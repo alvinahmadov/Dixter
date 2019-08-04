@@ -1,0 +1,24 @@
+Sir Isaac Newton (f. 4. janúar 1643, d. 31. mars 1727) [en skv. Júlíska tímatalinu sem þá var í notkun: f. 25.
+desember 1642, d. 20. mars 1727] var enskur stærðfræðingur, eðlisfræðingur, stjarnfræðingur, náttúruspekingur og
+gullgerðarmaður. Hann bar höfuð og herðar yfir flesta samtímamenn sína og gjörbylti stærðfræði og eðlisfræði 17. aldar.
+Framlög hans til þessara fræða voru meðal annars örsmæðareikningur, aflfræðin, þyngdarlögmálið, lögmálið um hreyfingu
+reikistjarna á braut, tvíliðuröðin (binomial series), aðferð Newtons í tölulegri greiningu auk mikilla fræða um lausnir
+jafna og fleira. Hann var mikilvægur boðberi upplýsingarinnar.
+
+Newton sagðist þola illa gagnrýni og þess vegna birti hann ekki niðurstöður rannsókna sinna fyrr en seint og um síðir
+og sumar aldrei. Sem dæmi um þetta er sagt að Edmund Halley, sem halastjarna Halleys er kennd við, hafi árið 1684
+stungið upp á því við Newton að hann kannaði hvernig það aðdráttarlögmál væri, sem leiddi af sér niðurstöður Keplers
+um hreyfingar reikistjarnanna. Þá svaraði Newton því til, að þetta væri hann búinn að leiða út fyrir mörgum árum,
+það væri lögmálið um andhverfu fjarlægðarinnar í öðru veldi. Halley var undrandi á að Newton skyldi ekki hafa gefið
+þetta út, og skoraði á hann að birta niðurstöður rannsókna sinna. Newton lét loks af því verða árið 1687, er hann gaf
+út höfuðrit sitt Philosophiae Naturalis Principia Mathematica, oftst nefnt Principia. Hin frægu þrjú lögmál Newtons,
+sem hann setti fram í Principia, leggja grunninn að klassískri aflfræði, en 2. lögmálið gefur tengsl krafts og
+hröðunar á þann veg að kraftur sé jafn margfeldi massa og hröðunar, þ.e. F = ma. (Lögmál Newtons stóðu óhögguð í rúm
+200 ár, en afstæðiskenningin sýndi að breyta þurfti þeim þegar fengist var við hluti sem fara með hraða, sem er nærri
+ljóshraða.)
+
+Þessi meinta viðkvæmni Newtons fyrir gagnrýni kom líka í veg fyrir að hann birti niðurstöður sínar í örsmæðareikningi
+fyrr en eftir að Leibniz hafði gert grein fyrir sínum niðurstöðum. Nú þykir nokkuð víst að Newton gerði uppgötvanir
+sínar á undan Leibniz, en lokaði þær niðri í skúffu. Leibniz hafði aldrei um þær heyrt er hann gerði sínar uppgötvanir
+fáum árum síðar og birti niðurstöðurnar strax. Þá loks dreif Newton sig til þess að koma sínum útreikningum á framfæri.
+Af þessum sökum eru þeir báðir taldir upphafsmenn örsmæðareiknings og er ekki gert upp á milli þeirra hvað það varðar.
