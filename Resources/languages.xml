@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<languages>
+    <language>
+        <id>am</id>
+        <name>Armenian</name>
+        <display_name>հայերեն</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔևՕՖ</alphabet_upper>
+        <alphabet_lower>աբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆ</alphabet_lower>
+    </language>
+    <language>
+        <id>az</id>
+        <name>Azerbaijani</name>
+        <display_name>Azərbaycanca</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCÇDEƏFGHXIİJKQLMNOÖPRSŞTUÜVYZ</alphabet_upper>
+        <alphabet_lower>abcçdeəfghxıijkqlmnoöprsştuüvyz</alphabet_lower>
+    </language>
+    <language>
+        <id>da</id>
+        <name>Danish</name>
+        <display_name>Dansk</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCDEFGHIJKLMNOPQRSTUWXYZÆØÅ</alphabet_upper>
+        <alphabet_lower>abcdefghijklmnopqrstuwxyzæøå</alphabet_lower>
+    </language>
+    <language>
+        <id>en</id>
+        <name>English</name>
+        <display_name>English</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCDEFGHIJKLMNOPQRSTUVWXYZ</alphabet_upper>
+        <alphabet_lower>abcdefghijklmnopqrstuvwxyz</alphabet_lower>
+    </language>
+    <language>
+        <id>fr</id>
+        <name>French</name>
+        <display_name>Français</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCDEFGHIJKLMNOPQRSTUVWXYZ</alphabet_upper>
+        <alphabet_lower>abcdefghijklmnopqrstuvwxyz</alphabet_lower>
+    </language>
+    <language>
+        <id>ft</id>
+        <name>Futhark</name>
+        <display_name>ᚠᚢᚦᚨᚱᚲ</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ᚨᛒᛞᛖᚠᚷᚺᛁᛃᚲᛚᛗᚾᛟᛝᚱᛊᚢᚦᚹᛇᛈᛉᛏ</alphabet_upper>
+        <alphabet_lower>!</alphabet_lower>
+    </language>
+    <language>
+        <id>de</id>
+        <name>German</name>
+        <display_name>Deutsch</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ</alphabet_upper>
+        <alphabet_lower>abcdefghijklmnopqrstuvwxyzäöüß</alphabet_lower>
+    </language>
+    <language>
+        <id>is</id>
+        <name>Icelandic</name>
+        <display_name>íslenska</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>AÁBDÐEÉFGHIÍJKLMNOÓPRSTUÚVXYÝÞÆÖ</alphabet_upper>
+        <alphabet_lower>aábdðeéfghiíjklmnoóprstuúvxyýþæ</alphabet_lower>
+    </language>
+    <language>
+        <id>no</id>
+        <name>Norwegian</name>
+        <display_name>Norsk</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ</alphabet_upper>
+        <alphabet_lower>abcdefghijklmnopqrstuvwxyzæøå</alphabet_lower>
+    </language>
+    <language>
+        <id>peo</id>
+        <name>Old Persian</name>
+        <display_name>𐎱𐎠𐎼𐎿</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>𐎀𐎁𐎂𐎃𐎄𐎅𐎆𐎇𐎈𐎉𐎊𐎋𐎌𐎍𐎎𐎏𐎐𐎑𐎒𐎓𐎔𐎕𐎖𐎗𐎘𐎙𐎚𐎛𐎜𐎝</alphabet_upper>
+        <alphabet_lower>!</alphabet_lower>
+    </language>
+    <language>
+        <id>ru</id>
+        <name>Russian</name>
+        <display_name>Русский</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ</alphabet_upper>
+        <alphabet_lower>абвгдеёжзийклмнопрстуфхцчшщъыьэюя</alphabet_lower>
+    </language>
+    <language>
+        <id>sv</id>
+        <name>Swedish</name>
+        <display_name>Svensk</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCDEFGHIJKLMNOPQRSTUVWXYZÅÖÄ</alphabet_upper>
+        <alphabet_lower>abcdefghijklmnopqrstuvwxyzåöä</alphabet_lower>
+    </language>
+    <language>
+        <id>tr</id>
+        <name>Turkish</name>
+        <display_name>Türkçe</display_name>
+        <structure>Word,Morphology,Translation</structure>
+        <alphabet_upper>ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ</alphabet_upper>
+        <alphabet_lower>abcçdefgğhıijklmnoöprsştuüvyz</alphabet_lower>
+    </language>
+</languages>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<settings>
+    <log>
+        <logfile>"/home/alvin/CLionProjects/Dixter/data/log"</logfile>
+    </log>
+    <widget name="Window">
+        <width>1280</width>
+        <height>960</height>
+        <bgcolour>#1e1e1e</bgcolour>
+        <fgcolour>#ffffff</fgcolour>
+        <font>
+            <name>Open Sans</name>
+            <size>14</size>
+        </font>
+    </widget>
+    <widget name="TextArea">
+        <bgcolour>#232323</bgcolour>
+        <fgcolour>#dcdcdc</fgcolour>
+        <font>
+            <name>Open Sans</name>
+            <size>14</size>
+        </font>
+    </widget>
+</settings>

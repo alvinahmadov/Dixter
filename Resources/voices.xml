@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<voices>
+    <voice>
+        <name>Boris</name>
+        <value>boris</value>
+    </voice>
+    <voice>
+        <name>Denis</name>
+        <value>Denis</value>
+    </voice>
+    <voice>
+        <name>Jack</name>
+        <value>f1</value>
+    </voice>
+    <voice>
+        <name>Sarah</name>
+        <value>f2</value>
+    </voice>
+    <voice>
+        <name>Sean</name>
+        <value>f3</value>
+    </voice>
+    <voice>
+        <name>Dean</name>
+        <value>f4</value>
+    </voice>
+    <voice>
+        <name>Stefan</name>
+        <value>f5</value>
+    </voice>
+    <voice>
+        <name>Gene</name>
+        <value>Gene</value>
+    </voice>
+</voices>

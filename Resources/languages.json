@@ -1,0 +1,72 @@
+{
+    "language_list": {
+        "lang": [
+            {
+                "id": "ar",
+                "name": "Armenian",
+                "alphabet": "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔևՕՖաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքևօֆ",
+                "dict_struct": ""
+            },
+            {
+                "id": "az",
+                "name": "Azerbaijani",
+                "alphabet": "ABCÇDEƏFGĞHXIİJKLMNOÖPQRSŞTUÜVYZabcçdeəfgğhxıijklmnoöpqrsştuüvyz",
+                "dict_struct": ""
+            },
+            {
+                "id": "da",
+                "name": "Danish",
+                "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå",
+                "dict_struct": ""
+            },
+            {
+                "id": "de",
+                "name": "German",
+                "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞabcdefghijklmnopqrstuvwxyzäöüß",
+                "dict_struct": ""
+            },
+            {
+                "id": "en",
+                "name": "English",
+                "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+                "dict_struct": ""
+            },
+            {
+                "id": "fr",
+                "name": "French",
+                "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZéàèùâêîôûëïüÿçabcdefghijklmnopqrstuvwxyzéàèùâêîôûëïüÿç",
+                "dict_struct": ""
+            },
+            {
+                "id": "is",
+                "name": "Icelandic",
+                "alphabet": "AÁBDÐEÉFGHIÍJKLMNOÓPRSTUÚVXYÝÞÆÖaábdðeéfghiíjklmnoóprstuúvxyýþæ",
+                "dict_struct": ""
+            },
+            {
+                "id": "no",
+                "name": "Norwegian",
+                "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅabcdefghijklmnopqrstuvwxyzæøå",
+                "dict_struct": "Id,Word,Bend1,Bend2,Type,Form1,Form2,Form3,Form4,Translation"
+            },
+            {
+                "id": "ru",
+                "name": "Russian",
+                "alphabet": "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя",
+                "dict_struct": ""
+            },
+            {
+                "id": "tr",
+                "name": "Turkish",
+                "alphabet": "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijklmnoöprsştuüvyz",
+                "dict_struct": ""
+            },
+            {
+                "id": "sv",
+                "name": "Swedish",
+                "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÖÄabcdefghijklmnopqrstuvwxyzåöä",
+                "dict_struct": ""
+            }
+        ]
+    }
+}
