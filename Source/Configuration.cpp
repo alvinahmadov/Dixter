@@ -60,9 +60,9 @@ namespace Dixter
 			}
 		} else
 		{
-			if (m_throw == ExceptionCase::kThrow)
+			if (m_throw == ExceptionCase::Throw)
 			{
-				throw NotFoundException { "%s:%d Node data for name %s not found." };
+				throw NotFoundException { "%s:%d Node data for name %s not found.", __FILE__, __LINE__, key};
 			}
 		}
 		
@@ -108,11 +108,11 @@ namespace Dixter
 				}
 			}
 		}
-		if (m_throw == ExceptionCase::kThrow)
+		if (m_throw == ExceptionCase::Throw)
 		{
 			if (__data == nullptr)
 			{
-				throw NotFoundException { "%s:%d Node data for %s not found." };
+				throw NotFoundException { "%s:%d Node data for %s not found.", __FILE__, __LINE__, key};
 			}
 		}
 		return __data;
@@ -131,10 +131,10 @@ namespace Dixter
 					__data = __node;
 				}
 		}
-		if (m_throw == ExceptionCase::kThrow)
+		if (m_throw == ExceptionCase::Throw)
 		{
-			// if (__data == nullptr)
-			throw NotFoundException { "%s:%d Node data for %s not found." };
+			if (__data == nullptr)
+			throw NotFoundException { "%s:%d Node data for %s not found.", __FILE__, __LINE__, value.asUTF8()};
 		}
 		return __data;
 	}
@@ -158,11 +158,11 @@ namespace Dixter
 			}
 		}
 		
-		if (m_throw == ExceptionCase::kThrow)
+		if (m_throw == ExceptionCase::Throw)
 		{
 			if (__data == nullptr)
 			{
-				throw NotFoundException { "%s:%d Node data for index %d not found." };
+				throw NotFoundException { "%s:%d Node data for index %d not found.", __FILE__, __LINE__, index};
 			}
 		}
 		return __data;
@@ -239,8 +239,8 @@ namespace Dixter
 	
 	// INIConfiguration implementation
 	INIConfiguration::INIConfiguration(const string_t& file)
-			: m_configurationList { std::list<Shared<NodeData>>() },
-			  m_propertyTree(std::unique_ptr<PropertyTree>(new PropertyTree()))
+			: m_configurationList { list<shared_ptr<NodeData>>() },
+			  m_propertyTree(unique_ptr<PropertyTree>(new PropertyTree()))
 	{
 		boost::property_tree::ini_parser::read_ini<PropertyTree>(file, *m_propertyTree);
 	}
@@ -270,7 +270,7 @@ namespace Dixter
 		printl("Not implemented yet")
 	}
 	
-	void INIConfiguration::getKey(std::list<string_t>& keyList) const
+	void INIConfiguration::getKey(list<string_t>& keyList) const
 	{
 		for (auto& __treeKey : *m_propertyTree)
 			keyList.push_back(__treeKey.first);
@@ -304,6 +304,8 @@ namespace Dixter
 	
 	void XMLConfiguration::load()
 	{
+		lock_guard<mutex> loadLock(m_mutex);
+		
 		static string_t __parentBefore { };
 		string_t __parent { };
 		string_t __nodeName { };
@@ -336,7 +338,7 @@ namespace Dixter
 				}
 			}
 		};
-		std::function<
+		function<
 				void(const PropertyTree&, const string_t&)> internalLoad =
 				[ & ](const PropertyTree& prop, const string_t& parent)
 				{
@@ -384,25 +386,28 @@ namespace Dixter
 					m_entries->insertEntry(__configData);
 				};
 		
-		for (const auto& value : __childTree)
+		scoped_lock<mutex> scopedLock(m_mutex);
 		{
-			__parent.clear();
-			__parent = value.first;
-			if (__parent != __parentBefore)
+			for (const auto& value : __childTree)
 			{
-				__parentBefore = __parent;
+				__parent.clear();
+				__parent = value.first;
+				if (__parent != __parentBefore)
+				{
+					__parentBefore = __parent;
+				}
+				
+				internalLoad(value.second, __parent);
 			}
-			
-			internalLoad(value.second, __parent);
 		}
 	}
 	
 	void XMLConfiguration::save()
 	{
-		throw NotImplementedException("%s:d% Saving xml configuration not implemented yet");
+		throw NotImplementedException("%s:d% Saving xml configuration not implemented yet", __FILE__, __LINE__);
 	}
 	
-	void XMLConfiguration::getKey(std::list<string_t>& keyList) const
+	void XMLConfiguration::getKey(list<string_t>& keyList) const
 	{
 		keyList.push_back(m_rootNode);
 	}
@@ -455,14 +460,12 @@ namespace Dixter
 	{
 		switch (type)
 		{
-			case ConfigurationType::kConfigIni: m_configuration = new INIConfiguration(configPath);
+			case ConfigurationType::ConfigIni: m_configuration = new INIConfiguration(configPath);
 				break;
-			case ConfigurationType::kConfigXml: m_configuration = new XMLConfiguration(configPath);
+			case ConfigurationType::ConfigXml: m_configuration = new XMLConfiguration(configPath);
 				break;
-			case ConfigurationType::kConfigJson : throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n" };
-				break;
-			default: throw IllegalArgumentException { "%s:%d Not type.\n" };
-				break;
+			case ConfigurationType::ConfigJson : throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
+			default: throw IllegalArgumentException { "%s:%d Unknown type.\n", __FILE__, __LINE__};
 		}
 	}
 	
@@ -474,18 +477,16 @@ namespace Dixter
 	{
 		if (m_configuration == nullptr)
 		{
-			
-			throw IllegalArgumentException("%s:%d Configuration is not initialised.");
+			throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 		}
 		switch (m_type)
 		{
-			case ConfigurationType::kConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->load();
+			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->load();
 				break;
-			case ConfigurationType::kConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->load();
+			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->load();
 				break;
-			case ConfigurationType::kConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n" };
-				break;
-			default: throw IllegalArgumentException("%s:%d Configuration is not initialised");
+			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
+			default: throw NotImplementedException("%s:%d Configuration is not initialised", __FILE__, __LINE__);
 		}
 	}
 	
@@ -497,37 +498,34 @@ namespace Dixter
 		}
 		switch (m_type)
 		{
-			case ConfigurationType::kConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->save();
+			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->save();
 				break;
-			case ConfigurationType::kConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->save();
+			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->save();
 				break;
-			case ConfigurationType::kConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n" };
-				break;
-			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.");
+			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
+			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 		}
 	}
 	
-	void ConfigurationFactory::getKey(std::list<string_t>& keyList) const
+	void ConfigurationFactory::getKey(list<string_t>& keyList) const
 	{
 		switch (m_type)
 		{
-			case ConfigurationType::kConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->getKey(keyList);
+			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->getKey(keyList);
 				break;
-			case ConfigurationType::kConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->getKey(keyList);
+			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->getKey(keyList);
 				break;
-			case ConfigurationType::kConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n" };
-				break;
-			default: throw IllegalArgumentException { "%s:%d Configuration is not initialised." };
+			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
+			default: throw IllegalArgumentException { "%s:%d Configuration is not initialised.", __FILE__, __LINE__ };
 		}
 	}
 	
 	void ConfigurationManagerInterface::checkKey(const ConfigurationProperty::const_iterator key,
 	                                             ConfigurationProperty* properties, string_t errorMsg) const
 	{
-		(void) errorMsg;
 		if (properties != nullptr && key == properties->end())
 		{
-			throw NotFoundException { };
+			throw NotFoundException { errorMsg };
 		}
 	}
 	
@@ -535,13 +533,11 @@ namespace Dixter
 	{
 		switch (m_type)
 		{
-			case ConfigurationType::kConfigXml : return dynamic_cast<XMLConfiguration*>(m_configuration);
-			case ConfigurationType::kConfigIni : return dynamic_cast<INIConfiguration*>(m_configuration);
-			case ConfigurationType::kConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n" };
-				break;
-			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.");
+			case ConfigurationType::ConfigXml : return dynamic_cast<XMLConfiguration*>(m_configuration);
+			case ConfigurationType::ConfigIni : return dynamic_cast<INIConfiguration*>(m_configuration);
+			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
+			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 		}
-		return nullptr;
 	}
 	
 	const ConfigurationType&
@@ -552,7 +548,7 @@ namespace Dixter
 	
 	///ConfigurationManager implementation
 	ConfigurationManager*
-	ConfigurationManager::getManager(ConfigurationType type, const std::list<string_t>& configPaths)
+	ConfigurationManager::getManager(ConfigurationType type, const list<string_t>& configPaths)
 	{
 		if (m_instance == nullptr)
 		{
@@ -580,7 +576,7 @@ namespace Dixter
 	void ConfigurationManager::read(ConfigurationType type, const string_t& path)
 	{
 		m_factory = new ConfigurationFactory(path, type);
-		std::list<string_t> __keyList;
+		list<string_t> __keyList;
 		m_factory->load();
 		m_factory->getKey(__keyList);
 		for (auto& val : __keyList)
@@ -593,11 +589,11 @@ namespace Dixter
 		
 		switch (type)
 		{
-			case ConfigurationType::kConfigXml : printl_log("XML write")
+			case ConfigurationType::ConfigXml : printl_log("XML write")
 				break;
-			case ConfigurationType::kConfigJson : printl_log("JSON write")
+			case ConfigurationType::ConfigJson : printl_log("JSON write")
 				break;
-			case ConfigurationType::kConfigIni : printl_log("INI write")
+			case ConfigurationType::ConfigIni : printl_log("INI write")
 				break;
 			default: printl_log("None")
 				break;
@@ -622,7 +618,7 @@ namespace Dixter
 		ConfigurationManagerInterface::checkKey(key, m_properties, errorMsg);
 	}
 	
-	ConfigurationManager::ConfigurationManager(ConfigurationType type, const std::list<string_t>& paths)
+	ConfigurationManager::ConfigurationManager(ConfigurationType type, const list<string_t>& paths)
 			: m_pathList { paths },
 			  m_properties { new ConfigurationProperty() },
 			  m_accessor { new Accessor(this) }
@@ -638,7 +634,7 @@ namespace Dixter
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wreturn-type"
 	
-	const ustring_t&
+	ustring_t
 	ConfigurationManager::Accessor::getValue(const string_t& root, const string_t& key) const
 	{
 		auto iter = m_manager->m_properties->find(root);
@@ -647,25 +643,23 @@ namespace Dixter
 		{
 			switch (m_instance->m_factory->getType())
 			{
-				case ConfigurationType::kConfigXml :
+				case ConfigurationType::ConfigXml :
 				{
 					return dynamic_cast<XMLConfiguration*>(iter->second)
 							->m_entries->findEntry(key)->value;
 				}
-				case ConfigurationType::kConfigIni :
+				case ConfigurationType::ConfigIni :
 				{
-					// return dynamic_cast<INIConfiguration*>(iter->second)
-					// 		->m_propertyTree->find(key)->second.data();
-					break;
+					return dynamic_cast<INIConfiguration*>(iter->second)
+							->m_propertyTree->find(key)->second.data();
 				}
-				case ConfigurationType::kConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.");
-					break;
+				case ConfigurationType::ConfigJson : break;
+				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 			}
 		}
 	}
 	
-	const ustring_t&
+	ustring_t
 	ConfigurationManager::Accessor::getValue(const string_t& root, const ustring_t& value, const string_t& key) const
 	{
 		auto iter = m_manager->m_properties->find(root);
@@ -674,7 +668,7 @@ namespace Dixter
 		{
 			switch (m_instance->m_factory->getType())
 			{
-				case ConfigurationType::kConfigXml :
+				case ConfigurationType::ConfigXml :
 				{
 					auto __entries { dynamic_cast<XMLConfiguration*>(iter->second)->m_entries };
 					
@@ -690,14 +684,14 @@ namespace Dixter
 					}
 					break;
 				}
-				case ConfigurationType::kConfigIni :
+				case ConfigurationType::ConfigIni :
 				{
-					// return dynamic_cast<INIConfiguration*>(iter->second)
-					// 		->m_propertyTree->find(key)->second.data();
+					return dynamic_cast<INIConfiguration*>(iter->second)
+							->m_propertyTree->find(key)->second.data();
 					break;
 				}
-				case ConfigurationType::kConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.");
+				case ConfigurationType::ConfigJson : break;
+				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 					break;
 			}
 		}
@@ -705,7 +699,7 @@ namespace Dixter
 	
 	#pragma GCC diagnostic pop
 	
-	void ConfigurationManager::Accessor::getValues(const string_t& root, const string_t& key, std::vector<ustring_t>& values) const
+	void ConfigurationManager::Accessor::getValues(const string_t& root, const string_t& key, vector<ustring_t>& values) const
 	{
 		auto iter = m_manager->m_properties->find(root);
 		
@@ -713,17 +707,16 @@ namespace Dixter
 		{
 			switch (m_instance->m_factory->getType())
 			{
-				case ConfigurationType::kConfigXml :
+				case ConfigurationType::ConfigXml :
 				{
 					auto __entries { dynamic_cast<XMLConfiguration*>(iter->second)->m_entries };
 					for (const auto& __data : *__entries->get())
 						__data.second->getValues(key, values);
 					break;
 				}
-				case ConfigurationType::kConfigIni : break;
-				case ConfigurationType::kConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.");
-					break;
+				case ConfigurationType::ConfigIni : break;
+				case ConfigurationType::ConfigJson : break;
+				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 			}
 		}
 	}
@@ -734,21 +727,21 @@ namespace Dixter
 	
 	void ConfigurationManager::Mutator::setValue(const string_t& root, const string_t& key, const ustring_t& value) const
 	{
+		scoped_lock<mutex> lockGuard(m_mutex);
 		auto iter = m_manager->m_properties->find(root);
 		
 		if (iter != m_manager->m_properties->end())
 		{
 			switch (m_instance->m_factory->getType())
 			{
-				case ConfigurationType::kConfigXml :
+				case ConfigurationType::ConfigXml :
 				{
 					dynamic_cast<XMLConfiguration*>(iter->second)
 							->m_entries->setEntry(key, value);
 				}
-				case ConfigurationType::kConfigIni : break;
-				case ConfigurationType::kConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.");
-					break;
+				case ConfigurationType::ConfigIni : break;
+				case ConfigurationType::ConfigJson : break;
+				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 			}
 		}
 	}
@@ -756,8 +749,8 @@ namespace Dixter
 	ConfigurationManager*
 			ConfigurationManager::ConfigurationManager::m_instance = nullptr;
 	
-	std::set<ConfigurationManager*>*
-			ConfigurationManager::ConfigurationManager::m_instances = new std::set<ConfigurationManager*>();
+	set<ConfigurationManager*>*
+			ConfigurationManager::ConfigurationManager::m_instances = new set<ConfigurationManager*>();
 	
 	bool ConfigurationManager::update()
 	{
@@ -769,9 +762,9 @@ namespace Dixter
 			SAFE_RELEASE(m_instance)
 			m_instance = new ConfigurationManager(__type, __paths);
 			success = true;
-		} catch (std::exception& e)
+		} catch (Exception& e)
 		{
-			printerr(e.what())
+			printerr(e.getMessage())
 		}
 		if (success)
 			printl("Updated")

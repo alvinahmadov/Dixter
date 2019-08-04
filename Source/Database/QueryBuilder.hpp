@@ -66,5 +66,3 @@ namespace Dixter
 		};
 	}
 }
-
-#endif //_DIXTER_QUERY_BUILDER_H_

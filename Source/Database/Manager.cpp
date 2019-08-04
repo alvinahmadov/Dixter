@@ -47,8 +47,8 @@ namespace Dixter
 		{
 			for (auto& value : *m_tables)
 			{
-				PUTLF(value.first)
-				PUTLF(value.second->getTableName())
+				printl_log(value.first)
+				printl_log(value.second->getTableName())
 				SAFE_RELEASE(value.second)
 			}
 			SAFE_RELEASE(m_tables)
@@ -139,64 +139,47 @@ namespace Dixter
 			(*m_preparedStmts)[tableName]->setBigInt(parameterIndex, value);
 		}
 		
-		void Manager::setBlob(const string_t& tableName,
-		                      ui32 parameterIndex,
-		                      istream* blob)
+		void Manager::setBlob(const string_t& tableName, ui32 parameterIndex, istream* blob)
 		{
 			(*m_preparedStmts)[tableName]->setBlob(parameterIndex, blob);
 		}
 		
-		void Manager::setBoolean(const string_t& tableName,
-		                         ui32 parameterIndex,
-		                         bool value)
+		void Manager::setBoolean(const string_t& tableName, ui32 parameterIndex, bool value)
 		{
 			(*m_preparedStmts)[tableName]->setBoolean(parameterIndex, value);
 		}
 		
-		void Manager::setDateTime(const string_t& tableName,
-		                          ui32 parameterIndex,
-		                          const string_t& value)
+		void Manager::setDateTime(const string_t& tableName, ui32 parameterIndex, const string_t& value)
 		{
 			(*m_preparedStmts)[tableName]->setDateTime(parameterIndex, SQLString { value.c_str() });
 		}
 		
-		void Manager::setDouble(const string_t& tableName,
-		                        ui32 parameterIndex,
-		                        d32 value)
+		void Manager::setDouble(const string_t& tableName, ui32 parameterIndex, d32 value)
 		{
 			(*m_preparedStmts)[tableName]->setDouble(parameterIndex, value);
 		}
 		
-		void Manager::setInt(const string_t& tableName,
-		                     ui32 parameterIndex,
-		                     i32 value)
+		void Manager::setInt(const string_t& tableName, ui32 parameterIndex, i32 value)
 		{
 			(*m_preparedStmts)[tableName]->setInt(parameterIndex, value);
 		}
 		
-		void Manager::setUInt(const string_t& tableName,
-		                      ui32 parameterIndex,
-		                      ui32 value)
+		void Manager::setUInt(const string_t& tableName, ui32 parameterIndex, ui32 value)
 		{
 			(*m_preparedStmts)[tableName]->setUInt(parameterIndex, value);
 		}
 		
-		void Manager::setInt64(const string_t& tableName,
-		                       ui32 parameterIndex,
-		                       i64 value)
+		void Manager::setInt64(const string_t& tableName, ui32 parameterIndex, i64 value)
 		{
 			(*m_preparedStmts)[tableName]->setInt64(parameterIndex, value);
 		}
 		
-		void Manager::setUInt64(const string_t& tableName,
-		                        ui32 parameterIndex,
-		                        ui64 value)
+		void Manager::setUInt64(const string_t& tableName, ui32 parameterIndex, ui64 value)
 		{
 			(*m_preparedStmts)[tableName]->setUInt64(parameterIndex, value);
 		}
 		
-		void Manager::setNull(const string_t& tableName,
-		                      ui32 parameterIndex)
+		void Manager::setNull(const string_t& tableName, ui32 parameterIndex)
 		{
 			auto valList = (*m_tables)[tableName]->getValuesList();
 			uint counter { 0 };
@@ -212,16 +195,12 @@ namespace Dixter
 			(*m_preparedStmts)[tableName]->setNull(parameterIndex, static_cast<int>(dataType));
 		}
 		
-		void Manager::setString(const string_t& tableName,
-		                        ui32 parameterIndex,
-		                        const string_t& value)
+		void Manager::setString(const string_t& tableName, ui32 parameterIndex, const string_t& value)
 		{
 			(*m_preparedStmts)[tableName]->setString(parameterIndex, value);
 		}
 		
-		ui32 Manager::setStrings(const string_t& tableName,
-		                         const ui32& parameterStartIndex,
-		                         list<string_t>& list,
+		ui32 Manager::setStrings(const string_t& tableName, const ui32& parameterStartIndex, list<string_t>& list,
 		                         ui32 stringColumnNum)
 		{
 			if (stringColumnNum == 0)
@@ -233,7 +212,7 @@ namespace Dixter
 			ui32 index { parameterStartIndex };
 			if ((*m_preparedStmts)[tableName] == nullptr)
 			{
-				throw Exception { "No statement is prepared" };
+				throw SQLException { "%s:%d No statement is prepared", __FILE__, __LINE__};
 			}
 			try
 			{
@@ -254,7 +233,7 @@ namespace Dixter
 			}
 			list.clear();
 			return index;
-		};
+		}
 		
 		int Manager::executeUpdate(const string_t& tableName)
 		{

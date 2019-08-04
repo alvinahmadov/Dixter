@@ -13,8 +13,8 @@
 namespace Dixter
 {
 	//////////////////////////////
-// Attribute Implementation //
-//////////////////////////////
+	// Attribute Implementation //
+	//////////////////////////////
 	Attribute::Attribute(const string_t& attributeName, const ustring_t& attributeValue)
 			: name {attributeName},
 			  value {attributeValue},
@@ -86,17 +86,17 @@ namespace Dixter
 			if (__node->has(name))
 				__node->value = value;
 		
-		throw NotFoundException ("%s:%d No node with name %s."); //, __FILE__, __LINE__, name};
+		throw NotFoundException {"%s:%d No node with name %s.", __FILE__, __LINE__, name};
 	}
 	
-	const ustring_t&
+	ustring_t
 	NodeData::getValue(const string_t& name) const
 	{
 		for (const auto& __node : getNodes())
 			if (__node->has(name))
 				return __node->value;
 		
-		throw NotFoundException {"%s:%d No node with name %s."};//, __FILE__, __LINE__, name};
+		throw NotFoundException {"%s:%d No node with name %s.", __FILE__, __LINE__, name};
 	}
 	
 	const Nodes&

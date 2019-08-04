@@ -12,7 +12,6 @@
 
 #include <functional>
 #include <boost/format.hpp>
-#include <boost/stacktrace.hpp>
 #include <exception>
 #include <map>
 #include <list>
@@ -32,8 +31,6 @@
 
 namespace Dixter
 {
-
-
 #ifdef BENCHMARK_TEST
 	#define BENCH_BEGIN auto t = ::boost::timer {};
 	#define BENCH_END   printf("Overall run time %lf seconds.", t.elapsed());
@@ -314,19 +311,16 @@ namespace Dixter
 		{
 		public:
 			/**
-			 * \class ClassNameConvertor
-			 * \returns formatted name of class
+			 * \returns string name of the class
 			 * */
 			static string_t getName(const string_t& rawName);
 			
 			/**
-			 * \class ClassNameConvertor
 			 * \see \code getName(const string_t&)
 			 * */
 			static string_t getName(const char* rawName);
 			
 			/**
-			 * \class ClassNameConvertor
 			 * \brief Parses raw class name to formatted one.
 			 * \see \code getName(const string_t&)
 			 * */
@@ -349,47 +343,39 @@ namespace Dixter
 	
 	/**
 	 * \author Alvin Ahmadov
-	 * \class VarArgMessageFormatter
 	 * \namespace Dixter
-	 * \ingroup base
+	 *
+	 * \brief Class used to format passed variable arguments to readable form.
+	 *
 	 * \tparam Args Argument types to be passed to formatter.
 	 * */
 	template<typename... Args>
-	class VarArgMessageFormatter
+	class VarArgMessageFormat
 	{
 		using Format = boost::basic_format<typename string_t::value_type>;
 		
 		/**
-		 * \brief Casts arguments to string type and appends to specified string.
-		 * \param message String object to which append arguments.
-		 * \param args Arguments to be cast and appended to string object.
-		 * */
-		static inline void _format(string_t& message, Args&& ... args);
-		
-		/**
-		 * \brief Check if \c anyArg's type is of type T.
+		 * \brief Check if \c arg's is of type T.
 		 * \tparam T Type to check.
-		 * \returns True if \c T is \c anyArg's type.
+		 * \returns True if \c T is \c arg's type.
 		 * */
 		template<typename T>
-		static inline constexpr bool checkTypeIdentity(const any_t& anyArg);
+		static constexpr bool checkTypeIdentity(const any_t& arg);
 		
 		/**
 		 * \brief Casts argument to its original type and appends to string.
 		 * \tparam T Type to cast argument.
-		 * \param fmt Boost::format object pointer.
+		 * \param fmt boost::format pointer.
 		 * \param arg Object of type any to be cast and appended.
 		 * */
 		template<typename T>
-		static inline void append(Format* fmt, const any_t& arg);
+		static void append(Format* fmt, const any_t& arg);
 	public:
 		
 		/**
 		 * \brief Public interface for class format operations.
 		 * \param message String to which add arguments.
 		 * \param args Arguments to be appended to \c message.
-		 *
-		 * Delegates to \code format(string_t&, Args...)
 		 * */
 		static void format(string_t& message, Args&& ... args);
 	};
@@ -410,45 +396,24 @@ namespace Dixter
 		string_t m_message;
 	};
 	
-	template<typename String = string_t>
-	class TException : public  std::exception
-	{
-	public:
-		explicit TException(const String& message = String()) dxDECL_NOEXCEPT;
-		
-		virtual ~TException() dxDECL_NOEXCEPT dxDECL_OVERRIDE;
-		
-		virtual const String& what() const dxDECL_NOEXCEPT dxDECL_OVERRIDE;
-		
-		virtual const String& getMessage() const dxDECL_NOEXCEPT;
-	
-	protected:
-		String m_message;
-	};
-	
-	#define DECLARE_SIMPLE_EXCEPTION(className)                     \
-    class className : public Exception                              \
-    {                                                               \
-    public:                                                         \
-        className();                                                \
-        explicit className(const char* msg);                        \
-        explicit className(string_t &&msg);                         \
-        virtual ~className() dxDECL_NOEXCEPT dxDECL_OVERRIDE;       \
-        const char* what() const dxDECL_NOEXCEPT dxDECL_OVERRIDE;   \
-    };
-	
 	#define DECL_DETAILED_EXCEPTION(className)                       \
     class className : public Exception                               \
     {                                                                \
     public:                                                          \
         explicit className(const string_t& message = string_t());    \
         template <typename ... Args>                                 \
-        explicit className(const string_t& message, Args&& ... args) \
-            : Exception(message)                                     \
+        explicit className(string_t&& message, Args&& ... args)      \
+            : Exception()                                            \
             {                                                        \
-               VarArgMessageFormatter<string_t, Args...>::           \
-                       format(message, args...);                     \
+               VarArgMessageFormat<Args...>::                        \
+                       format(message,                               \
+                       		std::forward<Args>(args)...);            \
+               m_message = message;        		                     \
             };                                                       \
+        template <typename ... Args>                                 \
+        explicit className(const char* message, Args&& ... args)     \
+            : className(string_t(message), args...)                  \
+            {};                                                      \
         ~className() dxDECL_NOEXCEPT dxDECL_OVERRIDE;                \
         const char* what() const dxDECL_NOEXCEPT dxDECL_OVERRIDE;    \
         const string_t& getMessage() const dxDECL_NOEXCEPT           \
@@ -457,42 +422,20 @@ namespace Dixter
 	
 	DECL_DETAILED_EXCEPTION(NotImplementedException)
 	
+	DECL_DETAILED_EXCEPTION(IllegalArgumentException)
+	
 	DECL_DETAILED_EXCEPTION(NullPointerException)
 	
 	DECL_DETAILED_EXCEPTION(NotFoundException)
 	
-	DECL_DETAILED_EXCEPTION(IllegalArgumentException)
-	
 	DECL_DETAILED_EXCEPTION(RangeException)
+	
+	DECL_DETAILED_EXCEPTION(SQLException)
 	
 	struct DJBHash
 	{
 		size_t operator()(const string_t& hashKey) const;
 	};
-	
-	template<typename String>
-	TException<String>::TException(const String& message) dxDECL_NOEXCEPT
-			: std::exception(),
-			  m_message {message}
-	{}
-	
-	template<typename String>
-	TException<String>::~TException() dxDECL_NOEXCEPT
-	{}
-	
-	template<typename String>
-	const String&
-	TException<String>::what() const dxDECL_NOEXCEPT
-	{
-		return m_message;
-	}
-	
-	template<typename String>
-	const String&
-	TException<String>::getMessage() const dxDECL_NOEXCEPT
-	{
-		return m_message;
-	}
 	
 	/// ClassInfo<> implementation
 	template<class T>
@@ -550,9 +493,9 @@ namespace Dixter
 	template<class T>
 	inline constexpr i32 ClassInfo<T>::compareTo(const ClassInfo<T>& other)
 	{
-		if (this->getSize() - other.getSize() < 0)
+		if (getSize() - other.getSize() < 0)
 			return -1;
-		else if (this->getSize() - other.getSize() > 0)
+		else if (getSize() - other.getSize() > 0)
 			return 1;
 		else
 			return 0;
@@ -565,13 +508,7 @@ namespace Dixter
 	}
 	
 	template<typename... Args>
-	inline void VarArgMessageFormatter<Args...>::format(string_t& message, Args&&... args)
-	{
-		VarArgMessageFormatter::_format(message, args...);
-	}
-	
-	template<typename... Args>
-	inline void VarArgMessageFormatter<Args...>::_format(string_t& message, Args&& ... args)
+	inline void VarArgMessageFormat<Args...>::format(string_t& message, Args&&... args)
 	{
 		auto __pFmt = new Format(message);
 		std::initializer_list<any_t> __argumentsAny {std::forward<Args>(args)..., sizeof...(Args)};
@@ -580,7 +517,6 @@ namespace Dixter
 		{
 			append<string_t>(__pFmt, __anyArg);
 			append<ustring_t>(__pFmt, __anyArg);
-			append<QString>(__pFmt, __anyArg);
 			append<const char*>(__pFmt, __anyArg);
 			append<int>(__pFmt, __anyArg);
 			append<double>(__pFmt, __anyArg);
@@ -593,14 +529,14 @@ namespace Dixter
 	
 	template<typename... Args>
 	template<typename T>
-	inline constexpr bool VarArgMessageFormatter<Args...>::checkTypeIdentity(const any_t& anyArg)
+	inline constexpr bool VarArgMessageFormat<Args...>::checkTypeIdentity(const any_t& anyArg)
 	{
 		return typeid(T) == anyArg.type();
 	}
 	
 	template<typename... Args>
 	template<typename T>
-	inline void VarArgMessageFormatter<Args...>::append(Format* fmt, const any_t& arg)
+	inline void VarArgMessageFormat<Args...>::append(Format* fmt, const any_t& arg)
 	{
 		if (checkTypeIdentity<T>(arg))
 		{
@@ -608,4 +544,4 @@ namespace Dixter
 		}
 		return;
 	}
-}
+} // namespace Dixter

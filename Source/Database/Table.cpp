@@ -49,7 +49,7 @@ namespace Dixter
 			query = m_queryBuilder->createQuery(m_tableName, *m_dbValueList, m_paramsSize);
 			if (query.empty())
 			{
-				throw IllegalArgumentException { "%s:%d Query not set", __FILE__, __LINE__ };
+				throw SQLException { "%s:%d Query not set", __FILE__, __LINE__ };
 			}
 			statement->execute(query);
 		}

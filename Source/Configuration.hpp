@@ -40,8 +40,8 @@ namespace Dixter
 	 */
 	enum class ExceptionCase
 	{
-		kThrow,
-		kDontThrow
+		Throw,
+		DontThrow
 	};
 	
 	/**
@@ -56,10 +56,10 @@ namespace Dixter
 	 * */
 	enum class ConfigurationType
 	{
-		kConfigIni,
-		kConfigXml,
-		kConfigJson,
-		kConfigNone
+		ConfigIni,
+		ConfigXml,
+		ConfigJson,
+		ConfigNone
 	};
 	
 	/**
@@ -104,7 +104,7 @@ namespace Dixter
 		 * \param throw_ If data to return is null or empty,
 		 * class methods will throw exceptions.
 		 * */
-		NodeEntry(ExceptionCase throw_ = ExceptionCase::kThrow);
+		NodeEntry(ExceptionCase throw_ = ExceptionCase::Throw);
 		
 		~NodeEntry();
 		
@@ -284,6 +284,7 @@ namespace Dixter
 		string_t m_file;
 		NodeEntry* m_entries;
 		PropertyTree* m_propertyTree;
+		mutable std::mutex m_mutex;
 	};
 	
 	class JSONConfiguration : public ConfigurationInterface
@@ -356,7 +357,7 @@ namespace Dixter
 		/**
 		 * \author Alvin Ahmadov
 		 * \class ConfigurationManager::Accessor
-		 * \brief Class used as inner helper class to access data of ConfigurationManager.
+		 * \brief Class used as inner helper class to read data of ConfigurationManager.
 		 *
 		 * Provides easy access interfaces to data. Data is immutable.
 		 * */
@@ -372,7 +373,7 @@ namespace Dixter
 		 * \returns Found value.
 		 * \throws NotFoundException.
 		 * */
-			const ustring_t& getValue(const string_t& root, const string_t& key) const;
+			ustring_t getValue(const string_t& root, const string_t& key) const;
 			
 			/**
 			 * \class XMLConfiguration
@@ -382,7 +383,7 @@ namespace Dixter
 			 * \returns value
 			 * \throws NotFoundException
 			 * */
-			const ustring_t& getValue(const string_t& root, const ustring_t& value, const string_t& key) const;
+			ustring_t getValue(const string_t& root, const ustring_t& value, const string_t& key) const;
 			
 			/**
 			 * \brief Get all values of node with specified name.
@@ -394,6 +395,17 @@ namespace Dixter
 			ConfigurationManager* m_manager;
 		};
 		
+		/**
+		 * \brief Helper used to change configuration value/values
+		 * */
+		
+		/**
+		 * \author Alvin Ahmadov
+		 * \class ConfigurationManager::Mutator
+		 * \brief Class used as inner helper class to write data of ConfigurationManager.
+		 *
+		 * Provides easy access interfaces to data. Data is mutable.
+		 * */
 		class Mutator
 		{
 		public:
@@ -410,6 +422,7 @@ namespace Dixter
 		
 		private:
 			ConfigurationManager* m_manager;
+			mutable std::mutex m_mutex;
 		};
 	
 	public:
@@ -442,11 +455,11 @@ namespace Dixter
 		 * */
 		template<class T>
 		inline const T* getConfiguration(const string_t& key,
-		                                 ConfigurationType type = ConfigurationType::kConfigNone)
+		                                 ConfigurationType type = ConfigurationType::ConfigNone)
 		{
 			try
 			{
-				if (type != ConfigurationType::kConfigNone)
+				if (type != ConfigurationType::ConfigNone)
 				{
 					if (m_instance->getType() != type)
 					{
@@ -454,7 +467,7 @@ namespace Dixter
 						{
 							if (__instance->getType() == type)
 							{
-								return getConfiguration<T>(key, ConfigurationType::kConfigNone);
+								return getConfiguration<T>(key, ConfigurationType::ConfigNone);
 							}
 						}
 					}

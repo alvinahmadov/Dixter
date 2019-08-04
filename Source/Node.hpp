@@ -90,7 +90,7 @@ namespace Dixter
 		 * \returns Value of node.
 		 * \throws NotFoundException
 		 * */
-		const ustring_t& getValue(const string_t& name) const;
+		ustring_t getValue(const string_t& name) const;
 		
 		template<typename Container_T>
 		void getValues(const string_t& name, Container_T& values) const

@@ -1,10 +1,14 @@
 set(${DIXTER_BASE}_SOURCE_FILES
-    Commons.cpp
-    UnicodeStringWrapper.cpp
-    Node.cpp
-    Configuration.cpp
-    SettingsController.cpp
-    Utilities.cpp
+    ${DIXTER_SOURCE_DIR}/Commons.cpp
+    ${DIXTER_SOURCE_DIR}/UnicodeStringWrapper.cpp
+    ${DIXTER_SOURCE_DIR}/Node.cpp
+    ${DIXTER_SOURCE_DIR}/Configuration.cpp
+    ${DIXTER_SOURCE_DIR}/SettingsController.cpp
+    ${DIXTER_SOURCE_DIR}/Utilities.cpp
+    ${DIXTER_SOURCE_DIR}/Database/Manager.cpp
+    ${DIXTER_SOURCE_DIR}/Database/QueryBuilder.cpp
+    ${DIXTER_SOURCE_DIR}/Database/Table.cpp
+    ${DIXTER_SOURCE_DIR}/Database/Value.cpp
     )
 
 file(GLOB DB_SOURCE_FILES ${DIXTER_SOURCE_DIR}/database/*.cpp)
@@ -48,7 +52,7 @@ set(${DIXTER_BASE}_TARGET_LIBRARIES
 
 if(${OTR_TEST} OR ${BUILD_ALL})
     if(NOT ${BUILD_SIMPLE})
-        file(GLOB NNET_SOURCE_FILES ${DIXTER_SOURCE_DIR}/nnet/*.cpp)
+        file(GLOB NNET_SOURCE_FILES ${DIXTER_SOURCE_DIR}/NNet/*.cpp)
         set(${DIXTER_BASE}_SOURCE_FILES ${${DIXTER_BASE}_SOURCE_FILES} ${NNET_SOURCE_FILES})
     endif()
 endif()
@@ -61,9 +65,9 @@ if(${GUI_TEST})
     add_subdirectory(Gui)
 elseif(${OTR_TEST})
     if(${ENABLE_BENCHMARK})
-        add_compile_definitions(-DBENCHMARK_TEST)
+        add_compile_definitions(BENCHMARK_TEST)
     endif()
-    add_compile_definitions(-DDICT_TESTING)
+    add_compile_definitions(DICT_TESTING)
     add_subdirectory(OpenTranslate)
 elseif(${CVTR_TEST})
     add_subdirectory(CvTranslate)

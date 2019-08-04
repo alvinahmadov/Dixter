@@ -8,9 +8,7 @@
  */
 #pragma once
 
-
 #include "Database/Manager.hpp"
-
 
 namespace Dixter
 {
@@ -23,9 +21,8 @@ namespace Dixter
 			
 			~Dictionary();
 			
-			std::map<string_t, string_t>
-			search(const string_t& word, string_t column,
-			       bool asRegex = false, bool all = false);
+			std::multimap<string_t, string_t>
+			search(const string_t& word, string_t column, bool asRegex = false);
 		
 		private:
 			Database::Manager* m_databaseManager;

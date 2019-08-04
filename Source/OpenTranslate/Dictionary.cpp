@@ -7,13 +7,14 @@
  *  See README.md for more information.
  */
 
+#include <cppconn/resultset.h>
 #include "Dictionary.hpp"
 
 namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		Dictionary::Dictionary(database::DatabaseManager* manager)
+		Dictionary::Dictionary(Database::Manager* manager)
 				: m_databaseManager {manager}
 		{
 		
@@ -24,10 +25,10 @@ namespace Dixter
 		
 		}
 		
-		std::map<string_t, string_t>
-		Dictionary::search(const string_t& word, string_t column, bool asRegex, bool all)
+		std::multimap<string_t, string_t>
+		Dictionary::search(const string_t& word, string_t column, bool asRegex)
 		{
-			std::map<string_t, string_t> resultMap {};
+			std::multimap<string_t, string_t> resultMap {};
 			char firstLetter = std::toupper(word.at(0));
 			auto rs = m_databaseManager->selectColumn("tables", "original_value");
 			std::list<string_t> tableData {};
@@ -42,10 +43,7 @@ namespace Dixter
 					
 					if (asRegex)
 					{
-						if (all)
-							resultSet = m_databaseManager->selectColumnsWhere(table, cols, column + " LIKE \"%" + word + "%\"");
-						else
-							resultSet = m_databaseManager->selectColumnsWhere(table, cols, column + " LIKE \"" + word + "%\"");
+						resultSet = m_databaseManager->selectColumnsWhere(table, cols, column + " LIKE \"" + word + "%\"");
 					} else
 						resultSet = m_databaseManager->selectColumnsWhere(table, cols, column + "=\"" + word + "\"");
 							

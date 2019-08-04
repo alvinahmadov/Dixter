@@ -9,6 +9,8 @@
 
 #include <algorithm>
 
+#include <QString>
+
 #include "Tokenizer.hpp"
 
 
@@ -163,7 +165,7 @@ namespace Dixter
 			}
 			if (index > m_chunks->tokens->size())
 			{
-				throw IllegalArgumentException { "%s:%d Index %d > size: %d.", __FILE__, __LINE__, index, m_chunks->tokens->size() };
+				throw RangeException { string_t("Index %d > size: %d."), index, m_chunks->tokens->size() };
 			}
 			if (m_chunks->tokens->size() > 1)
 			{

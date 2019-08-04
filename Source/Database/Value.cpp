@@ -82,7 +82,7 @@ namespace Dixter
 		Value::getSize() const
 		{
 			return m_size;
-		};
+		}
 		
 		bool Value::isAutoIncrement() const
 		{

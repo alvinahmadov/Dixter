@@ -98,7 +98,7 @@ namespace Dixter
 	
 	inline const char* Exception::what() const dxDECL_NOEXCEPT
 	{
-		return m_message.data();
+		return m_message.c_str();
 	}
 	
 	inline const string_t&
@@ -106,22 +106,6 @@ namespace Dixter
 	{
 		return m_message;
 	}
-
-	#define IMPLEMENT_SIMPLE_EXCEPTION(className)               \
-    className::className()                                      \
-        : Exception{}                                           \
-    {};                                                         \
-    className::className(const char* msg)                       \
-        : Exception{msg}                                        \
-    {}                                                          \
-    className::className(string_t &&msg)                        \
-        : Exception{msg}                                        \
-    {}                                                          \
-    className::~className() dxDECL_NOEXCEPT {}                       \
-    const char* className::what() const dxDECL_NOEXCEPT              \
-    {                                                           \
-        return m_message.c_str();                               \
-    }
 
 	#define DEF_DETAILED_EXCEPTION(className)                   \
     className::className(const string_t& message)               \
@@ -137,15 +121,17 @@ namespace Dixter
         return Exception::getMessage();                         \
     }                                                           \
 
+	DEF_DETAILED_EXCEPTION(IllegalArgumentException)
+	
 	DEF_DETAILED_EXCEPTION(NotImplementedException)
 	
 	DEF_DETAILED_EXCEPTION(NullPointerException)
 	
 	DEF_DETAILED_EXCEPTION(NotFoundException)
 	
-	DEF_DETAILED_EXCEPTION(IllegalArgumentException)
-	
 	DEF_DETAILED_EXCEPTION(RangeException)
+	
+	DEF_DETAILED_EXCEPTION(SQLException)
 	
 	size_t DJBHash::operator()(const string_t& hashKey) const
 	{
