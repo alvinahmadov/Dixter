@@ -29,52 +29,44 @@ namespace Dixter
 			  index {0}
 	{}
 	
-	bool Node::equal(const Node& other) const
+	bool Node::equal(const Node& aNode) const
 	{
-		return ((name == other.name) && (value == other.value) && (index == other.index));
+		return ((name == aNode.name) && (value == aNode.value) && (index == aNode.index));
 	}
 	
-	bool Node::has(const string_t& name) const
+	bool Node::has(const string_t& aName) const
 	{
-		return (this->name.compare(name) == 0);
+		return (this->name.compare(aName) == 0);
 	}
 	
 	///NodeData Implementation
 	NodeData::NodeData()
-			: nodes {Nodes()},
-			  attributes {Attributes()}
+			: nodes {},
+			  attributes {}
 	{}
-	
-	NodeData::~NodeData()
-	{
-		for (auto& __node : getNodes())
-			SAFE_RELEASE(__node)
-		for (auto& __attrib : attributes)
-			__attrib.reset();
-	}
 	
 	void NodeData::insertData(const string_t& nodeName, const ustring_t& nodeValue, const string_t& parent,
 	                          const string_t& attributeName, const ustring_t& attributeValue)
 	{
-		static auto* __parentBefore {&parent};
-		static auto* __startNode {&nodeName};
+		static string_t __parentBefore {parent};
+		static string_t __startNode {nodeName};
 		static size_t __localIndex {};
 		
-		if (parent != *__parentBefore)
+		if (parent != __parentBefore)
 		{
-			__startNode = &nodeName;
-			__parentBefore = &parent;
+			__startNode = nodeName;
+			__parentBefore = parent;
 		}
 		
-		nodes.push_back(new Node(nodeName, nodeValue, parent));
-		if (nodeName == *__startNode)
+		nodes.push_back(std::make_shared<Node>(nodeName, nodeValue, parent));
+		if (nodeName.compare(__startNode) == 0)
 			__localIndex = 0;
 		else
 			__localIndex++;
 		
 		if (!attributeName.empty() && !attributeValue.empty())
 		{
-			attributes.push_back(Shared<Attribute> {new Attribute(attributeName, attributeValue)});
+			attributes.push_back(std::make_shared<Attribute>(attributeName, attributeValue));
 			attributes.back()->index = __localIndex;
 		}
 		nodes.back()->index = __localIndex;

@@ -9,7 +9,6 @@
  
 #pragma once
 
-#include <set>
 #include <map>
 #include <list>
 #include <mutex>
@@ -96,7 +95,7 @@ namespace Dixter
 	class NodeEntry
 	{
 	public:
-		using Entry = std::map<i32, NodeData*>;
+		using Entry = std::map<i32, std::shared_ptr<NodeData>>;
 	public:
 		/**
 		 * \class NodeEntry
@@ -136,7 +135,8 @@ namespace Dixter
 		 * Depending on \c m_throw value throws exception if node
 		 * haven't found else returns null.
 		 * */
-		const Node* findEntry(const string_t& key) const;
+		std::shared_ptr<const Node>
+		findEntry(const string_t& key) const;
 		
 		/**
 		 * \class NodeEntry
@@ -148,7 +148,8 @@ namespace Dixter
 		 * Depending on \c m_throw value throws exception if node
 		 * haven't found else returns null.
 		 * */
-		const Node* findEntry(const ustring_t& value) const;
+		std::shared_ptr<const Node>
+		findEntry(const ustring_t& value) const;
 		
 		/**
 		 * \class NodeEntry
@@ -159,7 +160,8 @@ namespace Dixter
 		 * Depending on \c m_throw value throws exception if
 		 * node data haven't found else returns null.
 		 * */
-		const std::shared_ptr<NodeData> findEntryData(i32 index) const;
+		std::shared_ptr<const NodeData>
+		findEntryData(i32 index) const;
 		
 		i32 findEntryIndex(const string_t& key) const;
 		
@@ -229,8 +231,8 @@ namespace Dixter
 		ustring_t getValue(const string_t& key) const;
 	
 	private:
-		std::list<Shared<NodeData>> m_configurationList;
-		Unique<PropertyTree> m_propertyTree;
+		std::list<std::shared_ptr<NodeData>> m_configurationList;
+		std::unique_ptr<PropertyTree> m_propertyTree;
 	};
 	
 	/**
@@ -306,7 +308,7 @@ namespace Dixter
 		static size_t reference_count;
 	private:
 		string_t m_rootNode;
-		std::map<i32, Shared<NodeData>>* m_pConfigMap;
+		std::map<i32, std::shared_ptr<NodeData>>* m_pConfigMap;
 		std::unique_ptr<PropertyTree> m_propertyTree;
 	};
 	
@@ -554,10 +556,11 @@ namespace Dixter
 	void NodeEntry::forEach(return_t(NodeData::*method)(args_t ... args), args_t ... args)
 	{
 		auto __methodCallback = MethodCallback<NodeData, return_t, args_t ...>(method);
-		std::for_each(m_nodeEntries->begin(), m_nodeEntries->end(), [ &__methodCallback, &args ... ](std::pair<i32, Shared<NodeData>>& pair)
-		{
-			if (pair.second != nullptr)
-				__methodCallback(pair.second, args ...);
-		});
+		std::for_each(m_nodeEntries->begin(), m_nodeEntries->end(),
+		              [ &__methodCallback, &args ... ](std::pair<i32, std::shared_ptr<NodeData>>& pair)
+		              {
+			              if (pair.second != nullptr)
+				              __methodCallback(pair.second, args ...);
+		              });
 	}
 } // namespace Dixter

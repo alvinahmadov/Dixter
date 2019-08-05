@@ -49,7 +49,7 @@ namespace Dixter
 		size_t index;
 	};
 	
-	using Nodes         = std::list<Node*>;
+	using Nodes         = std::list<std::shared_ptr<Node>>;
 	using Attributes    = std::list<std::shared_ptr<Attribute>>;
 	
 	/**
@@ -62,11 +62,6 @@ namespace Dixter
 		 * Default constructor
 		 **/
 		NodeData();
-		
-		/**
-		 * Default destructor
-		 **/
-		~NodeData();
 		
 		/**
 		 * Add node for configuration

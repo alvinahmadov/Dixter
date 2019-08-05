@@ -29,7 +29,6 @@ namespace Dixter
 	
 	NodeEntry::~NodeEntry()
 	{
-		SAFE_RELEASE_MAP((*m_nodeEntries))
 		SAFE_RELEASE(m_nodeEntries)
 	}
 	
@@ -38,7 +37,7 @@ namespace Dixter
 		std::lock_guard<std::mutex> l(m_mutex);
 		if (m_nodeEntries->find(m_index) == m_nodeEntries->end())
 		{
-			m_nodeEntries->insert({ m_index++, nodeEntry });
+			m_nodeEntries->insert({ m_index++, std::shared_ptr<NodeData>(nodeEntry) });
 			return true;
 		}
 		return false;
@@ -79,9 +78,9 @@ namespace Dixter
 			
 			std::replace_if(
 					iter->second->getNodes().begin(), iter->second->getNodes().end(),
-					[ &__nodeName ](const Node* node)
+					[ &__nodeName ](shared_ptr<const Node> node)
 					{ return node->name.compare(__nodeName) == 0; },
-					new Node(__nodeName, value)
+					std::make_shared<Node>(__nodeName, value)
 			);
 			return true;
 		}
@@ -93,14 +92,14 @@ namespace Dixter
 		return false;
 	}
 	
-	const Node*
+	std::shared_ptr<const Node>
 	NodeEntry::findEntry(const string_t& key) const
 	{
 		std::lock_guard<std::mutex> l(m_mutex);
-		Node* __data = nullptr;
+		std::shared_ptr<Node> __data;
 		for (const auto& __valuePair : *m_nodeEntries)
 		{
-			for (const auto& __node : __valuePair.second->getNodes())
+			for (shared_ptr<Node>& __node : __valuePair.second->getNodes())
 			{
 				if (__node->name.compare(key) == 0)
 				{
@@ -110,7 +109,7 @@ namespace Dixter
 		}
 		if (m_throw == ExceptionCase::Throw)
 		{
-			if (__data == nullptr)
+			if (!__data)
 			{
 				throw NotFoundException { "%s:%d Node data for %s not found.", __FILE__, __LINE__, key};
 			}
@@ -118,14 +117,14 @@ namespace Dixter
 		return __data;
 	}
 	
-	const Node*
+	std::shared_ptr<const Node>
 	NodeEntry::findEntry(const ustring_t& value) const
 	{
 		std::lock_guard<std::mutex> l(m_mutex);
-		Node* __data = nullptr;
+		std::shared_ptr<Node> __data;
 		for (const auto& __valuePair : *m_nodeEntries)
 		{
-			for (const auto& __node : __valuePair.second->getNodes())
+			for (shared_ptr<Node>& __node : __valuePair.second->getNodes())
 				if (__node->value.compare(value) == 0)
 				{
 					__data = __node;
@@ -139,7 +138,7 @@ namespace Dixter
 		return __data;
 	}
 	
-	const std::shared_ptr<NodeData>
+	std::shared_ptr<const NodeData>
 	NodeEntry::findEntryData(i32 index) const
 	{
 		std::lock_guard<std::mutex> l(m_mutex);
@@ -152,7 +151,7 @@ namespace Dixter
 				{
 					if (__p.first == index)
 					{
-						__data.reset(__p.second);
+						__data = __p.second;
 					}
 				}
 			}
@@ -254,7 +253,7 @@ namespace Dixter
 	void INIConfiguration::load()
 	{
 		PropertyTree __localTree = *m_propertyTree;
-		auto __configData = Shared<NodeData>(new NodeData());
+		auto __configData = std::shared_ptr<NodeData>(new NodeData());
 		for (const auto& __value : __localTree)
 		{
 			for (const auto& __node : __value.second)
@@ -386,7 +385,6 @@ namespace Dixter
 					m_entries->insertEntry(__configData);
 				};
 		
-		scoped_lock<mutex> scopedLock(m_mutex);
 		{
 			for (const auto& value : __childTree)
 			{
@@ -411,48 +409,6 @@ namespace Dixter
 	{
 		keyList.push_back(m_rootNode);
 	}
-	
-	/*
-	dix::UStringVector
-	dix::XMLConfiguration::GetAttributes(const ustring_t &attributeName) const
-	{
-		UStringVector __valList {};
-		for (const auto& __data : m_nodeMap)
-		{
-			__data.second
-		}
-		for (const auto &__attribute : m_configuration_list->attributes)
-		{
-			if (__attribute->name.compare(name))
-				valList.push_back(attribute->value);
-		}
-		return __valList;
-	}
-	
-	
-	dix::ustring_t
-	dix::XMLConfiguration::GetAttributeValue(const ustring_t &nodeValue, const ustring_t &attributeName) const
-	{
-		for (const auto &__node : m_configuration_list->nodes)
-		{
-			if (__node->value == nodeValue)
-			{
-					for (const auto &__attrData : node->dataAttributes)
-					{
-						if (__attrData->attributeName.compare(attributeName))
-							return __attrData->attributeValue;
-					}
-			}
-		}
-		return ustring_t();
-	}
-	
-	dix::ustring_t
-	dix::XMLConfiguration::GetAttributeValueBySibling(const ustring_t &siblingValue, const ustring_t &nodeName)
-	{
-		return ustring_t();
-	}
-	*/
 	
 	// ConfigurationProxy implementation
 	ConfigurationFactory::ConfigurationFactory(const string_t& configPath, ConfigurationType type)
