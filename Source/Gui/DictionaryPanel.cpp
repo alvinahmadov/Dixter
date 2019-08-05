@@ -111,7 +111,7 @@ namespace Dixter
 			auto __langIdList = vector<ustring_t>();
 			try
 			{
-				auto confMgr = ConfigurationManager::getManager(ConfigurationType::kConfigXml);
+				auto confMgr = ConfigurationManager::getManager(ConfigurationType::ConfigXml);
 				
 				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangNameNode, __langNameList);
 				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangNameDisplayNode, __langNameDisplayList);
@@ -177,7 +177,7 @@ namespace Dixter
 				auto __strSel = __pLangBox->currentText();
 				try
 				{
-					auto confMgr = ConfigurationManager::getManager(ConfigurationType::kConfigXml);
+					auto confMgr = ConfigurationManager::getManager(ConfigurationType::ConfigXml);
 					__structureList = confMgr->getAccessor()->getValue(NodeKey::kLangRoot, __strSel, NodeKey::kLangStructureNode);
 					__langName = confMgr->getAccessor()->getValue(NodeKey::kLangRoot, __strSel, NodeKey::kLangNameNode);
 				} catch (Exception& e)

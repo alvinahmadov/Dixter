@@ -21,14 +21,11 @@ namespace Dixter
 		Q_OBJECT
 		public:
 			explicit Application(int& argc, char** argv,
-			                     const QString& appId, bool enableNativeWindow = true);
+			                     const QString& appId);
 			
 			~Application() dxDECL_OVERRIDE;
 			
-			int run(QWidget* window);
-		
-		private:
-			bool m_enableSelfWindow;
+			int exec(QWidget* window);
 		};
 	}
 }

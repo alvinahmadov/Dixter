@@ -15,23 +15,23 @@ namespace Dixter
 	namespace Gui
 	{
 		Application::Application(int& argc, char** argv,
-		                         const QString& appId, bool enableNativeWindow)
-				: QApplication(argc, argv),
-				  m_enableSelfWindow(enableNativeWindow)
+		                         const QString& appId)
+				: QApplication(argc, argv)
 		{
 			setApplicationName(appId);
 		}
 		
 		Application::~Application()
 		{
-			ConfigurationManager::getManager(ConfigurationType::kConfigXml)->release();
+			ConfigurationManager::getManager(ConfigurationType::ConfigXml)->release();
 		}
 		
-		int Application::run(QWidget* window)
+		int Application::exec(QWidget* window)
 		{
 			try
 			{
 				setActiveWindow(window);
+				window->show();
 				return QApplication::exec();
 			} catch (std::exception& e)
 			{

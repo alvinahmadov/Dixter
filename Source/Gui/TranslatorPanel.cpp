@@ -70,7 +70,7 @@ namespace Dixter
 			
 			try
 			{
-				auto confMgr = ConfigurationManager::getManager(ConfigurationType::kConfigXml);
+				auto confMgr = ConfigurationManager::getManager(ConfigurationType::ConfigXml);
 				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangNameNode, __langNameList);
 				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangNameDisplayNode, __langNameDisplayList);
 				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangIdNode, __langIdList);
@@ -192,7 +192,7 @@ namespace Dixter
 					return std::pair<string_t, string_t>();
 				}
 				__langName = __pBox->currentText().toStdString();
-				__langId = ConfigurationManager::getManager(ConfigurationType::kConfigXml)
+				__langId = ConfigurationManager::getManager(ConfigurationType::ConfigXml)
 						->getAccessor()
 						->getValue(NodeKey::kLangRoot, __langName, NodeKey::kLangNameNode).asUTF8();
 			} catch (Exception& e)

@@ -130,7 +130,8 @@ namespace Dixter
 			{
 				for (const auto& option : options)
 				{
-					addItem(option.asCustom());
+					auto __option = option.asCustom();
+					addItem(__option);
 				}
 			}
 		}
