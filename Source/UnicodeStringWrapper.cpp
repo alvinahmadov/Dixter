@@ -72,7 +72,8 @@ namespace Dixter
 	
 	QString UnicodeStringWrapper::asCustom() const
 	{
-		auto customString = QString::fromStdU16String(getBuffer());
+		auto buffer = asUTF8();
+		auto customString = QString::fromStdString(buffer);
 		return customString;
 	}
 	

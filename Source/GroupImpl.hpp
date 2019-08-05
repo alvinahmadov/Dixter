@@ -57,7 +57,7 @@ namespace Dixter
 			getGroup(groupName)->push_back(groupElement);
 		} else
 		{
-			throw IllegalArgumentException("%s:%d\nThe specified m_element can not be added to the group %s", __FILE__, __LINE__,);
+			throw IllegalArgumentException("%s:%d\nThe specified m_element can not be added to the group %s", __FILE__, __LINE__, groupName);
 		}
 		return groupElement->getElement();
 	}

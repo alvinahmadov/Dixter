@@ -299,7 +299,7 @@ namespace Dixter
 	private:
 		ClassInfo();
 		
-		static Unique<ClassInfo>& getInstance();
+		static std::unique_ptr<ClassInfo>& getInstance();
 		
 		/**
 		 * \author Alvin Ahmadov
@@ -338,7 +338,7 @@ namespace Dixter
 	private:
 		static size_t s_size;
 		const_bytes m_className;
-		static Unique<ClassInfo> m_classInstance;
+		static std::unique_ptr<ClassInfo> m_classInstance;
 	};
 	
 	/**
@@ -439,7 +439,7 @@ namespace Dixter
 	
 	/// ClassInfo<> implementation
 	template<class T>
-	Unique<ClassInfo<T>> ClassInfo<T>::m_classInstance = nullptr;
+	std::unique_ptr<ClassInfo<T>> ClassInfo<T>::m_classInstance = nullptr;
 	
 	template<class T> size_t ClassInfo<T>::s_size = 0;
 	
@@ -458,11 +458,11 @@ namespace Dixter
 	{}
 	
 	template<class T>
-	inline Unique<ClassInfo<T>>&
+	inline std::unique_ptr<ClassInfo<T>>&
 	ClassInfo<T>::getInstance()
 	{
 		if (m_classInstance == nullptr)
-			m_classInstance = Unique<ClassInfo>(new ClassInfo());
+			m_classInstance = std::unique_ptr<ClassInfo>(new ClassInfo());
 		
 		return m_classInstance;
 	}
