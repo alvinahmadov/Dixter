@@ -160,13 +160,4 @@ namespace Dixter
 		} // namespace string_literals
 	} // namespace literals
 	#endif
-	
-	template<class C>
-	using Shared = std::shared_ptr<C>;
-	
-	template<class C, class D = std::default_delete<C>>
-	using Unique = std::unique_ptr<C>;
-	
-	template<class C>
-	using Weak = std::weak_ptr<C>;
 }
