@@ -192,12 +192,6 @@ namespace Dixter
 		return m_nodeEntries;
 	}
 	
-	NodeEntry::Entry*
-	NodeEntry::operator()()
-	{
-		return m_nodeEntries;
-	}
-	
 	bool NodeEntry::checkKey(const string_t& key) const
 	{
 		bool __found { };

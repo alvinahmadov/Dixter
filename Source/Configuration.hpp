@@ -191,10 +191,6 @@ namespace Dixter
 		 * \returns Entries.
 		 * */
 		const Entry* get() const;
-		
-		Entry* operator()();
-		
-		const NodeData* operator[](i32 index) const;
 	
 	private:
 		bool checkKey(const string_t& key) const;
