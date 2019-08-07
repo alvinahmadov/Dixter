@@ -84,7 +84,7 @@ namespace Dixter
 		public:
 			TokenData();
 			
-			TokenData(value_type* part);
+			explicit TokenData(value_type* part);
 			
 			~TokenData();
 			

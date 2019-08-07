@@ -417,9 +417,9 @@ namespace Dixter
 	{
 		switch (type)
 		{
-			case ConfigurationType::ConfigIni: m_configuration = new INIConfiguration(configPath);
+			case ConfigurationType::ConfigIni: m_configuration = std::make_shared<INIConfiguration>(configPath);
 				break;
-			case ConfigurationType::ConfigXml: m_configuration = new XMLConfiguration(configPath);
+			case ConfigurationType::ConfigXml: m_configuration = std::make_shared<XMLConfiguration>(configPath);
 				break;
 			case ConfigurationType::ConfigJson : throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
 			default: throw IllegalArgumentException { "%s:%d Unknown type.\n", __FILE__, __LINE__};
@@ -427,8 +427,7 @@ namespace Dixter
 	}
 	
 	ConfigurationFactory::~ConfigurationFactory()
-	{
-	}
+	{}
 	
 	void ConfigurationFactory::load()
 	{
@@ -438,9 +437,9 @@ namespace Dixter
 		}
 		switch (m_type)
 		{
-			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->load();
+			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration.get())->load();
 				break;
-			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->load();
+			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration.get())->load();
 				break;
 			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
 			default: throw NotImplementedException("%s:%d Configuration is not initialised", __FILE__, __LINE__);
@@ -455,9 +454,9 @@ namespace Dixter
 		}
 		switch (m_type)
 		{
-			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->save();
+			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration.get())->save();
 				break;
-			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->save();
+			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration.get())->save();
 				break;
 			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
 			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
@@ -468,9 +467,9 @@ namespace Dixter
 	{
 		switch (m_type)
 		{
-			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration)->getKey(keyList);
+			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration.get())->getKey(keyList);
 				break;
-			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration)->getKey(keyList);
+			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration.get())->getKey(keyList);
 				break;
 			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
 			default: throw IllegalArgumentException { "%s:%d Configuration is not initialised.", __FILE__, __LINE__ };
@@ -490,8 +489,8 @@ namespace Dixter
 	{
 		switch (m_type)
 		{
-			case ConfigurationType::ConfigXml : return dynamic_cast<XMLConfiguration*>(m_configuration);
-			case ConfigurationType::ConfigIni : return dynamic_cast<INIConfiguration*>(m_configuration);
+			case ConfigurationType::ConfigXml : return dynamic_cast<XMLConfiguration*>(m_configuration.get());
+			case ConfigurationType::ConfigIni : return dynamic_cast<INIConfiguration*>(m_configuration.get());
 			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
 			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
 		}

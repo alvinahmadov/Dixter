@@ -15,7 +15,7 @@ namespace Dixter
 	class SettingsController
 	{
 	public:
-		SettingsController(const string_t& configRoot);
+		explicit SettingsController(const string_t& configRoot);
 		
 		~SettingsController();
 		

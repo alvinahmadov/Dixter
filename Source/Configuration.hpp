@@ -292,7 +292,9 @@ namespace Dixter
 	
 	class JSONConfiguration : public ConfigurationInterface
 	{
-		JSONConfiguration(const string_t& config_file) = delete;
+		explicit JSONConfiguration(const string_t& config_file) {
+			(void) config_file;
+		};
 		
 		virtual ~JSONConfiguration() = 0;
 		
@@ -316,7 +318,7 @@ namespace Dixter
 	class ConfigurationFactory : public ConfigurationInterface, public DefaultNonCopyable
 	{
 	public:
-		ConfigurationFactory(const string_t& configPath, ConfigurationType type);
+		explicit ConfigurationFactory(const string_t& configPath, ConfigurationType type);
 		
 		~ConfigurationFactory();
 		
@@ -332,7 +334,7 @@ namespace Dixter
 	
 	private:
 		ConfigurationType m_type;
-		ConfigurationInterface* m_configuration;
+		std::shared_ptr<ConfigurationInterface> m_configuration;
 	};
 	
 	struct ConfigurationManagerInterface
@@ -364,10 +366,10 @@ namespace Dixter
 		 *
 		 * Provides easy access interfaces to data. Data is immutable.
 		 * */
-		class Accessor
+		class Accessor : public NonCopyable
 		{
 		public:
-			Accessor(ConfigurationManager* manager);
+			explicit Accessor(ConfigurationManager* manager);
 			
 			/**
 		 * \class ConfigurationManager
@@ -409,10 +411,10 @@ namespace Dixter
 		 *
 		 * Provides easy access interfaces to data. Data is mutable.
 		 * */
-		class Mutator
+		class Mutator : public NonCopyable
 		{
 		public:
-			Mutator(ConfigurationManager* manager);
+			explicit Mutator(ConfigurationManager* manager);
 			
 			/**
 		 * \class ConfigurationManager

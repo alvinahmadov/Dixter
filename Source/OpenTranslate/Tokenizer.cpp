@@ -325,7 +325,6 @@ namespace Dixter
 		
 		bool Tokenizer::tokenizeComplex(const string_view_t* token)
 		{
-			return false;
 			ui32 parts { };
 			if (!isComplex(token, parts))
 			{

@@ -249,10 +249,10 @@ namespace Dixter
 			void buildPath(String& returnValue, Char separator, const Args& ... args)
 			{
 				std::list<String> __strings { args... };
-				size_t __index = 0;
 				
 				if (sizeof...(Args) > 1)
 				{
+					size_t __index = 0;
 					for (const auto& str : __strings)
 					{
 						returnValue.append(str);

@@ -23,9 +23,9 @@ namespace Dixter
 		public:
 			explicit Button(QWidget* parent, const QString& label = QString());
 			
-			Button(QIcon icon, QWidget *parent = nullptr);
+			explicit Button(QIcon icon, QWidget *parent = nullptr);
 			
-			Button(const QString& label);
+			explicit Button(const QString& label);
 			
 			~Button() dxDECL_OVERRIDE;
 		};
