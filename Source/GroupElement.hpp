@@ -9,7 +9,6 @@
 
 #pragma once
 
-
 #include <unordered_map>
 
 #include "Commons.hpp"
@@ -17,58 +16,61 @@
 namespace Dixter
 {
 	template<typename ID = id_type>
-	struct ElementProperty
-	{
-		ID id;
-		string_t description;
-		bool bAutoDelete;
-	};
-	
-	template<typename ID>
-	inline void setProperty(ElementProperty<ID>* properties, ID id, const string_t& description, bool autoDelete)
-	{
-		if (!properties)
-		{
-			properties = new ElementProperty<ID>;
-		}
-		properties->id = id;
-		properties->description.clear();
-		properties->description = description;
-		properties->bAutoDelete = autoDelete;
-	}
-	
-	template<typename ID>
-	inline void setProperty(ElementProperty<ID>* properties, ID id, bool autoDelete)
-	{
-		if (!properties)
-		{
-			properties = new ElementProperty<ID>;
-		}
-		properties->id = id;
-		properties->description.clear();
-		properties->description = string_t();
-		properties->bAutoDelete = autoDelete;
-	}
-	
-	template<typename ID>
-	inline void setNullProperty(ElementProperty<ID>* properties)
-	{
-		if (properties)
-		{
-			properties->id = static_cast<ID>(0);
-			if (!properties->description.empty())
-			{
-				properties->description.clear();
-			}
-			SAFE_RELEASE(properties)
-		}
-	}
-	
-	template<class Element, typename ID = ui32>
-	class GroupElement : public ComparableInterface<GroupElement<Element, ID>>
+	class ElementProperty
 	{
 	public:
-		GroupElement();
+		explicit ElementProperty(ID id, const string_t& description, bool autoDelete) dxDECL_NOEXCEPT
+		{
+			m_id = id;
+			m_description.clear();
+			m_description = description;
+			m_autoDelete = autoDelete;
+		}
+		
+		explicit ElementProperty(ID id, bool autoDelete) dxDECL_NOEXCEPT
+		{
+			m_id = id;
+			m_description.clear();
+			m_description = string_t();
+			m_autoDelete = autoDelete;
+		}
+		
+		inline void reset()
+		{
+			this->m_id = static_cast<ID>(0);
+			if (!m_description.empty())
+			{
+				m_description.clear();
+			}
+		}
+		
+		ID getId() const
+		{
+			return m_id;
+		}
+		
+		inline bool isAutoDeletable() const
+		{
+			return m_autoDelete;
+		}
+		
+		inline const string_t& getDescription() const
+		{
+			return m_description;
+		}
+	
+	private:
+		ID m_id;
+		
+		bool m_autoDelete;
+		
+		string_t m_description;
+	};
+	template<class Element, typename ID = ui32>
+	class GroupElement : public ComparableInterface<GroupElement<Element, ID>>, public DefaultNonCopyable
+	{
+	public:
+		GroupElement() = default;
 		
 		explicit GroupElement(Element& element, const ID& id, const string_t& description, bool autoDelete = true);
 		
@@ -84,53 +86,42 @@ namespace Dixter
 		
 		bool empty() const;
 		
+		const Element& getElement() const;
+		
 		Element& getElement();
 		
-		ElementProperty<ID>* getProperties();
+		const ElementProperty<ID>* getProperties() const;
 	
 	private:
 		Element m_element;
 		
 		ElementProperty<ID>* m_pProperties;
 	};
-	
-	template<class Element, typename ID>
-	void releaseElement(GroupElement<Element, ID>* element);
-	
 	template<typename Element, typename ID>
 	struct ElementComparator
 	{
-		bool operator()(const GroupElement<Element, ID>& lhs, const GroupElement<Element, ID>& rhs)
+		constexpr bool operator()(const GroupElement<Element, ID>& lhs,
+		                          const GroupElement<Element, ID>& rhs) const
 		{
-			return lhs.id == rhs.id;
+			return lhs.getProperties()->getId() == rhs.getProperties()->getId();
 		}
 	};
 }
-
 namespace Dixter
 {
 	// Implementation
 	template<class Element, typename ID>
-	GroupElement<Element, ID>::GroupElement()
-	{
-		m_element = nullptr;
-		setNullProperty(m_pProperties);
-	}
-	
-	template<class Element, typename ID>
 	GroupElement<Element, ID>::GroupElement(Element& element, const ID& id, const string_t& description, bool autoDelete)
-			: m_pProperties { new ElementProperty<ID>() }
+			: m_pProperties { new ElementProperty<ID>(id, description, autoDelete) }
 	{
 		m_element = element;
-		setProperty(m_pProperties, id, description, autoDelete);
 	}
 	
 	template<class Element, typename ID>
 	GroupElement<Element, ID>::GroupElement(Element& element, const ID& id, bool autoRelease)
-			: m_pProperties { new ElementProperty<ID>() }
+			: m_pProperties { new ElementProperty<ID>(id, autoRelease) }
 	{
 		m_element = element;
-		setProperty(m_pProperties, id, autoRelease);
 	}
 	
 	template<class Element, typename ID>
@@ -142,7 +133,7 @@ namespace Dixter
 	template<typename Element, typename ID>
 	int GroupElement<Element, ID>::compareTo(const GroupElement<Element, ID>& other)
 	{
-		return static_cast<int>(m_pProperties->id) - static_cast<int>(other.m_pProperties->id);
+		return static_cast<int>(m_pProperties->getId()) - static_cast<int>(other.m_pProperties->getId());
 	}
 	
 	template<class Element, typename ID>
@@ -155,7 +146,7 @@ namespace Dixter
 	         typename ID>
 	inline bool GroupElement<Element, ID>::equal(const ID& id) const
 	{
-		return m_pProperties->id == id;
+		return m_pProperties->getId() == id;
 	}
 	
 	template<class Element, typename ID>
@@ -165,14 +156,20 @@ namespace Dixter
 	}
 	
 	template<class Element, typename ID>
+	const Element& GroupElement<Element, ID>::getElement() const
+	{
+		return m_element;
+	}
+	
+	template<class Element, typename ID>
 	Element& GroupElement<Element, ID>::getElement()
 	{
 		return m_element;
 	}
 	
 	template<class Element, typename ID>
-	ElementProperty<ID>*
-	GroupElement<Element, ID>::getProperties()
+	const ElementProperty<ID>*
+	GroupElement<Element, ID>::getProperties() const
 	{
 		return m_pProperties;
 	}
@@ -180,10 +177,9 @@ namespace Dixter
 	template<class Element, typename ID>
 	inline void releaseElement(GroupElement<Element, ID>* element)
 	{
-		if (element->getProperties()->bAutoDelete)
+		if (element->getProperties()->isAutoDeletable())
 		{
 			SAFE_RELEASE(element->getElement())
 		}
-		setNullProperty(element->getProperties());
 	}
 }

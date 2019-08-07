@@ -43,9 +43,9 @@ namespace Dixter
 	{
 		std::lock_guard<std::mutex> addLock(m_mutex);
 		bool __bGroupExists { hasGroup(groupName) };
-		bool __bElementExist { hasElement(groupName, groupElement->getProperties()->id) };
+		bool __bElementExist { hasElement(groupName, groupElement->getProperties()->getId()) };
 		
-		// create both group and m_element
+		// create both group and element
 		if (!__bGroupExists && !__bElementExist)
 		{
 			/// If we don't have the item then create group and add child item to the new group
@@ -294,7 +294,7 @@ namespace Dixter
 			{
 				for (const auto& __element : *__iterator->second)
 				{
-					if (__element->getProperties()->id == id && __element->getElement() != nullptr)
+					if (__element->getProperties()->getId() == id && __element->getElement() != nullptr)
 					{
 						__bExists = true;
 					}
