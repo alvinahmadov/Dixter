@@ -248,7 +248,6 @@ namespace Dixter
 	INIConfiguration::~INIConfiguration()
 	{
 		m_propertyTree.reset(nullptr);
-		SAFE_RESET_LIST(m_configurationList);
 	}
 	
 	void INIConfiguration::load()

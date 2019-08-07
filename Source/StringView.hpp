@@ -70,7 +70,7 @@ namespace Dixter
 		{ }
 		
 		constexpr
-		string_view(std::basic_string<CharT> str) noexcept 
+		string_view(const std::basic_string<CharT>& str) noexcept
 				: m_length{str.empty() ? 0 : str.length()},
 				  m_string{str.c_str()}
 		{ }

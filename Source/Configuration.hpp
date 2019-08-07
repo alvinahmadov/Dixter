@@ -214,7 +214,7 @@ namespace Dixter
 	/**
 	 * @brief Class for reading and storing settings from ini file
 	 * */
-	class INIConfiguration : public ConfigurationInterface
+	class INIConfiguration : public ConfigurationInterface, public NonCopyable
 	{
 		friend class ConfigurationManager;
 	
@@ -241,7 +241,7 @@ namespace Dixter
 	 * \implements ConfigurationInterface
 	 * \brief Class for reading and storing settings from xml file
 	 * */
-	class XMLConfiguration : public ConfigurationInterface
+	class XMLConfiguration : public ConfigurationInterface, public NonCopyable
 	{
 		friend class ConfigurationManager;
 	
