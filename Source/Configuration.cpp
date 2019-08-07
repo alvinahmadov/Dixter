@@ -37,7 +37,8 @@ namespace Dixter
 		std::lock_guard<std::mutex> l(m_mutex);
 		if (m_nodeEntries->find(m_index) == m_nodeEntries->end())
 		{
-			m_nodeEntries->insert({ m_index++, std::shared_ptr<NodeData>(nodeEntry) });
+			m_nodeEntries->insert({ m_index, std::shared_ptr<NodeData>(nodeEntry) });
+			++m_index;
 			return true;
 		}
 		return false;
@@ -644,11 +645,9 @@ namespace Dixter
 				{
 					return dynamic_cast<INIConfiguration*>(iter->second)
 							->m_propertyTree->find(key)->second.data();
-					break;
 				}
 				case ConfigurationType::ConfigJson : break;
 				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-					break;
 			}
 		}
 	}

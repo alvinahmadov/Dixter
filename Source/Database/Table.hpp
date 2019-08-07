@@ -32,7 +32,7 @@ namespace Dixter
 		
 		class Value;
 		
-		class Table
+		class Table : public CopyConstructible
 		{
 		public:
 			Table(const string_t& tableName, const std::list<Value*>& valueList);

@@ -21,6 +21,7 @@
 #include "MethodCallback.hpp"
 #include "Node.hpp"
 #include "Utilities.hpp"
+#include "Commons.hpp"
 
 #define DEBUG_CONFIG 0
 
@@ -103,7 +104,7 @@ namespace Dixter
 		 * \param throw_ If data to return is null or empty,
 		 * class methods will throw exceptions.
 		 * */
-		NodeEntry(ExceptionCase throw_ = ExceptionCase::Throw);
+		explicit NodeEntry(ExceptionCase throw_ = ExceptionCase::Throw);
 		
 		~NodeEntry();
 		
@@ -312,7 +313,7 @@ namespace Dixter
 		std::unique_ptr<PropertyTree> m_propertyTree;
 	};
 	
-	class ConfigurationFactory : public ConfigurationInterface
+	class ConfigurationFactory : public ConfigurationInterface, public DefaultNonCopyable
 	{
 	public:
 		ConfigurationFactory(const string_t& configPath, ConfigurationType type);

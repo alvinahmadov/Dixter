@@ -118,15 +118,6 @@ namespace Dixter
 	 * Derived classes by default can be copied. Implements C++ version-dependent
 	 * copying.
 	 * */
-	struct Copyable
-	{
-		/// Default copy ctor.
-		Copyable(const Copyable&) = default;
-		
-		/// Default copy operator.
-		Copyable& operator=(const Copyable&) = default;
-	};
-	
 	struct CopyConstructible
 	{
 		CopyConstructible() = default;
