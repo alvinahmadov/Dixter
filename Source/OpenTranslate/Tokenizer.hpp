@@ -113,8 +113,6 @@ namespace Dixter
 			void setInfo(const TokenInfo& info);
 		
 		protected:
-			TokenMode m_mode;
-			
 			value_type* m_token;
 			
 			Token<value_type>* m_chunks;

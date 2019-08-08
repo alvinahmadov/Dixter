@@ -14,7 +14,7 @@ namespace Dixter
 	SettingsController::SettingsController(const string_t& configRoot)
 			: m_root {configRoot}
 	{
-		// m_type = ConfigurationManager::getManager(ConfigurationType::ConfigXml)->getType();
+		m_type = ConfigurationManager::getManager(ConfigurationType::ConfigXml)->getType();
 	}
 	
 	SettingsController::~SettingsController()

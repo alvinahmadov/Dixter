@@ -17,7 +17,7 @@ namespace Dixter
 		class Dictionary
 		{
 		public:
-			Dictionary(Database::Manager* manager);
+			explicit Dictionary(Database::Manager* manager);
 			
 			~Dictionary();
 			

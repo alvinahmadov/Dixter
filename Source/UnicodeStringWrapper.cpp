@@ -60,7 +60,7 @@ namespace Dixter
 	
 	const char* UnicodeStringWrapper::c_str() const
 	{
-		return asUTF8().c_str();
+		return asUTF8().data();
 	}
 	
 	std::string UnicodeStringWrapper::asUTF8() const
