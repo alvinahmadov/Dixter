@@ -1,8 +1,6 @@
-#include <boost/timer.hpp>
 #include "Randomizer.hpp"
 #include "Utilities.hpp"
 #include "Commons.hpp"
-#include <armadillo>
 
 #ifdef DICT_TESTING
 
@@ -15,18 +13,19 @@ void readData(char** argv);
 
 void writeData();
 
-void readDB(Dixter::Database::Manager* dbManager, const Dixter::string_t& table, const std::vector<Dixter::string_t>& cols);
+void readDB(Dixter::Database::Manager* dbManager, const Dixter::TString& table, const std::vector<Dixter::TString>& cols);
 
 #elif defined(OTR_TESTING)
 
 #include <future>
+#include <fstream>
+#include <sstream>
 #include "OpenTranslate/Tokenizer.hpp"
-#include "Utilities.h"
 
 using namespace Dixter;
 using namespace OpenTranslate;
 
-void otr_test();
+cuhost void otr_test();
 
 #elif defined(NNET_TEST)
 
@@ -44,10 +43,10 @@ void nnet_test(int inputDim);
 
 using namespace Dixter::Utilities;
 
-int main(int argc, char** argv)
+int main(dxMAYBE_UNUSED int argc, dxMAYBE_UNUSED char** argv)
 {
 	printl_log("Translation Module")
-	BENCH_BEGIN
+	TIMER_START
 	#ifdef DICT_TESTING
 	if (argc >= 2)
 	{
@@ -70,7 +69,6 @@ int main(int argc, char** argv)
 	}
 	#endif
 	
-	BENCH_END
 	return 0;
 }
 
@@ -80,19 +78,19 @@ void readData(char** argv)
 {
 	printl_log("Translation Module")
 	using namespace Dixter;
-	std::vector<string_t> tables = {"D", "E", "OE"};
-	const string_t host = "127.0.0.1";
-	const string_t database = "dixterdb_NO";
-	const string_t userName = argv[1];
-	const string_t password = argv[2];
+	std::vector<TString> tables = {"D", "E", "OE"};
+	const TString host = "127.0.0.1";
+	const TString database = "dixterdb_NO";
+	const TString userName = argv[1];
+	const TString password = argv[2];
 	auto dbManager = new Database::Manager(host, database, userName, password);
-	std::vector<string_t> columns {"id", "word", "paradigm",
-	                               "category_1", "category_2", "category_3", "category_4",
-	                               "category_5", "category_6", "category_7", "category_8",
-	                               "category_9", "category_10", "category_11", "category_12"};
+	std::vector<TString> columns {"id", "word", "paradigm",
+								   "category_1", "category_2", "category_3", "category_4",
+								   "category_5", "category_6", "category_7", "category_8",
+								   "category_9", "category_10", "category_11", "category_12"};
 
 	auto dict = Dixter::OpenTranslate::Dictionary(dbManager);
-	const string_t& paradigmKey = "paradigm";
+	const TString& paradigmKey = "paradigm";
 	auto res1 = dict.search("jafse", paradigmKey, true);
 	
 	printl("1. ")
@@ -111,18 +109,18 @@ void writeData()
 
 }
 
-void readDB(Dixter::Database::Manager* dbManager, const Dixter::string_t& table, const std::vector<Dixter::string_t>& cols)
+void readDB(Dixter::Database::Manager* dbManager, const Dixter::TString& table, const std::vector<Dixter::TString>& cols)
 {
 	std::mutex mtx;
 	std::unique_lock l(mtx);
 	
-	Dixter::string_t dat {};
+	Dixter::TString dat {};
 	static size_t counter {};
 	auto res = dbManager->selectColumns(table, cols, 0);
 	
 	while (res->next())
 	{
-		Dixter::ui32 colIndex {1};
+		Dixter::UInt32 colIndex {1};
 		while (colIndex < cols.size())
 		{
 			dat.append(res->getString(colIndex)).push_back(' ');
@@ -136,34 +134,70 @@ void readDB(Dixter::Database::Manager* dbManager, const Dixter::string_t& table,
 	print_log("Read about ")
 	prints(counter)
 	printl(" table records.")
-	l.unlock();
 }
 
 #elif defined(OTR_TESTING)
 
-void otr_test() try
+using IFStreamPtr   = std::unique_ptr<std::ifstream>;
+using TStringVector = std::vector<TString>;
+
+TString readAll(IFStreamPtr& stream, char delimiter)
 {
-	string_t datFileNo = "../../../data/wiki/isaac_newton_no.txt";
-	string_t datFileDe = "../../../data/wiki/isaac_newton_de.txt";
+	std::stringstream ret;
+	char c;
+	while (( c = stream->peek()) != -1)
+	{
+		auto pos = stream->tellg();
+		if (c != delimiter)
+			ret << c;
+		stream->seekg(pos += std::ifstream::pos_type(1));
+	}
 	
-	auto fsNo = new FileInputStream(datFileNo);
-	auto fsDe = new FileInputStream(datFileDe);
-	string_t str1 = fsNo->readAll('\n');
-	string_t str2 = fsDe->readAll('\n');
-	
-	Tokenizer* tok = new Tokenizer();
-	
-	tok->tokenize(str1);
-	tok->tokenize(str2);
-	
-	printl_log(tok->getTokenData())
-	
-	SAFE_RELEASE(fsDe)
-	SAFE_RELEASE(fsNo)
-	SAFE_RELEASE(tok)
-} catch (std::exception& e)
+	return ret.str();
+}
+
+inline void readTestFiles(const TStringVector& fileNames,
+                          TStringVector& contents)
 {
-	printerr(e.what())
+	if (not fileNames.size())
+	{
+		printf("Nothing to do.");
+		return;
+	}
+	contents.reserve(fileNames.size());
+	for (const auto& fileName : fileNames)
+	{
+#if defined(HAVE_CXX14) or defined(HAVE_CXX17)
+		auto file = std::make_unique<std::ifstream>(fileName);
+#else
+		auto file = std::unique_ptr<std::ifstream>(new std::ifstream(fileName));
+#endif
+		contents.push_back(readAll(file, '\n'));
+	}
+}
+
+cuhost void otr_test()
+{
+	auto tokenizer = std::unique_ptr<TTokenizer>(new TTokenizer);
+	try
+	{
+		TStringVector contents, fileNames {
+				"../../../Data/wiki/isaac_newton_no.txt",
+				// "../../../Data/wiki/isaac_newton_de.txt",
+				// "../../../Data/wiki/isaac_newton_fr.txt"
+		};
+		
+		readTestFiles(fileNames, contents);
+		
+		for (const auto& content : contents)
+			tokenizer->tokenize(content);
+		
+		printl_log(tokenizer->toString())
+	}
+	catch (Dixter::Exception& e)
+	{
+		printerr(e.getMessage())
+	}
 }
 
 #elif defined(NNET_TEST)
@@ -172,7 +206,7 @@ void nnet_test(int inputDim)
 {
 	using namespace dix;
 	
-	auto inputs = new dix::dxVector<double> {};
+	auto inputs = new vector<double> {};
 	Dixter::nnet::generateRandomData(inputDim, inputs);
 	
 	IActivation* activation = new HyperTangensActivation();
