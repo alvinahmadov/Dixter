@@ -1,6 +1,14 @@
+#include <sstream>
 #include "Randomizer.hpp"
 #include "Utilities.hpp"
 #include "Commons.hpp"
+
+inline std::ostream&
+operator<<(std::ostream& out, const std::stringstream& ss)
+{
+	out << ss.str();
+	return out;
+}
 
 #ifdef DICT_TESTING
 
@@ -9,23 +17,30 @@
 #include "Database/Value.hpp"
 #include "OpenTranslate/Dictionary.hpp"
 
-void readData(char** argv);
+using TDatabaseManager = Dixter::Database::TManager;
+using TDatabaseManagerPtr = std::shared_ptr<TDatabaseManager>;
+using TStringVector = std::vector<Dixter::TString>;
+using Dixter::OpenTranslate::TDictionary;
+using Dixter::TString;
+using Dixter::StopWatch;
+using Dixter::g_whiteSpace;
+
+void readData(int argc, char** argv);
 
 void writeData();
 
-void readDB(Dixter::Database::Manager* dbManager, const Dixter::TString& table, const std::vector<Dixter::TString>& cols);
+void readDB(TDatabaseManagerPtr dbManager, const TString& table, const TStringVector& cols);
 
 #elif defined(OTR_TESTING)
 
 #include <future>
 #include <fstream>
-#include <sstream>
 #include "OpenTranslate/Tokenizer.hpp"
 
 using namespace Dixter;
 using namespace OpenTranslate;
 
-cuhost void otr_test();
+cuhost void otr_tokenizer_test();
 
 #elif defined(NNET_TEST)
 
@@ -46,17 +61,14 @@ using namespace Dixter::Utilities;
 int main(dxMAYBE_UNUSED int argc, dxMAYBE_UNUSED char** argv)
 {
 	printl_log("Translation Module")
-	TIMER_START
+	
 	#ifdef DICT_TESTING
-	if (argc >= 2)
-	{
-		printl_log("\tDictionary Submodule")
-		readData(argv);
-	} else
-		printl("Usage: <user_name> <password>")
+	
+	readData(argc, argv);
+	
 	#elif defined(OTR_TESTING)
 	printl_log("\tOpenTranslate Submodule")
-	otr_test();
+	otr_tokenizer_test();
 	#elif defined(NNET_TEST)
 	printl_log("\tMachine Learning Submodule")
 	const int inputDim = 99;
@@ -65,7 +77,7 @@ int main(dxMAYBE_UNUSED int argc, dxMAYBE_UNUSED char** argv)
 	while (i++ != 1)
 	{
 		nnet_test(inputDim);
-		printl("")
+		println("")
 	}
 	#endif
 	
@@ -73,67 +85,69 @@ int main(dxMAYBE_UNUSED int argc, dxMAYBE_UNUSED char** argv)
 }
 
 #ifdef DICT_TESTING
+using Dixter::OpenTranslate::operator<<;
 
-void readData(char** argv)
+void readData(int argc, char** argv)
 {
-	printl_log("Translation Module")
-	using namespace Dixter;
-	std::vector<TString> tables = {"D", "E", "OE"};
-	const TString host = "127.0.0.1";
-	const TString database = "dixterdb_NO";
-	const TString userName = argv[1];
-	const TString password = argv[2];
-	auto dbManager = new Database::Manager(host, database, userName, password);
-	std::vector<TString> columns {"id", "word", "paradigm",
-								   "category_1", "category_2", "category_3", "category_4",
-								   "category_5", "category_6", "category_7", "category_8",
-								   "category_9", "category_10", "category_11", "category_12"};
-
-	auto dict = Dixter::OpenTranslate::Dictionary(dbManager);
-	const TString& paradigmKey = "paradigm";
-	auto res1 = dict.search("jafse", paradigmKey, true);
-	
-	printl("1. ")
-	for (const auto& pr : res1)
+	printl_log("\tDictionary Submodule")
+	if (argc <= 2)
 	{
-		prints(pr.first)
-		prints(" ")
-		printl(pr.second)
+		println("Usage: <user_name> <password> <word_to_search>")
+		return;
 	}
 	
-	SAFE_RELEASE(dbManager)
-}
-
-void writeData()
-{
-
-}
-
-void readDB(Dixter::Database::Manager* dbManager, const Dixter::TString& table, const std::vector<Dixter::TString>& cols)
-{
-	std::mutex mtx;
-	std::unique_lock l(mtx);
+	TIMER_START
+	TStringVector tables = { "AE", "D", "E", "F", "OE", "J" };
+	const TString host { "127.0.0.1" };
+	const TString database { "dixterdb_NO" };
+	const TString userName { argv[1] };
+	const TString password { argv[2] };
+	const TString wordToSearch { argv[3] };
+	auto dbManager = TDatabaseManagerPtr(new TDatabaseManager(host, database, userName, password));
+	const std::vector<TString> columns { "id", "word", "paradigm",
+	                                     "category_1", "category_2", "category_3", "category_4",
+	                                     "category_5", "category_6", "category_7", "category_8",
+	                                     "category_9", "category_10", "category_11", "category_12" };
 	
-	Dixter::TString dat {};
+	auto dict = TDictionary(dbManager, "tables", "original_value");
+	const auto& col = columns.at(2);
+	auto res = dict.search(wordToSearch, col);
+	
+	std::stringstream ss {};
+	size_t index {};
+	for (const auto&[__key, __valueVector] : res)
+		for (const auto& __value : __valueVector)
+			if (__key == col)
+				ss << __value << ( ++index == res.size() ? ".\n" : ", " );
+	
+	println(ss)
+	printfm("Read about %lu words for %s", index, wordToSearch.data());
+}
+
+void readDB(TDatabaseManagerPtr dbManager,
+            const TString& table,
+            const TStringVector& cols)
+{
+	std::stringstream dat {};
 	static size_t counter {};
 	auto res = dbManager->selectColumns(table, cols, 0);
 	
 	while (res->next())
 	{
-		Dixter::UInt32 colIndex {1};
+		Dixter::UInt32 colIndex { 1 };
 		while (colIndex < cols.size())
 		{
-			dat.append(res->getString(colIndex)).push_back(' ');
+			dat << res->getString(colIndex) << g_whiteSpace;
 			++colIndex;
 		}
 		++counter;
-		printl(dat)
+		println(dat)
 		dat.clear();
 	}
 	
 	print_log("Read about ")
 	prints(counter)
-	printl(" table records.")
+	println(" table records.")
 }
 
 #elif defined(OTR_TESTING)
@@ -157,7 +171,7 @@ TString readAll(IFStreamPtr& stream, char delimiter)
 }
 
 inline void readTestFiles(const TStringVector& fileNames,
-                          TStringVector& contents)
+						  TStringVector& contents)
 {
 	if (not fileNames.size())
 	{
@@ -176,7 +190,7 @@ inline void readTestFiles(const TStringVector& fileNames,
 	}
 }
 
-cuhost void otr_test()
+cuhost void otr_tokenizer_test()
 {
 	auto tokenizer = std::unique_ptr<TTokenizer>(new TTokenizer);
 	try
@@ -216,11 +230,11 @@ void nnet_test(int inputDim)
 	neuron->process();
 
 	prints("Weights: ")
-	printl(toString(neuron->getWeights()))
+	println(toString(neuron->getWeights()))
 	prints("Inputs:  ")
-	printl(toString(neuron->getInputs()))
+	println(toString(neuron->getInputs()))
 	prints("Output:  ")
-	printl(neuron->getOutput())
+	println(neuron->getOutput())
 }
 
 #endif

@@ -1,6 +1,8 @@
 list(APPEND DIXTER_OTR_INCLUDES     ${DIXTER_INCLUDE_DIR} ${OT_SRC})
 list(APPEND DIXTER_OTR_LIBRARIES    ${DIXTER_OT})
 
+#add_definitions(-DOTR_TESTING)
+add_definitions(-DDICT_TESTING)
 set(OT_TARGET DixterOt)
 
 add_target_module(${OT_TARGET} DIXTER_OT DixterOt.cpp "${DIXTER_OTR_INCLUDES}" "${DIXTER_OTR_LIBRARIES}")
