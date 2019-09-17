@@ -8,24 +8,49 @@
  */
 #pragma once
 
+#include <mutex>
+
+#include "Group.hpp"
 #include "Database/Manager.hpp"
+#include "setup.h"
 
 namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		class Dictionary
+		std::ostream& operator<<(std::ostream& out, const std::multimap<TString, std::vector<TString>>& rs);
+		std::ostream& operator<<(std::ostream& out, const std::vector<TString>& sv);
+		
+		class TDictionary
 		{
+			using TDatabaseManager      = Database::TManager;
+			using TDatabaseManagerPtr   = std::shared_ptr<TDatabaseManager>;
+			using TStringVector         = std::vector<TString>;
+			using TSearchResult         = std::multimap<TString, TStringVector>;
+			#ifdef HAVE_CXX17
+			using TWord = TStringView;
+			#else
+			using TWord = const TString&;
+			#endif
 		public:
-			explicit Dictionary(Database::Manager* manager);
+			TDictionary(TDatabaseManagerPtr manager, TString table, TString column) noexcept;
 			
-			~Dictionary();
+			~TDictionary() noexcept = default;
 			
-			std::multimap<string_t, string_t>
-			search(const string_t& word, string_t column, bool asRegex = false);
+			const TSearchResult&
+			search(TWord word, const TString& column, bool asRegex = false) noexcept;
+			
+		protected:
+			void _search(TByte key, TDatabaseManager::TClause clause);
+			
+			void _collect(const TString& table, TDatabaseManager::TClause clause);
 		
 		private:
-			Database::Manager* m_databaseManager;
+			TString m_table;
+			TString m_column;
+			mutable std::mutex m_mutex;
+			TSearchResult m_resultMap;
+			TDatabaseManagerPtr m_databaseManager;
 		};
 	}
 }
