@@ -1,6 +1,5 @@
 #include <sstream>
 #include "Randomizer.hpp"
-#include "Utilities.hpp"
 #include "Commons.hpp"
 
 inline std::ostream&
