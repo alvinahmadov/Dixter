@@ -9,42 +9,37 @@
 
 #include "JoinThread.hpp"
 
-
 namespace Dixter
 {
-	JoinThread::JoinThread(Thread thread) noexcept
-			: m_thread { std::move(thread) }
+	JoinThread::JoinThread(TThread thread) noexcept
+			: m_thread(std::move(thread))
 	{ }
 	
 	JoinThread::JoinThread(JoinThread&& other) noexcept
-			: m_thread { std::move(other.m_thread) }
+			: m_thread(std::move(other.m_thread))
 	{ }
 	
 	JoinThread::~JoinThread() noexcept
 	{
 		if (joinable())
-		{
 			join();
-		}
 	}
 	
-	JoinThread& JoinThread::operator=(JoinThread&& other) noexcept
+	JoinThread&
+	JoinThread::operator=(JoinThread&& other) noexcept
 	{
 		if (joinable())
-		{
 			join();
-		}
 		
 		m_thread = std::move(other.m_thread);
 		return *this;
 	}
 	
-	JoinThread& JoinThread::operator=(JoinThread other) noexcept
+	JoinThread&
+	JoinThread::operator=(JoinThread other) noexcept
 	{
 		if (joinable())
-		{
 			join();
-		}
 		
 		m_thread = std::move(other.m_thread);
 		return *this;
@@ -55,7 +50,7 @@ namespace Dixter
 		m_thread.swap(other.m_thread);
 	}
 	
-	JoinThread::Thread::id
+	JoinThread::TThread::id
 	JoinThread::getId() const noexcept
 	{
 		return m_thread.get_id();
@@ -76,12 +71,14 @@ namespace Dixter
 		m_thread.detach();
 	}
 	
-	JoinThread::Thread& JoinThread::thread() noexcept
+	JoinThread::TThread&
+	JoinThread::thread() noexcept
 	{
 		return m_thread;
 	}
 	
-	const JoinThread::Thread& JoinThread::thread() const noexcept
+	const JoinThread::TThread&
+	JoinThread::thread() const noexcept
 	{
 		return m_thread;
 	}

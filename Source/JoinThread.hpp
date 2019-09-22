@@ -8,21 +8,27 @@
  */
 #pragma once
 
-
 #include <thread>
 #include <mutex>
 
-
 namespace Dixter
 {
+	/**
+	 * C++20 std::jthread implementation
+	 * */
 	class JoinThread
 	{
-		using Thread = std::thread;
+		using TThread = std::thread;
 	public:
-		template<typename Callable, typename ... Args>
-		explicit JoinThread(Callable&& callable, Args&& ... args) noexcept;
+		JoinThread() = delete;
 		
-		explicit JoinThread(Thread thread) noexcept;
+		template<
+				typename TCallable,
+				typename... TArgs
+		>
+		explicit JoinThread(TCallable&& callable, TArgs&& ... args) noexcept;
+		
+		explicit JoinThread(TThread thread) noexcept;
 		
 		JoinThread(JoinThread&& other) noexcept;
 		
@@ -34,7 +40,7 @@ namespace Dixter
 		
 		void swap(JoinThread& other) noexcept;
 		
-		Thread::id getId() const noexcept;
+		TThread::id getId() const noexcept;
 		
 		bool joinable() const noexcept;
 		
@@ -42,16 +48,19 @@ namespace Dixter
 		
 		void detach();
 		
-		Thread& thread() noexcept;
+		TThread& thread() noexcept;
 		
-		const Thread& thread() const noexcept;
+		const TThread& thread() const noexcept;
 	
 	private:
-		Thread m_thread;
+		TThread m_thread;
 	};
 	
-	template<typename Callable, typename ... Args>
-	JoinThread::JoinThread(Callable&& callable, Args&& ... args) noexcept
-			: m_thread(std::forward<Callable>(callable), std::forward<Args>(args)...)
+	template<
+	        typename TCallable,
+	        typename... TArgs
+	        >
+	JoinThread::JoinThread(TCallable&& callable, TArgs&& ... args) noexcept
+			: m_thread(std::forward<TCallable>(callable), std::forward<TArgs>(args)...)
 	{ }
-}
+} // namespace Dixter
