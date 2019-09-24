@@ -135,34 +135,46 @@ namespace Dixter
 			return TBase::operator>=(self);
 		}
 		
-		operator int() const
+		inline operator int() const
 		{
-			icu::Formattable __format(*this);
-			return __format.getLong();
+			int __nm(std::stoi(asUTF8()));
+			return __nm;
 		}
 		
-		operator float() const
+		inline operator long() const
 		{
-			icu::Formattable __form(*this);
-			return __form.getDouble();
+			long __nm(std::stol(asUTF8()));
+			return __nm;
 		}
 		
-		operator double() const
+		inline operator long long() const
 		{
-			icu::Formattable __form(*this);
-			return __form.getDouble();
+			long long __nm(std::stoll(asUTF8()));
+			return __nm;
 		}
 		
-		operator unsigned long() const
+		inline operator unsigned long() const
 		{
-			icu::Formattable __form(*this);
-			return __form.getLong();
+			unsigned long __nm(std::stoul(asUTF8()));
+			return __nm;
 		}
 		
-		operator unsigned long long() const
+		inline operator unsigned long long() const
 		{
-			icu::Formattable __form(*this);
-			return __form.getInt64();
+			unsigned long long __nm(std::stoull(asUTF8()));
+			return __nm;
+		}
+		
+		inline operator float() const
+		{
+			float __nm(std::stof(asUTF8()));
+			return __nm;
+		}
+		
+		inline operator double() const
+		{
+			double __nm(std::stod(asUTF8()));
+			return __nm;
 		}
 	};
 }
