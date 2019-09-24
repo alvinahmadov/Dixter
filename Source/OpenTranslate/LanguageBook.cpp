@@ -18,31 +18,31 @@ namespace Dixter
 	{
 		LanguageBook::LanguageBook()
 				: m_alphabets { },
-				  m_langdefs { unicode::langdefs }
+				  m_langdefs { Unicode::langdefs }
 		{ }
 		
 		LanguageBook::~LanguageBook()
 		{
 			for (auto& alpha : m_alphabets)
-				SAFE_RELEASE(alpha)
+				delete alpha;
 		}
 		
-		void LanguageBook::insert(const string_t& language, const string_t& id)
+		void LanguageBook::insert(const TString& language, const TString& id)
 		{
 			m_alphabets.push_back(new Alphabet(language, m_langdefs.find(id)->second));
 		}
 		
-		ustring_t
-		LanguageBook::getView(string_t language)
+		TUString
+		LanguageBook::getView(TString language)
 		{
-			ustring_t view { };
+			TUString view { };
 			for (const auto& alpha : m_alphabets)
 			{
 				if (alpha->contains(language))
 				{
 					auto chrs = alpha->getCodePoints();
 					
-					for (size_t i = 0; i < alpha->getSize(); ++i)
+					for (TSize i = 0; i < alpha->getSize(); ++i)
 						view.append(chrs[i]);
 				}
 			}
@@ -50,7 +50,7 @@ namespace Dixter
 		}
 		
 		
-		const code_point_t* LanguageBook::getView(ustring_t language)
+		const TCodePoint* LanguageBook::getView(TUString language)
 		{
 			for (const auto& alpha : m_alphabets)
 			{
