@@ -14,20 +14,20 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		TextList::TextList(QWidget* parent, int rows, int columns)
+		TTextList::TTextList(QWidget* parent, int rows, int columns)
 				: QTableWidget(rows, columns, parent),
 				  m_rowCount { 0 },
-				  m_rows { }
+				  m_rows {}
 		{
 			connectEvents();
 		}
 		
-		TextList::~TextList()
+		TTextList::~TTextList()
 		{ }
 		
-		void TextList::insertColumns(const QStringList& columns, const QString&)
+		void TTextList::insertColumns(const QStringList& columns, const QString&)
 		{
-			// size_t __index = 0;
+			// TSize __index = 0;
 			setHorizontalHeaderLabels(columns);
 			// for (const auto& item : columns)
 			// {
@@ -39,10 +39,11 @@ namespace Dixter
 			// }
 		}
 		
-		const ui32& TextList::insertRowValues(i64 index, const std::vector<QString>& values)
+		const UInt32&
+		TTextList::insertRowValues(Int64 index, const std::vector<QString>& values)
 		{
 			insertRow(index);
-			int colidx { };
+			int colidx {};
 			
 			for (const auto& value : values)
 			{
@@ -51,38 +52,38 @@ namespace Dixter
 			return ++m_rowCount;
 		}
 		
-		void TextList::removeRow(const i64& rowIndex)
+		void TTextList::removeRow(const Int64& rowIndex)
 		{
 			
 			remove(rowIndex);
 			--m_rowCount;
 		}
 		
-		bool TextList::searchRow(const QString&, i64&, const i64&)
+		bool TTextList::searchRow(const QString&, Int64&, const Int64&)
 		{
 			// position = FindItem(start, text, true);
 			// return position != -1;
 			return false;
 		}
 		
-		void TextList::clearRows()
+		void TTextList::clearRows()
 		{
 			// DeleteAllItems();
 			// for (auto& __cont : m_rows)
 			// {
 			// 	SAFE_RELEASE(__cont.item);
-			// 	__cont.index = -1;
+			// 	__cont.m_index = -1;
 			// }
 			m_rowCount = 0;
 		}
 		
-		i64
-		TextList::getSelectedRowIndex()
+		Int64
+		TTextList::getSelectedRowIndex()
 		{
-			// i64 __index { -1 };
+			// Int64 __index { -1 };
 			// if (GetSelectedItemCount() == 1)
 			// {
-			// 	for (i64 idx { }; idx < m_rowCount; idx++)
+			// 	for (Int64 idx { }; idx < m_rowCount; idx++)
 			// 	{
 			// 		auto state = GetItemState(idx, wxLIST_STATE_SELECTED);
 			// 		if (state == wxLIST_STATE_SELECTED)
@@ -95,47 +96,47 @@ namespace Dixter
 			// return __index;
 		}
 		
-		const ui32
-		& TextList::getRowCount() const
+		const UInt32&
+		TTextList::getRowCount() const
 		{
 			return m_rowCount;
 		}
 		
 		QTableWidgetItem*
-		TextList::first() const
+		TTextList::first() const
 		{
 			return m_rows.front();
 		}
 		
 		QTableWidgetItem*
-		TextList::last() const
+		TTextList::last() const
 		{
 			return m_rows.back();
 		}
 		
-		void TextList::connectEvents()
+		void TTextList::connectEvents()
 		{
 			//BIND_EVENT(signal_cursor_changed, TextList::OnCursorChanged)
 		}
 		
-		void TextList::onCursorChanged()
+		void TTextList::onCursorChanged()
 		{
 		}
 		
-		void TextList::insert(i64)
+		void TTextList::insert(Int64)
 		{
 			auto __item = new QTableWidgetItem();
 			m_rows.push_back(__item);
 		}
 		
-		void TextList::remove(i64)
+		void TTextList::remove(Int64)
 		{
 			// for (auto __container : m_rows)
 			// {
-			// 	if (__container.index == index)
+			// 	if (__container.m_index == m_index)
 			// 	{
 			// 		SAFE_RELEASE(__container.item);
-			// 		__container.index = -1;
+			// 		__container.m_index = -1;
 			// 	}
 			// }
 		}

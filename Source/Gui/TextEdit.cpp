@@ -13,51 +13,48 @@
 #include <QResizeEvent>
 
 #include "Configuration.hpp"
-#include "Gui/TextArea.hpp"
+#include "Constants.hpp"
+#include "Gui/TextEdit.hpp"
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		TextArea::TextArea(QWidget* parent, const QString& placeholder,
-		                   bool readOnly, int fontSize)
+		TTextEdit::TTextEdit(QWidget* parent, const QString& placeholder,
+		                     bool readOnly, int fontSize)
 				: QTextEdit(parent),
-				  m_fontSize { fontSize },
-				  m_placeholderSet { false },
-				  m_placeholderText { placeholder },
-				  m_charCount { }
+				  m_fontSize(fontSize),
+				  m_placeholderSet(false),
+				  m_charCount(0),
+				  m_placeholderText(placeholder)
 		{
 			auto textDocument = new QTextDocument(this);
 			setAcceptRichText(false);
 			setWordWrapMode(QTextOption::WordWrap);
 			setDocument(textDocument);
-			m_maxCharCount = static_cast<size_t>(size().height() / font().pointSize() *
-			                                     size().width() / font().pointSize());
+			m_maxCharCount = static_cast<TSize>(size().height() / font().pointSize() *
+					size().width() / font().pointSize());
 			setPlaceholder();
 			setFontPointSize(fontSize);
 			setReadOnly(readOnly);
 			connectEvents();
 		}
 		
-		TextArea::~TextArea()
-		{ }
-		
-		void TextArea::setPlaceholder()
+		void TTextEdit::setPlaceholder()
 		{
-			if (!m_placeholderText.isEmpty() && !isPlaceholderSet())
+			if (not m_placeholderText.isEmpty() and not isPlaceholderSet())
 			{
 				m_placeholderSet = true;
-				
 				setPlaceholderText(m_placeholderText);
 			}
 			
-			if (!document()->characterCount())
+			if (not document()->characterCount())
 			{
 				setFontItalic(true);
 			}
 		}
 		
-		void TextArea::resetPlaceholder()
+		void TTextEdit::resetPlaceholder()
 		{
 			if (isPlaceholderSet())
 			{
@@ -66,95 +63,100 @@ namespace Dixter
 			}
 		}
 		
-		void TextArea::resizeEvent(QResizeEvent* sizeEvent)
+		void TTextEdit::resizeEvent(QResizeEvent* sizeEvent)
 		{
-			m_maxCharCount = static_cast<size_t>((sizeEvent->size().height() * sizeEvent->size().width()));
+			m_maxCharCount = static_cast<TSize>(( sizeEvent->size().height() * sizeEvent->size().width()));
 			document()->setPageSize(sizeEvent->size());
 		}
 		
-		void TextArea::copyToClipboard(bool copyAll)
+		void TTextEdit::copyToClipboard(bool copyAll)
 		{
-			
 			auto __currentPoint = cursor().pos();
-			if (copyAll)
+			if (not copyAll)
+			{
+				copy();
+			}
+			else
 			{
 				selectAll();
 				copy();
 				cursor().setPos(__currentPoint);
-			} else copy();
-			
+			}
 		}
 		
-		void TextArea::cutToClipboard(bool cutAll)
+		void TTextEdit::cutToClipboard(bool cutAll)
 		{
-			if (cutAll)
+			if (not cutAll)
+			{
+				cut();
+			}
+			else
 			{
 				selectAll();
 				cut();
 				setFocus();
-			} else cut();
+			}
 		}
 		
-		void TextArea::swapContent(TextArea* other)
+		void TTextEdit::swapContent(TTextEdit* other)
 		{
-			if (!toPlainText().compare(other->toPlainText()))
+			if (not toPlainText().compare(other->toPlainText()))
 				return;
 			
 			auto __thsVal = toPlainText();
-
-			if (!other->isEmpty())
-			{
+			
+			if (not other->isEmpty())
 				setPlainText(other->toPlainText());
-			}
-			if (!isEmpty())
-			{
+			
+			if (not isEmpty())
 				other->setPlainText(__thsVal);
-			}
 		}
 		
-		QString TextArea::getContent() const
+		QString TTextEdit::getContent() const
 		{
 			return document()->toPlainText();
 		}
 		
-		void TextArea::write(const TextArea* other)
+		void TTextEdit::write(const TTextEdit* other)
 		{
-			if (!other->isPlaceholderSet())
+			if (not other->isPlaceholderSet())
 			{
-				if (isPlaceholderSet()) resetPlaceholder();
+				if (isPlaceholderSet())
+					resetPlaceholder();
 				
-				if (!isEnabled()) textColor().setNamedColor(kPlaceholderColour.c_str());
+				if (not isEnabled()) textColor().setNamedColor(g_placeholderColour.c_str());
 				setText(other->toPlainText());
 			}
 		}
 		
-		void TextArea::clearContent()
+		void TTextEdit::clearContent()
 		{
-			if (!isPlaceholderSet())
+			if (not isPlaceholderSet())
 			{
 				clearContent();
 				setPlaceholder();
 			}
 		}
 		
-		bool TextArea::isPlaceholderSet() const
+		bool TTextEdit::isPlaceholderSet() const
 		{
 			return m_placeholderSet;
 		}
 		
-		bool TextArea::isEmpty() const
+		bool TTextEdit::isEmpty() const
 		{
 			return document()->isEmpty();
 		}
 		
-		void TextArea::connectEvents()
+		void TTextEdit::connectEvents()
 		{
 			connect(this, SIGNAL(textChanged()), SLOT(resetPlaceholder()));
 			connect(this, SIGNAL(textChanged()), SLOT(setPlaceholder()));
-			connect(this, &QTextEdit::textChanged, [&]()
-			{
-				setFontPointSize(m_fontSize);
-			});
+			connect(
+					this, &QTextEdit::textChanged, [ & ]()
+					{
+						setFontPointSize(m_fontSize);
+					});
 		}
 	}
 }

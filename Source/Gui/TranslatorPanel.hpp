@@ -22,46 +22,42 @@
 
 namespace Dixter
 {
-	namespace OpenTranslate
-	{
-		class LanguageBook;
-	}
 	namespace Gui
 	{
-		class OptionBox;
-		class TextArea;
-		class TranslatorPanel : public Panel
+		class TOptionBox;
+		class TTextEdit;
+		class TTranslatorPanel : public TPanel
 		{
 		Q_OBJECT
 			
 			#ifdef USE_SPEECHD
 			using SD = vsynth::SpeechDispatcher;
 			#endif
-			using WidgetGroup   = Group<QWidget, WidgetID>;
-			using GridGroup     = Group<QLayoutItem, WidgetID>;
+			using WidgetGroup   = TGroup<QWidget, EWidgetID>;
+			using GridGroup     = TGroup<QLayoutItem, EWidgetID>;
 		
 		public:
-			explicit TranslatorPanel(QWidget* parent,
-			                         int width = 200, int height = 200,
-			                         const QString& name = g_translatorName);
+			TTranslatorPanel(QWidget* parent,
+			                 int width = 200, int height = 200,
+			                 const QString& name = g_translatorName);
 			
-			virtual ~TranslatorPanel() dxDECL_OVERRIDE;
+			~TTranslatorPanel() override;
 			
 			void show(bool show);
 			
-			std::shared_ptr<OptionBox>
-			getOptionBox(WidgetID id);
+			std::shared_ptr<TOptionBox>
+			getOptionBox(EWidgetID id);
 			
-			QWidget* getWidget(WidgetID id);
+			QWidget* getWidget(EWidgetID id);
 			
-			std::pair<string_t, string_t>
+			std::pair<TString, TString>
 			getCurrentLanguage();
 		
 		protected:
 			
 			void init();
 			
-			void connectEvents() dxDECL_OVERRIDE;
+			void connectEvents() override;
 			
 			void setValues();
 		
@@ -91,8 +87,6 @@ namespace Dixter
 			#ifdef USE_SPEECHD
 			vsynth::SpeechDispatcher *m_narrator;
 			#endif
-			
-			OpenTranslate::LanguageBook* m_lgs;
 			
 			GridGroup* m_grids;
 			

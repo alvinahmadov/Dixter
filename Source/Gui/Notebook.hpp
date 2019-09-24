@@ -19,18 +19,19 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class Panel;
-		class Notebook : public QTabWidget
+		class TPanel;
+		
+		class TNotebook : public QTabWidget
 		{
 		Q_OBJECT
 		public:
-			Notebook(QWidget* parent = nullptr, const QString& name = "");
+			TNotebook(QWidget* parent = nullptr, const QString& name = "");
 			
-			~Notebook() dxDECL_OVERRIDE;
+			~TNotebook() override = default;
 			
 			void addPage(QWidget* page, const QString& title);
 			
-			Panel* getPage(int pageNumber);
+			TPanel* getPage(int pageNumber);
 			
 			int getPageNumber(QWidget* page) const;
 		

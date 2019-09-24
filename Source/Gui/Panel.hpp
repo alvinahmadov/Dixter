@@ -16,16 +16,16 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class Panel : public QWidget
+		class TPanel : public QWidget
 		{
 		Q_OBJECT
 		public:
-			explicit Panel(QWidget* parent, const QSize& size = QSize(200, 200),
-			               const QString& name = "Panel");
+			TPanel(QWidget* parent, const QSize& size = QSize(200, 200),
+			       const QString& name = "Panel");
 			
-			~Panel() dxDECL_OVERRIDE;
+			virtual ~TPanel() override;
 			
-			// virtual QWidget* getWidget(WidgetID id) = 0;
+			// virtual QWidget* getWidget(EWidgetID id) = 0;
 		
 		protected:
 			virtual void connectEvents();

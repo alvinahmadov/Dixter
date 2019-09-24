@@ -28,18 +28,26 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		SettingsDialog::SettingsDialog(QWidget* parent, const QString& title)
+		TSettingsDialog::TSettingsDialog(QWidget* parent, const QString& title)
 				: QDialog(parent),
-				  m_tabWidget { new QTabWidget(this) },
-				  m_generalTab { new QWidget(this) },
-				  m_serverPanel { new QWidget(this) }
+				  m_tabWidget(new QTabWidget(this)),
+				  m_generalTab(new QWidget(this)),
+				  m_serverPanel(new QWidget(this))
 		{
 			init();
 			setWindowTitle(title);
 			setFixedSize(800, 800);
 		}
 		
-		void SettingsDialog::init()
+		TSettingsDialog::~TSettingsDialog()
+		{
+			delete m_tabWidget;
+			delete m_dialogButtonBox;
+			delete m_generalTab;
+			delete m_serverPanel;
+		}
+		
+		void TSettingsDialog::init()
 		{
 			setFixedSize(QSize(800, 800));
 			setModal(true);
@@ -49,8 +57,9 @@ namespace Dixter
 			m_tabWidget->addTab(m_serverPanel, tr("&Server Backend"));
 			
 			m_tabWidget->show();
-			m_dialogButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-			                                         Qt::Horizontal, this);
+			m_dialogButtonBox = new QDialogButtonBox(
+					QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
+					Qt::Horizontal, this);
 			
 			connect(m_dialogButtonBox, SIGNAL(accepted()), SLOT(accept()));
 			connect(m_dialogButtonBox, SIGNAL(rejected()), SLOT(reject()));
@@ -60,7 +69,7 @@ namespace Dixter
 			layout()->addWidget(m_dialogButtonBox);
 		}
 		
-		void SettingsDialog::generalTab()
+		void TSettingsDialog::generalTab()
 		{
 			m_generalTab->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 			auto loginBox = new QGroupBox("Login", m_generalTab);
@@ -80,7 +89,7 @@ namespace Dixter
 			auto emailInput = new QLineEdit(loginBox);
 			auto passwordLabel = new QLabel(tr("Password: "), loginBox);
 			auto passwordInput = new QLineEdit(loginBox);
-			auto tokenLabel = new QLabel(tr("Token: "), loginBox);
+			auto tokenLabel = new QLabel(tr("TTokenHolder: "), loginBox);
 			auto tokenInput = new QLineEdit(loginBox);
 			
 			// Echo modes
@@ -114,13 +123,13 @@ namespace Dixter
 			loginBox->setLayout(loginLayout);
 		}
 		
-		void SettingsDialog::accept()
+		void TSettingsDialog::accept()
 		{
 			// g_settingsManager->save();
 			QDialog::accept();
 		}
 		
-		void SettingsDialog::reject()
+		void TSettingsDialog::reject()
 		{
 			QDialog::reject();
 		}

@@ -18,39 +18,28 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		SearchEntry::SearchEntry(QWidget* parent, const QString& placeholder,
-		                         const QSize& size, int margin)
+		TSearchEntry::TSearchEntry(QWidget* parent, const QString& placeholder,
+								   const QSize& size, int margin)
 				: QLineEdit(parent),
-				  m_isPlaceholderSet { },
-				  m_placeholder { placeholder }
+				  m_isPlaceholderSet(),
+				  m_placeholder(placeholder)
 		{
 			setTextMargins(margin, margin, margin, margin);
-			if (size.width() > 0 && size.height() > 0)
-			{
-				setMinimumSize(size);
-			}
 			setPlaceholderText(placeholder);
 			connectEvents();
+			if (size.width() > 0 and size.height() > 0)
+				setMinimumSize(size);
 		}
 		
-		SearchEntry::~SearchEntry()
-		{ }
-		
-		bool SearchEntry::isPlaceholderSet() const
+		bool TSearchEntry::isPlaceholderSet() const
 		{
 			return m_isPlaceholderSet;
 		}
 		
-		void SearchEntry::onEnter(const QString& text)
+		void TSearchEntry::connectEvents()
 		{
-			qDebug() << text;
-		}
-		
-		void SearchEntry::connectEvents()
-		{
-			// BIND_EVENT(wxEVT_TEXT, &SearchEntry::onEnter)
-			connect(this, SIGNAL(textChanged(const QString&)),
-					SLOT(onEnter(const QString&)));
+			// connect(this, SIGNAL(textChanged(const QString&)),
+			// 		SLOT(onEnter(const QString&)));
 		}
 	}
 }

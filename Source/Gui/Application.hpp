@@ -10,20 +10,20 @@
 
 #include <QApplication>
 
-#include "MainWindow.hpp"
+#include "Window.hpp"
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		class Application : public QApplication
+		class TApplication : public QApplication
 		{
 		Q_OBJECT
 		public:
-			explicit Application(int& argc, char** argv,
-			                     const QString& appId);
+			explicit TApplication(int& argc, char** argv,
+								  const QString& appId);
 			
-			~Application() dxDECL_OVERRIDE;
+			~TApplication() override;
 			
 			int exec(QWidget* window);
 		};

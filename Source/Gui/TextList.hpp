@@ -23,32 +23,32 @@ namespace Dixter
 		struct ItemContainer
 		{
 			QTableWidgetItem* item;
-			i64 index;
+			Int64 index;
 		};
-		class TextList : public QTableWidget
+		class TTextList : public QTableWidget
 		{
 		Q_OBJECT
 		public:
-			using RowMap = std::map<int, ustring_t>;
+			using RowMap = std::map<int, TUString>;
 		public:
-			TextList(QWidget* parent = nullptr, int rows = 0, int columns = 0);
+			TTextList(QWidget* parent = nullptr, int rows = 0, int columns = 0);
 			
-			~TextList() dxDECL_OVERRIDE;
+			~TTextList() override;
 			
 			void insertColumns(const QStringList& columns, const QString& except = QString());
 			
-			const ui32&
-			insertRowValues(i64 index, const std::vector<QString>& values);
+			const UInt32&
+			insertRowValues(Int64 index, const std::vector<QString>& values);
 			
-			void removeRow(const i64& rowIndex);
+			void removeRow(const Int64& rowIndex);
 			
-			bool searchRow(const QString& text, i64& position, const i64& start = -1);
+			bool searchRow(const QString& text, Int64& position, const Int64& start = -1);
 			
 			void clearRows();
 			
-			i64 getSelectedRowIndex();
+			Int64 getSelectedRowIndex();
 			
-			const ui32& getRowCount() const;
+			const UInt32& getRowCount() const;
 			
 			QTableWidgetItem*
 			first() const;
@@ -62,12 +62,12 @@ namespace Dixter
 			void onCursorChanged();
 		
 		protected:
-			void insert(i64 index);
+			void insert(Int64 index);
 			
-			void remove(i64 index);
+			void remove(Int64 index);
 		
 		private:
-			ui32 m_rowCount;
+			UInt32 m_rowCount;
 			
 			QVector<QTableWidgetItem*> m_rows;
 		};

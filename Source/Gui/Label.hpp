@@ -20,15 +20,15 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class Label : public QLabel
+		class TLabel : public QLabel
 		{
 		Q_OBJECT
 		public:
-			explicit Label(const QString& label, QWidget* parent = nullptr, const QSize& size = QSize());
+			explicit TLabel(const QString& label, QWidget* parent = nullptr, const QSize& size = QSize());
 		
-			explicit Label(const QString& label, const QSize& size = QSize(1, 1));
+			explicit TLabel(const QString& label, const QSize& size = QSize(1, 1));
 			
-			~Label() dxDECL_OVERRIDE;
+			~TLabel() override;
 		};
 	}
 }

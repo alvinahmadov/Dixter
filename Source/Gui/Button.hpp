@@ -17,17 +17,17 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class Button : public QPushButton
+		class TButton : public QPushButton
 		{
 			Q_OBJECT
 		public:
-			explicit Button(QWidget* parent, const QString& label = QString());
+			TButton(QWidget* parent, const QString& label = QString());
 			
-			explicit Button(QIcon icon, QWidget *parent = nullptr);
+			TButton(QIcon icon, QWidget *parent = nullptr);
 			
-			explicit Button(const QString& label);
+			explicit TButton(const QString& label);
 			
-			~Button() dxDECL_OVERRIDE;
+			~TButton() override;
 		};
 	}
 }

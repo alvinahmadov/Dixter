@@ -15,7 +15,7 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		Panel::Panel(QWidget* parent, const QSize& size, const QString& name)
+		TPanel::TPanel(QWidget* parent, const QSize& size, const QString& name)
 				: QWidget(parent)
 		{
 			connectEvents();
@@ -23,11 +23,10 @@ namespace Dixter
 			setObjectName(name);
 		}
 		
-		Panel::~Panel()
+		TPanel::~TPanel()
 		{ }
 		
-		void Panel::connectEvents()
-		{
-		}
+		void TPanel::connectEvents()
+		{ }
 	}
 }

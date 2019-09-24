@@ -20,20 +20,19 @@ namespace Dixter
 		 * \brief SearchEntry is a class that responsible for
 		 * searching a word in the database
 		 * */
-		class SearchEntry : public QLineEdit
+		class TSearchEntry : public QLineEdit
 		{
 		Q_OBJECT
 		public:
-			explicit SearchEntry(QWidget* parent, const QString& placeholder = "Search",
-			                     const QSize& size = QSize(), int margin = 0);
+			explicit TSearchEntry(QWidget* parent, const QString& placeholder = QString("Search"),
+								  const QSize& size = QSize(), int margin = 0);
 			
-			~SearchEntry() dxDECL_OVERRIDE;
+			virtual ~TSearchEntry() noexcept override = default;
 			
 			bool isPlaceholderSet() const;
-		
-		protected slots:
 			
-			void onEnter(const QString& text);
+			// public slots:
+			// 	void onEnter(const QString& text);
 		
 		protected:
 			void connectEvents();

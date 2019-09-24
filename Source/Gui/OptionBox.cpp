@@ -9,10 +9,11 @@
 #include <QDebug>
 
 #include "Commons.hpp"
+#include "Utilities.hpp"
 #include "Configuration.hpp"
 #include "Gui/OptionBox.hpp"
 
-using namespace Dixter::Utilities;
+namespace AlgoUtils = Dixter::Utilities::Algorithms;
 using std::vector;
 
 namespace Dixter
@@ -21,69 +22,59 @@ namespace Dixter
 	{
 		void arrayStringToVector(const QStringList& src, vector<QString>& dest)
 		{
-			auto fCopier = [ ](const QString& srcValue, QString& destValue)
+			AlgoUtils::foreachCompound(src, dest, [](const QString& srcValue, QString& destValue)
 			{
 				destValue = srcValue;
-			};
-			
-			Algorithms::foreachCompound(src, dest, fCopier);
+			});
 		}
 		
 		void vectorToArrayString(const vector<QString>& src, QStringList& dest)
 		{
-			auto fCopier = [ ](const QString& srcValue, QString& destValue)
+			Utilities::Algorithms::foreachCompound(src, dest, [ ](const QString& srcValue, QString& destValue)
 			{
 				destValue = srcValue;
-			};
-			
-			Utilities::Algorithms::foreachCompound(src, dest, fCopier);
+			});
 		}
 		
 		QStringList vectorToArrayString(const vector<QString>& src)
 		{
-			auto __ret = QStringList();
-			auto fCopier = [ ](const QString& srcValue, QString& destValue)
+			QStringList __ret {};
+	
+			Utilities::Algorithms::foreachCompound(src, __ret, [ ](const QString& srcValue, QString& destValue)
 			{
 				destValue = srcValue;
-			};
-			
-			Utilities::Algorithms::foreachCompound(src, __ret, fCopier);
+			});
 			return __ret;
 		}
 		
-		int compare(const QVariant& v1, const QVariant& v2)
+		Int32 compare(const QVariant& v1, const QVariant& v2)
 		{
 			return v1.toString().compare(v2.toString());
 		}
 		
-		OptionBox::OptionBox(QWidget* parent,
-							 const QString& placeholder,
-							 const QSize& size, bool sort)
+		TOptionBox::TOptionBox(QWidget* parent,
+							   const QString& placeholder,
+							   const QSize& size, bool sort)
 				: QComboBox(parent),
 				  m_isPlaceholderSet { },
 				  m_sort { sort },
 				  m_placeHolder { placeholder }
 		{
 			setPlaceholder(placeholder);
-			if (size.height() > 0 && size.width() > 0)
+			if (size.height() > 0 and size.width() > 0)
 				setMinimumSize(size);
 			
 			connectEvents();
 		}
 		
-		OptionBox::OptionBox(const QString& placeholder,
-							 const QSize& size, bool sort)
-				: OptionBox(nullptr, placeholder, size, sort)
-		{
-		
-		}
-		
-		OptionBox::~OptionBox()
+		TOptionBox::TOptionBox(const QString& placeholder,
+							   const QSize& size, bool sort)
+				: TOptionBox(nullptr, placeholder, size, sort)
 		{ }
 		
-		inline void OptionBox::setPlaceholder(const QString& placeholder)
+		inline void TOptionBox::setPlaceholder(const QString& placeholder)
 		{
-			// if (!placeholder.isEmpty())
+			if (not placeholder.isEmpty())
 			{
 				m_placeHolder = placeholder;
 				m_isPlaceholderSet = true;
@@ -107,7 +98,7 @@ namespace Dixter
 			}
 		}
 		
-		void OptionBox::resetPlaceholder()
+		void TOptionBox::resetPlaceholder()
 		{
 			if (m_isPlaceholderSet)
 			{
@@ -118,13 +109,9 @@ namespace Dixter
 			}
 		}
 		
-		void OptionBox::setValues(vector<ustring_t>& options, bool sort)
+		void TOptionBox::setValues(vector<TUString>& options, bool sort)
 		{
 			Q_UNUSED(sort)
-			// if (sort)
-			// {
-			// 	std::sort(options.begin(), options.end(), std::less<ustring_t>());
-			// }
 			
 			if (options.size() > 0)
 			{
@@ -136,7 +123,7 @@ namespace Dixter
 			}
 		}
 		
-		void OptionBox::setValues(const QStringList& options)
+		void TOptionBox::setValues(const QStringList& options)
 		{
 			if (options.size() > 0)
 			{
@@ -147,9 +134,9 @@ namespace Dixter
 			}
 		}
 		
-		void OptionBox::swapCurrent(OptionBox* src)
+		void TOptionBox::swapCurrent(TOptionBox* src)
 		{
-			if(isPlaceholderSet() || src->isPlaceholderSet())
+			if(isPlaceholderSet() or src->isPlaceholderSet())
 				return;
 			
 			auto __srcCount = src->getItemCount();
@@ -162,9 +149,9 @@ namespace Dixter
 			}
 		}
 		
-		void OptionBox::sort(bool ascending)
+		void TOptionBox::sort(bool ascending)
 		{
-			//TODO: Reimplement
+			//TODO(Alvin): Reimplement
 			(void)ascending;
 			// auto __currentValues = currentData();
 			// clear();
@@ -179,30 +166,30 @@ namespace Dixter
 			// setValues(__currentValues);
 		}
 		
-		int OptionBox::getItemCount() const
+		Int32 TOptionBox::getItemCount() const
 		{
 			return (isPlaceholderSet() ? count() - 1 : count());
 		}
 		
-		int OptionBox::getPosition(const QString& value)
+		Int32 TOptionBox::getPosition(const QString& value)
 		{
-			int __pos { -1 };
+			Int32 __pos { -1 };
 			
 			__pos = findText(value);
 			return __pos;
 		}
 		
-		bool OptionBox::isPlaceholderSet() const
+		bool TOptionBox::isPlaceholderSet() const
 		{
 			return m_isPlaceholderSet;
 		}
 		
-		void OptionBox::onChanged(int)
+		void TOptionBox::onChanged(int)
 		{
 			resetPlaceholder();
 		}
 		
-		void OptionBox::connectEvents()
+		void TOptionBox::connectEvents()
 		{
 			connect(this, SIGNAL(activated(int)), SLOT(onChanged(int)));
 		}

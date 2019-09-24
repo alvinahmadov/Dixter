@@ -14,19 +14,17 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		Application::Application(int& argc, char** argv,
-		                         const QString& appId)
+		TApplication::TApplication(int& argc, char** argv,
+								   const QString& appId)
 				: QApplication(argc, argv)
 		{
 			setApplicationName(appId);
 		}
 		
-		Application::~Application()
-		{
-			ConfigurationManager::getManager(ConfigurationType::ConfigXml)->release();
-		}
+		TApplication::~TApplication()
+		{ }
 		
-		int Application::exec(QWidget* window)
+		int TApplication::exec(QWidget* window)
 		{
 			try
 			{

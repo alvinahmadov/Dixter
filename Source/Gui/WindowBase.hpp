@@ -23,26 +23,25 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class SettingsDialog;
-		class WindowBase : public QMainWindow
+		class TSettingsDialog;
+		class TWindowBase : public virtual QMainWindow
 		{
 		Q_OBJECT
 		public:
-			using MenuEvent    = QMenuEvent*;
-			using ObjectGroup  = Group<QObject, MenuID>;
-			using WidgetGroup  = Group<QWidget, WidgetID>;
-			using ControlGroup = Group<QObject, WidgetID>;
+			using ObjectGroup  = TGroup<QObject, EMenuID>;
+			using WidgetGroup  = TGroup<QWidget, EWidgetID>;
+			using ControlGroup = TGroup<QObject, EWidgetID>;
 		
 		public:
-			WindowBase();
+			TWindowBase();
 			
-			explicit WindowBase(const QString& title, int width, int height,
-			                    bool visible = true, bool hasMenu = true, bool hasStatusbar = true);
+			TWindowBase(const QString& title, int width, int height,
+						bool visible = true, bool hasMenu = true, bool hasStatusbar = true);
 			
-			explicit WindowBase(QWidget* parent, const QString& title, int width, int height,
-			                    bool visible = true, bool enableMenu = true, bool statusbar = false);
+			TWindowBase(QWidget* parent, const QString& title, int width, int height,
+						bool visible = true, bool enableMenu = true, bool statusbar = false);
 			
-			virtual ~WindowBase() dxDECL_OVERRIDE;
+			virtual ~TWindowBase() override;
 			
 			QWidget* getChildWidget(const QString& childName);
 		
@@ -69,7 +68,7 @@ namespace Dixter
 			
 			void onQuit();
 			
-			virtual void setSize(i32 width, i32 height);
+			virtual void setSize(Int32 width, Int32 height);
 			
 			virtual void connectEvents();
 		
@@ -78,11 +77,11 @@ namespace Dixter
 			
 			bool m_hasStatusBar;
 			
-			Group<QObject, MenuID>* m_objects;
+			TGroup<QObject, EMenuID>* m_objects;
 			
 			QStatusBar* m_statbar;
 			
-			SettingsDialog* m_settingsDialog;
+			TSettingsDialog* m_settingsDialog;
 		};
 	}
 }

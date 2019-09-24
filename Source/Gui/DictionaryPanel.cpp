@@ -15,7 +15,7 @@
 #include "Gui/TextList.hpp"
 #include "Gui/OptionBox.hpp"
 #include "Gui/Label.hpp"
-#include "OpenTranslate/Alphabet.hpp"
+#include "OpenTranslate/Dictionary.hpp"
 
 using namespace std;
 
@@ -23,63 +23,70 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		using namespace Utilities::Strings;
-		using namespace Utilities::Algorithms;
+		namespace StringUtils   = Utilities::Strings;
+		namespace AlgoUtils     = Utilities::Algorithms;
 		
-		DictionaryPanel::DictionaryPanel(QWidget* parent, int width, int height, const QString& name)
-				: Panel(parent, QSize(width, height), name),
-				  m_isLanguageSet { false },
-				  m_grids { new GridGroup },
-				  m_widgets { new WidgetGroup },
-				  m_languages { new OpenTranslate::LanguageBook() }
+		template<typename T>
+		using TVector = std::vector<T>;
+		
+		TDictionaryPanel::TDictionaryPanel(QWidget* parent, int width, int height, const QString& name)
+				: TPanel(parent, QSize(width, height), name),
+				  m_isLanguageSet(false),
+				  m_grids(new GridGroup),
+				  m_widgets(new WidgetGroup)
 		{
 			init();
 			setObjectName(name);
+			connectEvents();
 		}
 		
-		DictionaryPanel::~DictionaryPanel()
+		TDictionaryPanel::~TDictionaryPanel()
 		{
-			SAFE_RELEASE(m_grids)
-			SAFE_RELEASE(m_widgets)
-			SAFE_RELEASE(m_languages)
+			delete m_grids;
+			delete m_widgets;
 		}
 		
-		void DictionaryPanel::show(bool show)
+		void TDictionaryPanel::show(bool show)
 		{
 			m_widgets->forEach(&QWidget::setVisible, show);
 		}
 		
-		std::shared_ptr<OptionBox>
-		DictionaryPanel::getOptionBox(WidgetID widgetID)
+		std::shared_ptr<TOptionBox>
+		TDictionaryPanel::getOptionBox(EWidgetID widgetID)
 		{
-			return std::make_shared<OptionBox>(m_widgets->get<OptionBox>(g_widgetGroup, widgetID));
+			return dxMAKE_SHARED(TOptionBox, m_widgets->get<TOptionBox>(g_widgetGroup, widgetID));
 		}
 		
-		void DictionaryPanel::init()
+		void TDictionaryPanel::init()
 		{
-			auto __pMainGrid = m_grids->add<QVBoxLayout>(g_layoutGroup, new QVBoxLayout(this),
-			                                             WidgetID::Grid);
-			auto __pTextList = m_widgets->add<TextList>(g_widgetGroup, new TextList(),
-			                                            WidgetID::TextView);
-			auto __pWordBox = m_grids->add<QVBoxLayout>(g_layoutGroup, new QVBoxLayout(),
-			                                            WidgetID::WordBox);
-			auto __pLangBoxL = m_widgets->add<OptionBox>(g_widgetGroup, new OptionBox(nullptr, QString("Select language...")),
-			                                             WidgetID::LangboxWest);
-			auto __pLangBoxR = m_widgets->add<OptionBox>(g_widgetGroup, new OptionBox(nullptr, QString("Select language...")),
-			                                             WidgetID::LangboxEast);
+			auto __pMainGrid = m_grids->add<QVBoxLayout>(
+					g_layoutGroup, new QVBoxLayout(this), EWidgetID::Grid);
+			auto __pTextList = m_widgets->add<TTextList>(
+					g_widgetGroup, new TTextList(), EWidgetID::TextView);
+			auto __pWordBox = m_grids->add<QVBoxLayout>(
+					g_layoutGroup, new QVBoxLayout(), EWidgetID::WordBox);
+			auto __pLangBoxL = m_widgets->add<TOptionBox>(
+					g_widgetGroup,
+					new TOptionBox(nullptr, QString("Select language...")),
+					EWidgetID::LangboxWest);
+			auto __pLangBoxR = m_widgets->add<TOptionBox>(
+					g_widgetGroup,
+					new TOptionBox(nullptr, QString("Select language...")),
+					EWidgetID::LangboxEast);
 			auto __controlGroup = new QGroupBox();
 			auto __ctrlBox = new QHBoxLayout();
-			auto fromLabel = new Label(tr("From"), __pLangBoxL);
-			auto toLabel = new Label(tr("To"), __pLangBoxR);
+			auto __fromLabel = new TLabel(tr("From"), __pLangBoxL);
+			auto __toLabel = new TLabel(tr("To"), __pLangBoxR);
 			
-			// Search Entry for words in Database
-			auto __pSrchCtrl = m_widgets->add<SearchEntry>(g_widgetGroup, new SearchEntry(this, tr("Search...")),
-			                                               WidgetID::SearchControl, true);
+			// Search entry for words in a Database
+			auto __pSrchCtrl = m_widgets->add<TSearchEntry>(
+					g_widgetGroup, new TSearchEntry(this, tr("Search...")),
+					EWidgetID::SearchControl, true);
 			
-			__ctrlBox->addWidget(fromLabel);
+			__ctrlBox->addWidget(__fromLabel);
 			__ctrlBox->addWidget(__pLangBoxL);
 			__ctrlBox->addWidget(__pSrchCtrl);
-			__ctrlBox->addWidget(toLabel);
+			__ctrlBox->addWidget(__toLabel);
 			__ctrlBox->addWidget(__pLangBoxR);
 			
 			__controlGroup->setLayout(__ctrlBox);
@@ -99,88 +106,85 @@ namespace Dixter
 			setLayout(__pMainGrid);
 		}
 		
-		void DictionaryPanel::connectEvents()
+		void TDictionaryPanel::connectEvents()
 		{
+			auto __pSrchCtrl = m_widgets->get<TSearchEntry>(g_widgetGroup, EWidgetID::SearchControl);
+			connect(
+					__pSrchCtrl, SIGNAL(textChanged(
+												const QString&)), this, SLOT(onSearch(
+																					 const QString&)));
 		}
 		
-		void DictionaryPanel::setValues()
+		void TDictionaryPanel::setValues()
 		{
-			
-			auto __langNameList = vector<ustring_t>();
-			auto __langNameDisplayList = std::vector<ustring_t>();
-			auto __langIdList = vector<ustring_t>();
+			auto __langNameList = TVector<TUString>();
+			auto __langNameDisplayList = TVector<TUString>();
+			auto __langIdList = TVector<TUString>();
 			try
 			{
-				auto confMgr = ConfigurationManager::getManager(ConfigurationType::ConfigXml);
-				
-				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangNameNode, __langNameList);
-				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangNameDisplayNode, __langNameDisplayList);
-				confMgr->getAccessor()->getValues(NodeKey::kLangRoot, NodeKey::kLangIdNode, __langIdList);
-			} catch (Exception& e)
+				TConfigurationManager::getManager(EConfiguration::XML)
+						->getAccessor()
+						->getValues(NodeKey::kLangNameNode, __langNameList, NodeKey::kLangRoot)
+						->getValues(NodeKey::kLangNameDisplayNode, __langNameDisplayList, NodeKey::kLangRoot)
+						->getValues(NodeKey::kLangIdNode, __langIdList, NodeKey::kLangRoot);
+			}
+			catch (TException& e)
 			{
 				printerr(e.what())
 			}
 			
-			foreachCompound(__langNameList, __langIdList,
-			                [ & ](const ustring_t& langName, const ustring_t& langId)
-			                {
-				                m_languages->insert(langName.asUTF8(), langId.asUTF8());
-			                });
+			auto __languages = TVector<TUString>(__langNameList);
 			
-			auto __languages = std::vector<ustring_t>(__langNameList);
+			AlgoUtils::foreachCompound<TVector<TUString>>(
+					__languages, __langNameDisplayList,
+					[](TUString& langName, const TUString& langNameDisplay)
+					{
+						langName.append(u" / ");
+						langName.append(langNameDisplay);
+					});
 			
-			foreachCompound<std::vector<ustring_t>>(__languages, __langNameDisplayList,
-			                                        [ ](ustring_t& langName, const ustring_t& langNameDisplay)
-			                                        {
-				                                        langName.append(u" / ");
-				                                        langName.append(langNameDisplay);
-			                                        });
-			
-			m_widgets->get<OptionBox>(g_widgetGroup, WidgetID::LangboxWest)->setValues(__languages);
-			m_widgets->get<OptionBox>(g_widgetGroup, WidgetID::LangboxEast)->setValues(__languages);
+			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest)->setValues(__languages);
+			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxEast)->setValues(__languages);
 		}
 		
-		void DictionaryPanel::onCopyButton(void* event)
-		{
-			Q_UNUSED(event)
-		}
+		void TDictionaryPanel::onCopyButton(void)
+		{ }
 		
-		void DictionaryPanel::onClearButton(void* event)
-		{
-			Q_UNUSED(event)
-		}
+		void TDictionaryPanel::onClearButton(void)
+		{ }
 		
-		void DictionaryPanel::onSearch(void* event)
+		void TDictionaryPanel::onLanguageChange(void)
 		{
-			Q_UNUSED(event)
-		}
-		
-		void DictionaryPanel::onLanguageChange(void* event)
-		{
-			Q_UNUSED(event)
-			OptionBox* __pLangBox = nullptr;
+			TOptionBox* __pLangBox = nullptr;
 			try
 			{
-				__pLangBox = m_widgets->get<OptionBox>(g_widgetGroup, WidgetID::LangboxWest);
-			} catch (Exception& e)
+				__pLangBox = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest);
+			}
+			catch (TException& e)
 			{
 				printerr(e.what())
 				return;
 			}
 			
 			// __pLangBox->onChanged(event);
-			auto __pTextList = m_widgets->get<TextList>(g_widgetGroup, WidgetID::TextView);
-			if (!__pLangBox->isPlaceholderSet())
+			auto __pTextList = m_widgets->get<TTextList>(g_widgetGroup, EWidgetID::TextView);
+			if (not __pLangBox->isPlaceholderSet())
 			{
-				ustring_t __structureList { };
-				ustring_t __langName { };
+				TUString __structureList {};
+				TUString __langName {};
 				auto __strSel = __pLangBox->currentText();
 				try
 				{
-					auto confMgr = ConfigurationManager::getManager(ConfigurationType::ConfigXml);
-					__structureList = confMgr->getAccessor()->getValue(NodeKey::kLangRoot, __strSel, NodeKey::kLangStructureNode);
-					__langName = confMgr->getAccessor()->getValue(NodeKey::kLangRoot, __strSel, NodeKey::kLangNameNode);
-				} catch (Exception& e)
+					__structureList =
+							TConfigurationManager::getManager(EConfiguration::XML)
+									->getAccessor()
+									->getValue(NodeKey::kLangStructureNode, __strSel, NodeKey::kLangRoot);
+					__langName =
+							TConfigurationManager::getManager(EConfiguration::XML)
+									->getAccessor()
+									->getValue(NodeKey::kLangNameNode, __strSel, NodeKey::kLangRoot);
+				}
+				catch (TException& e)
 				{
 					printerr(e.what())
 				}
@@ -190,7 +194,26 @@ namespace Dixter
 			}
 		}
 		
-		QWidget* DictionaryPanel::getWidget(WidgetID id)
+		void TDictionaryPanel::onSearch(dxMAYBE_UNUSED const QString& text)
+		{
+			/*
+			OpenTranslate::TDictionary __dict(m_dbManager, "tables", "original_value");
+			auto res = __dict.search(text.toStdString(), "paradigm");
+			
+			std::ostringstream __oss {};
+			uint __index {};
+			for (const auto&[__key, __valueVector] : res)
+				for (; __index < __valueVector.size(); ++__index)
+				{
+					__oss << __valueVector.at(__index) << " ";
+				}
+			
+			__oss << g_endLine;
+			printl_log(__oss.str())
+			*/
+		}
+		
+		QWidget* TDictionaryPanel::getWidget(EWidgetID id)
 		{
 			return m_widgets->get(id);
 		}

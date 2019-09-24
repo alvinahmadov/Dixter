@@ -8,7 +8,8 @@
         Qt5::Widgets
         )
     
-    file(GLOB ${DIXTER_GUI}_SOURCE_FILES ${GUI_SRC}/*.cpp ${OT_SRC}/LanguageBook.cpp ${OT_SRC}/Alphabet.cpp)
+    file(GLOB ${DIXTER_GUI}_SOURCE_FILES ${GUI_SRC}/*.cpp
+         ${OT_SRC}/Dictionary.cpp)
 
     add_library(${DIXTER_GUI} SHARED ${${DIXTER_GUI}_SOURCE_FILES})
     target_include_directories(${DIXTER_GUI} PUBLIC ${${DIXTER_GUI}_TARGET_INCLUDE_DIRS})
@@ -18,5 +19,7 @@
             ${DIXTER_GUI}
             PROPERTIES
             AUTOMOC ON
+            AUTOUIC ON
+            AUTORCC ON
     )
     

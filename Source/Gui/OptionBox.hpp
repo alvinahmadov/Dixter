@@ -8,8 +8,6 @@
  */
 #pragma once
 
-#include "Utilities.hpp"
-
 #include <QComboBox>
 
 class QWidget;
@@ -18,35 +16,34 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class OptionBox : public QComboBox
+		class TOptionBox : public QComboBox
 		{
 		Q_OBJECT
 		public:
-			explicit OptionBox(QWidget* parent,
-			                   const QString& placeholder = QString { "Select..." },
-			                   const QSize& size = QSize(), bool sort = true);
+			TOptionBox(QWidget* parent,
+					   const QString& placeholder = QString("Select..." ),
+					   const QSize& size = QSize(), bool sort = true);
 		
-			explicit OptionBox(const QString& placeholder = QString { "Select..." },
-			                   const QSize& size = QSize(), bool sort = true);
+			TOptionBox(const QString& placeholder = QString("Select..."),
+					   const QSize& size = QSize(), bool sort = true);
 			
-			~OptionBox() dxDECL_OVERRIDE;
+			~TOptionBox() override = default;
 			
 			void setPlaceholder(const QString& placeholder);
 			
 			void resetPlaceholder();
 			
-			void setValues(std::vector<ustring_t>& options, bool sort = false);
+			void setValues(std::vector<TUString>& options, bool sort = false);
 			
 			void setValues(const QStringList& options);
 			
-			/// Change current value of src to this one
-			void swapCurrent(OptionBox* src);
+			void swapCurrent(TOptionBox* src);
 			
 			void sort(bool ascending = true);
 			
-			int getItemCount() const;
+			Int32 getItemCount() const;
 			
-			pos_t getPosition(const QString& value);
+			Int32 getPosition(const QString& value);
 			
 			bool isPlaceholderSet() const;
 		

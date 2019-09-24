@@ -15,25 +15,24 @@ namespace Dixter
 	namespace Gui
 	{
 		//Button implementation
-		Button::Button(QWidget* parent, const QString& label)
+		TButton::TButton(QWidget* parent, const QString& label)
 				: QPushButton(label, parent)
 		{
 		}
 		
-		Button::Button(QIcon icon, QWidget *parent)
-				: Button(parent,QString())
+		TButton::TButton(QIcon icon, QWidget* parent)
+				: TButton(parent, QString())
 		{
 			icon.actualSize(size());
 			setIcon(icon);
 		}
 		
-		Button::Button(const QString& label)
-				: Button(nullptr, label)
+		TButton::TButton(const QString& label)
+				: TButton(nullptr, label)
 		{
 		}
 		
-		Button::~Button()
-		{
-		}
+		TButton::~TButton()
+		{ }
 	}
 }

@@ -13,50 +13,55 @@
 #include "Commons.hpp"
 #include "Gui/Panel.hpp"
 #include "Gui/SearchEntry.hpp"
-#include "OpenTranslate/LanguageBook.hpp"
 
 namespace Dixter
 {
+	namespace Database
+	{
+		class TManager;
+	}
+	
 	namespace Gui
 	{
-		class OptionBox;
+		class TOptionBox;
 		
-		class DictionaryPanel : public Panel
+		class TDictionaryPanel : public TPanel
 		{
 		Q_OBJECT
 		private:
-			using ColumnList    = std::list<ustring_t>;
-			using WidgetGroup   = Group<QWidget, WidgetID>;
-			using GridGroup     = Group<QLayout, WidgetID>;
+			using ColumnList    = std::list<TUString>;
+			using WidgetGroup   = TGroup<QWidget, EWidgetID>;
+			using GridGroup     = TGroup<QLayout, EWidgetID>;
 		
 		public:
-			explicit DictionaryPanel(QWidget* parent, int width = -1, int height = -1,
-			                         const QString& name = g_dictionaryName);
+			explicit TDictionaryPanel(QWidget* parent, int width = -1, int height = -1,
+			                          const QString& name = g_dictionaryName);
 			
-			virtual ~DictionaryPanel() dxDECL_OVERRIDE;
+			virtual ~TDictionaryPanel() override;
 			
 			void show(bool show = true);
 			
-			std::shared_ptr<OptionBox>
-			getOptionBox(WidgetID widgetID);
+			std::shared_ptr<TOptionBox>
+			getOptionBox(EWidgetID widgetID);
 			
-			QWidget* getWidget(WidgetID id);
+			QWidget* getWidget(EWidgetID id);
 		
 		protected:
 			
 			void init();
 			
-			void connectEvents() dxDECL_OVERRIDE;
+			void connectEvents() override;
 			
 			void setValues();
 			
-			void onCopyButton(void* event);
+			void onCopyButton(void);
 			
-			void onClearButton(void* event);
+			void onClearButton(void);
 			
-			void onSearch(void*  event);
+			void onLanguageChange(void);
+		protected slots:
 			
-			void onLanguageChange(void*  event);
+			void onSearch(const QString& text);
 		
 		private:
 			bool m_isLanguageSet;
@@ -64,8 +69,6 @@ namespace Dixter
 			GridGroup* m_grids;
 			
 			WidgetGroup* m_widgets;
-			
-			OpenTranslate::LanguageBook* m_languages;
 		};
 	}
 }
