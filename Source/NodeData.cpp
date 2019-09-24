@@ -76,7 +76,7 @@ namespace Dixter
 			if (__node->has(name))
 				__node->m_value = value;
 		
-		throw NotFoundException("%s:%d No node with name %s.", __FILE__, __LINE__, name);
+		throw TNotFoundException("%s:%d No node with name %s.", __FILE__, __LINE__, name);
 	}
 	
 	TUString
@@ -86,7 +86,7 @@ namespace Dixter
 			if (__node->has(name))
 				return __node->m_value;
 		
-		throw NotFoundException("%s:%d No node with name %s.", __FILE__, __LINE__, name);
+		throw TNotFoundException("%s:%d No node with name %s.", __FILE__, __LINE__, name);
 	}
 	
 	const TNodeData::TNodeList&
