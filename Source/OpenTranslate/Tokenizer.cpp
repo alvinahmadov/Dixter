@@ -120,7 +120,7 @@ namespace Dixter
 			if (m_chunks.size() > 1)
 				return m_chunks.at(index);
 			
-			throw NotFoundException("%s:%d View by index %d not found", __FILE__, __LINE__, index);
+			throw TNotFoundException("%s:%d View by index %d not found", __FILE__, __LINE__, index);
 		}
 		
 		const TToken::TTokenInfo&
