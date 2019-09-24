@@ -11,6 +11,7 @@
 #include <iostream>
 #include <algorithm>
 #include <limits>
+#include <sstream>
 #include <boost/format.hpp>
 #include <list>
 #include <cstring>
@@ -19,13 +20,11 @@
 
 #ifdef HAVE_CXX17
 
-#include <string_view>
 #include <any>
 
 #else
 
 #include <boost/any.hpp>
-#include "StringView.hpp"
 
 #endif
 
@@ -84,15 +83,13 @@ namespace Dixter
 			         typename Iterator = typename Container::iterator>
 			void foreachCompound(Container& container1, Container& container2, Functor functor)
 			{
-				// if (container1.size() != container2.size())
-				// {
-				// 	return;
-				// }
+				if (container1.size() != container2.size())
+					return;
 				Iterator __lFirst = container1.begin();
 				Iterator __rFirst = container2.begin();
 				Iterator __lLast = container1.end();
 				Iterator __rLast = container2.end();
-				for (; __lFirst != __lLast && __rFirst != __rLast; ++__rFirst, ++__lFirst)
+				for (; __lFirst != __lLast and __rFirst != __rLast; ++__rFirst, ++__lFirst)
 				{
 					functor(*__lFirst, *__rFirst);
 				}
@@ -105,13 +102,13 @@ namespace Dixter
 			         typename OIterator = typename Container2::iterator>
 			void foreachCompound(Container1& container1, Container2& container2, Functor functor)
 			{
-				if (size_t(container1.size()) != size_t(container2.size()))
+				if (TSize(container1.size()) != TSize(container2.size()))
 					return;
 				IIterator __lFirst = container1.begin();
 				OIterator __rFirst = container2.begin();
 				IIterator __lLast = container1.end();
 				OIterator __rLast = container2.end();
-				for (; __lFirst != __lLast && __rFirst != __rLast; ++__rFirst, ++__lFirst)
+				for (; __lFirst != __lLast and __rFirst != __rLast; ++__rFirst, ++__lFirst)
 				{
 					functor(*__lFirst, *__rFirst);
 				}
@@ -127,12 +124,25 @@ namespace Dixter
 				Iterator __rFirst = container2->begin();
 				Iterator __lLast = container1->begin();
 				Iterator __rLast = container2->begin();
-				for (; __lFirst != __lLast && __rFirst != __rLast; ++__rFirst, ++__lFirst)
+				for (; __lFirst != __lLast and __rFirst != __rLast; ++__rFirst, ++__lFirst)
 				{
 					functor(__lFirst, __rFirst);
 				}
 			}
-		}
+			
+			template<typename TContainer, typename IIterator>
+			typename std::iterator_traits<IIterator>::difference_type
+			count(IIterator first, IIterator last, const TContainer& container)
+			{
+				typename std::iterator_traits<IIterator>::difference_type __diff{};
+				for (const auto& __v : container)
+				{
+					__diff += std::count(first, last, __v);
+				}
+				
+				return __diff;
+			}
+		} // namespace Algorithms
 		namespace Strings
 		{
 			// Utilities to work with string types
@@ -152,8 +162,8 @@ namespace Dixter
 			StringType join(const Container& container, CharType separator = CharType(','))
 			{
 				StringType __result { };
-				size_t __index { };
-				size_t __start { };
+				TSize __index { };
+				TSize __start { };
 				for (const StringType& __val : container)
 				{
 					while (true)
@@ -185,13 +195,13 @@ namespace Dixter
 			         class CharType = typename StringType::value_type>
 			Container split(const StringType& str, CharType separator = CharType(','))
 			{
-				size_t __start { };
-				size_t __pos { };
+				TSize __start { };
+				TSize __pos { };
 				Container __container = Container();
 				while (__pos != StringType::npos)
 				{
 					__pos = str.find(separator, __start);
-					__container.push_back(str.substr(__start, __pos - __start));
+					__container.push_back(str.substr(__start, __pos - __start + 1));
 					__start = __pos + 1;
 				}
 				
@@ -204,28 +214,26 @@ namespace Dixter
 			{
 				str = str.erase(str.find(charCode), 1);
 				if (symmetrical)
-				{
 					str = str.erase(str.find(charCode, str.size() - 1), 1);
-				}
 			}
 			
 			template<typename ... Strings>
-			string_t concat(Strings... args)
+			TString concat(Strings... args)
 			{
-				string_t __result { };
-				std::initializer_list<string_t> __argList { std::forward<Strings>(args)... };
+				TString __result { };
+				std::initializer_list<TString> __argList { std::forward<Strings>(args)... };
 				for (const auto& value : __argList)
 					__result.append(value);
 				
 				return __result;
 			}
 			
-			template<typename ... Args, typename Char = typename string_t::value_type>
-			string_t buildPath(Char separator, const Args& ... args)
+			template<typename ... Args, typename Char = typename TString::value_type>
+			TString buildPath(Char separator, const Args& ... args)
 			{
-				string_t __res { };
-				std::initializer_list<string_t> __strings { args... };
-				size_t __index = 0;
+				TString __res { };
+				std::initializer_list<TString> __strings { args... };
+				TSize __index = 0;
 				
 				if (sizeof...(Args) > 1)
 				{
@@ -245,14 +253,18 @@ namespace Dixter
 				return __res;
 			}
 			
-			template<class String, typename ... Args, typename Char = typename String::value_type>
-			void buildPath(String& returnValue, Char separator, const Args& ... args)
+			template<
+					class TString,
+					typename... TArgs,
+					typename TChar = typename TString::value_type
+			>
+			void buildPath(TString& returnValue, TChar separator, const TArgs& ... args)
 			{
-				std::list<String> __strings { args... };
+				std::list<TString> __strings { args... };
 				
-				if (sizeof...(Args) > 1)
-				{
-					size_t __index = 0;
+				// if (sizeof...(TArgs) > 1)
+				// {
+					TSize __index = 0;
 					for (const auto& str : __strings)
 					{
 						returnValue.append(str);
@@ -261,10 +273,10 @@ namespace Dixter
 							returnValue += separator;
 						}
 					}
-				} else
-				{
-					returnValue.append(1, separator).append(__strings.back());
-				}
+				// } else
+				// {
+				// 	returnValue.append(1, separator).append(__strings.back());
+				// }
 			}
 			
 			template<typename String, typename Char = typename String::value_type>
@@ -274,66 +286,79 @@ namespace Dixter
 				returnValue.insert(returnValue.length(), 1, endChar);
 			}
 			
-			template<class Container,
-			         typename ValueType = typename Container::value_type>
-			string_t toString(const Container& container, char delim = ',')
+			template<typename TIIterator>
+			TString toString(TIIterator first, TIIterator last, const TByte* sep = ", ", int width = -1)
 			{
-				string_t __result;
-				bool __isArithmetic;
-				typedef ValueType value_type;
-				typedef typename string_t::size_type size_type;
+				const TSize __distance = std::distance(first, last);
+				if (__distance < 1)
+					return "[]";
 				
-				#ifdef HAVE_CXX17
-				__isArithmetic = std::is_arithmetic_v<value_type>;
-				#elif defined(HAVE_CXX14) || defined(HAVE_CXX11)
-				__isArithmetic = std::is_arithmetic<value_type>::value;
-				#endif
+				TSize __counter {};
+				std::ostringstream __oss{};
+				__oss << '[';
 				
-				size_type __index { };
-				
-				__result.push_back('[');
-				for (auto __containerItem : container)
+				for(; first != last; ++first, ++__counter)
 				{
-					if (__isArithmetic)
-					{
-						auto strItem = std::to_string(__containerItem);
-						__result.append(strItem);
-					}
-					/*
-					else
-					{
-						if (__containerItem.size() > 1)
-							__result.append(__containerItem);
-						else
-							__result.push_back(1, __containerItem);
-					}
-					*/
-					
-					if ((++__index != container.size()) && container.size() > 1)
-					{
-						__result.append(1, delim).push_back(' ');
-					}
+					__oss << *first;
+					__oss << sep;
+					if (width > 0 && __counter%width == 0)
+						__oss << '\n';
 				}
-				__result.push_back(']');
-				return __result;
+				__oss << ']';
+				
+				return __oss.str();
 			}
 			
-			wstring_t toWstring(const std::string& str);
+			template<typename TSeqContainer>
+			inline TString toString(TSeqContainer container, const TByte* sep = ", ", int width = -1)
+			{
+				return toString(std::begin(container), std::end(container), sep, width);
+			}
+			
+			TWString toWstring(const std::string& str);
 			
 			int wstrToInt(const std::wstring& value);
+			
+			#ifdef HAVE_CXX17
+			
+			inline void removePrefix(TStringView& strView, TSize n)
+			{
+				strView.remove_prefix(n);
+			};
+			
+			inline void removeSuffix(TStringView& strView, TSize n)
+			{
+				strView.remove_suffix(n);
+			};
+			
+			inline TStringView range(TStringView& stringView, TSize begin, TSize end)
+			{
+				auto len = std::min(end, stringView.length());
+				return TStringView(stringView.data() + begin, len);
+			}
+			
+			template<typename Functor>
+			inline TStringView rangefn(TStringView& stringView, TSize begin, TSize end, Functor f)
+			{
+				auto len = std::min(end, stringView.length());
+				auto rng = f(TStringView(stringView.data() + begin, len));
+				return rng;
+			}
+			
+			#endif
 			
 			//TODO: Fix for integral and string types
 			#ifdef USE_TO_STRING_CONVERSION
 			template<class Map,
-				typename KeyType    = typename Map::key_type,
-				typename MappedType = typename Map::mapped_type>
-		string_t toString(const Map& map,
+				typename KeyType    = typename Map::TKey,
+				typename MappedType = typename Map::TMapped>
+		TString toString(const Map& map,
 						  char pairDelim, char delim = ',')
 		{
-			string_t __result;
+			TString __result;
 			bool keyIsArithmetic{};
 			bool MappedIsArithmetic{};
-			typedef typename string_t::size_type size_type;
+			typedef typename TString::TSizeype TSizeype;
 			#if HAVE_CXX17
 			typedef std::remove_reference_t<std::remove_const_t<KeyType>>       non_const_key_t;
 			typedef std::remove_reference_t<std::remove_const_t<MappedType>>    non_const_mapped_t;
@@ -342,13 +367,13 @@ namespace Dixter
 			#elif HAVE_CXX14 || HAVE_CXX11
 			typedef std::remove_reference_t<std::remove_const_t<KeyType>>       non_const_key_t;
 			typedef std::remove_reference_t<std::remove_const_t<MappedType>>    non_const_mapped_t;
-			keyIsArithmetic    = std::is_arithmetic<non_const_key_t>::value;
-			MappedIsArithmetic = std::is_arithmetic<non_const_mapped_t>::value;
+			keyIsArithmetic    = std::is_arithmetic<non_const_key_t>::m_value;
+			MappedIsArithmetic = std::is_arithmetic<non_const_mapped_t>::m_value;
 			#elif defined(HAVE_LEGACY)
 			typedef typename ArithmeticType non_const_rvalue_type;
 			#endif
 
-			size_type __index {};
+			TSizeype __index {};
 			__result.push_back('[');
 			for (auto __pair : map)
 			{
@@ -396,17 +421,14 @@ namespace Dixter
 			}
 			
 			template<typename ArithmeticType>
-			string_t to_string(ArithmeticType value)
+			TString to_string(ArithmeticType value)
 			{
-				bool __isSame { };
 				#ifdef HAVE_CXX17
 				typedef std::remove_reference_t<std::remove_const_t<ArithmeticType>> non_const_rvalue_t;
-				__isSame = std::is_same_v<string_t, ArithmeticType>;
-				#elif defined(HAVE_CXX14) || defined(HAVE_CXX11)
+				constexpr bool __isSame = std::is_same_v<TString, ArithmeticType>;
+				#elif defined(HAVE_CXX14) or defined(HAVE_CXX11)
 				typedef typename std::remove_reference<typename std::remove_const<ArithmeticType>::type>::type non_const_rvalue_t;
-			__isSame = std::is_same<string_t, ArithmeticType>::value;
-			#elif defined(HAVE_LEGACY)
-			typedef typename ArithmeticType non_const_rvalue_type;
+				constexpr bool __isSame = std::is_same<TString, ArithmeticType>::m_value;
 				#endif
 				auto nonConstRvalue = static_cast<non_const_rvalue_t>(value);
 				if (__isSame)
@@ -419,9 +441,9 @@ namespace Dixter
 				return "";
 			}
 			
-			int uStringToInt(const ustring_t& value);
+			int uStringToInt(const TUString& value);
 			
-			ustring_t intToUstring(int value);
-		}
-	}
-}
+			TUString intToUstring(int value);
+		} // namespace Strings
+	} // namespace Utilities
+} // namespace Dixter
