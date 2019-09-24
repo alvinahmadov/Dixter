@@ -12,33 +12,24 @@
 
 #include <functional>
 #include <boost/format.hpp>
-#include <exception>
 #include <map>
 #include <list>
-#include "Macros.hpp"
+#include <chrono>
+#include <memory>
 #include "Types.hpp"
-#ifdef BENCHMARK_TEST
-#include <boost/timer.hpp>
-#endif
 
 #ifdef HAVE_CXX17
 
 #include <any>
 
 #else
+
 #include <boost/any.hpp>
+
 #endif
 
 namespace Dixter
 {
-#ifdef BENCHMARK_TEST
-	#define BENCH_BEGIN auto t = ::boost::timer {};
-	#define BENCH_END   printf("Overall run time %lf seconds.", t.elapsed());
-#else
-	#define BENCH_BEGIN
-	#define BENCH_END
-#endif
-	
 	namespace Internal
 	{
 		#ifdef HAVE_CXX17
@@ -71,7 +62,6 @@ namespace Dixter
 			return ::boost::any_cast<ValueType>(op);
 		}
 		
-		
 		template<typename ValueType>
 		ValueType any_cast(any& op)
 		{
@@ -83,8 +73,9 @@ namespace Dixter
 		{
 			return ::boost::any_cast<ValueType>(op);
 		}
+		
 		#endif
-	}
+	} // namespace Internal
 	
 	using any_t = Internal::any;
 	
@@ -97,15 +88,10 @@ namespace Dixter
 	 * Derived classes will have a default ctor. Implements C++ version-dependent
 	 * default construction.
 	 * */
-	struct Constructible
+	struct DefaultConstructible
 	{
-		#ifdef HAVE_CXX11
-		/// Default ctor.
-		Constructible() = default;
-		
-		#else
-		Constructible() {};
-		#endif
+	protected:
+		DefaultConstructible() = default;
 	};
 	
 	/**
@@ -120,12 +106,14 @@ namespace Dixter
 	 * */
 	struct CopyConstructible
 	{
-		CopyConstructible() = default;
-		/// Default copy ctor.
-		CopyConstructible(const CopyConstructible&) = default;
+	protected:
+		CopyConstructible() noexcept = default;
 		
-		/// Default copy operator.
-		CopyConstructible& operator=(const CopyConstructible&) = default;
+		virtual ~CopyConstructible() noexcept = default;
+		
+		CopyConstructible(const CopyConstructible&) noexcept = default;
+		
+		CopyConstructible& operator=(const CopyConstructible&) noexcept = default;
 	};
 	
 	/**
@@ -140,17 +128,14 @@ namespace Dixter
 	 * */
 	struct Movable
 	{
-		#ifdef HAVE_CXX11
+	protected:
+		constexpr Movable() noexcept = default;
 		
-		Movable() = default;
+		virtual ~Movable() noexcept = default;
 		
-		Movable(Movable&&) = default;
+		Movable(Movable&&) noexcept = default;
 		
-		#else
-		Movable() {};
-		
-		Movable(Movable&&);
-		#endif
+		Movable& operator=(Movable&&) noexcept = default;
 	};
 	
 	/**
@@ -165,81 +150,18 @@ namespace Dixter
 	 * */
 	struct NonCopyable
 	{
-		#ifdef HAVE_CXX11
-		/// Default ctor.
+	protected:
 		NonCopyable() = default;
 		
-		/// Deleted copy ctor.
+		virtual ~NonCopyable() = default;
+		
+		NonCopyable(NonCopyable&& other) = default;
+		
+		NonCopyable& operator=(NonCopyable&& other) = default;
+		
 		NonCopyable(const NonCopyable&) = delete;
 		
-		/// Deleted copy operator.
 		NonCopyable& operator=(const NonCopyable&) = delete;
-		
-		#else
-		public:
-		/// Public default ctor.
-			NonCopyable() {};
-			
-		private:
-		/// Private copy ctor
-			NonCopyable(const NonCopyable &src);
-			
-		/// Private copy operator.
-			NonCopyable &operator=(const NonCopyable &src);
-		#endif
-	};
-	
-	/**
-	 * \author Alvin Ahmadov <alvin.dev.ahmadov%gmail.com>
-	 * \namespace Dixter
-	 * \ingroup base
-	 * \class DefaultNonCopyable
-	 * \brief Implements default ctor and non-copyable concept.
-	 *
-	 * Derived classes will have a default and non-copyable ctors. Implements C++ version-dependent
-	 * default ctor and non-copyable ctors.
-	 * */
-	struct DefaultNonCopyable : public Constructible
-	{
-		#ifdef HAVE_CXX11
-		/// Default ctor.
-		DefaultNonCopyable() = default;
-		
-		/// Deleted copy ctor.
-		DefaultNonCopyable(const DefaultNonCopyable&) = delete;
-		
-		/// Deleted copy operator.
-		DefaultNonCopyable& operator=(const DefaultNonCopyable&) = delete;
-		
-		#else
-		public:
-		DefaultNonCopyable() {};
-		private:
-			DefaultNonCopyable(const DefaultNonCopyable &src);
-			
-			DefaultNonCopyable &operator=(const DefaultNonCopyable &src);
-		#endif
-	};
-	
-	/**
-	 * \author Alvin Ahmadov <alvin.dev.ahmadov%gmail.com>
-	 * \namespace Dixter
-	 * \ingroup base
-	 * \class NonDefault
-	 * \brief Implements deleted default concept.
-	 *
-	 * Derived classes will not have a default ctor. Implements C++ version-dependent
-	 * deleted default ctor.
-	 * */
-	struct NonDefault
-	{
-		#ifdef HAVE_CXX11
-		NonDefault() = delete;
-		
-		#else
-		private:
-			NonDefault() {};
-		#endif
 	};
 	
 	/**
@@ -251,7 +173,7 @@ namespace Dixter
 	 * \tparam T Type of object that implements comparable interface.
 	 * */
 	template<class T>
-	struct ComparableInterface
+	struct IComparable
 	{
 		/**
 		 * \interface ComparableInterface
@@ -261,31 +183,35 @@ namespace Dixter
 		 * Compares two elements of type T. Returns -1 if \c otherComparable
 		 * is greater than \c this, 0 if objects equal, 1 otherwise.
 		 * */
-		virtual int compareTo(const T& otherComparable) = 0;
+		virtual int compareTo(const T& otherComparable) noexcept = 0;
 	};
 	
 	template<class T>
-	class ClassInfo : public ComparableInterface<ClassInfo<T>>
+	class ClassInfo : public IComparable<ClassInfo<T>>
 	{
 	public:
-		using underlying_class_t = T;
-	
-	public:
-		virtual ~ClassInfo();
+		using TClass    = T;
+		using TClassRef = T&;
+		using TClassPtr = T*;
 		
-		static string_t getName();
+		virtual ~ClassInfo() noexcept = default;
 		
-		static const char* getRawName();
+		static TString getName();
+		
+		static constexpr
+		TByteArray getRawName();
 		
 		template<class Other>
-		constexpr static bool compare();
+		static constexpr
+		bool compare();
 		
 		/**
 		 * \link ComparableInterface::compareTo() \endlink
 		 * */
-		constexpr int compareTo(const ClassInfo<T>& other) dxDECL_OVERRIDE;
+		int compareTo(const ClassInfo<T>& other) noexcept override;
 		
-		static const size_t& getSize();
+		static constexpr
+		const TSize& getSize();
 	
 	private:
 		ClassInfo();
@@ -304,32 +230,55 @@ namespace Dixter
 			/**
 			 * \returns string name of the class
 			 * */
-			static string_t getName(const string_t& rawName);
+			static TString getName(const TString& rawName);
 			
 			/**
 			 * \see \code getName(const string_t&)
 			 * */
-			static string_t getName(const char* rawName);
+			static TString getName(const TByte* rawName);
 			
 			/**
 			 * \brief Parses raw class name to formatted one.
 			 * \see \code getName(const string_t&)
 			 * */
-			static string_t parseName(const char* raw);
+			static TString parseName(const TByte* raw);
 		
 		private:
-			static string_t _getName(const char* rawName);
-		
-		private:
-			static std::map<string_t, string_t> m_names;
-			static std::list<const byte*> m_charTable;
-			static const size_t m_charTableSize;
+			static std::map<TString, TString> m_names;
+			
+			static std::list<TByteArray> m_charTable;
+			
+			static const TSize m_charTableSize;
 		};
 	
 	private:
-		static size_t s_size;
-		const_bytes m_className;
+		static TSize m_size;
+		
+		TByteArray m_className;
+		
 		static std::unique_ptr<ClassInfo> m_classInstance;
+	};
+	
+	class StopWatch final
+	{
+		using SystemClock = std::chrono::system_clock;
+	public:
+		StopWatch() noexcept
+				: m_time(SystemClock::now())
+		{ }
+		
+		~StopWatch() noexcept
+		{
+			if (m_showOnDelete)
+				printfm("\nOverall run time %.3lf ms.\n", elapsed(true));
+		}
+		
+		inline Real32 elapsed(bool showOnDelete = false);
+	
+	private:
+		bool m_showOnDelete = true;
+		
+		SystemClock::time_point m_time;
 	};
 	
 	/**
@@ -343,7 +292,7 @@ namespace Dixter
 	template<typename... Args>
 	class VarArgMessageFormat
 	{
-		using Format = boost::basic_format<typename string_t::value_type>;
+		using Format = boost::basic_format<TString::value_type>;
 		
 		/**
 		 * \brief Check if \c arg's is of type T.
@@ -351,7 +300,8 @@ namespace Dixter
 		 * \returns True if \c T is \c arg's type.
 		 * */
 		template<typename T>
-		static constexpr bool checkTypeIdentity(const any_t& arg);
+		static constexpr
+		bool checkTypeIdentity(const any_t& arg);
 		
 		/**
 		 * \brief Casts argument to its original type and appends to string.
@@ -361,6 +311,7 @@ namespace Dixter
 		 * */
 		template<typename T>
 		static void append(Format* fmt, const any_t& arg);
+	
 	public:
 		
 		/**
@@ -368,146 +319,101 @@ namespace Dixter
 		 * \param message String to which add arguments.
 		 * \param args Arguments to be appended to \c message.
 		 * */
-		static void format(string_t& message, Args&& ... args);
-	};
-	
-	//TODO: Extend exception class to have a stackTrace functionality and detailed information.
-	class Exception : public std::exception
-	{
-	public:
-		explicit Exception(const string_t& message = string_t()) dxDECL_NOEXCEPT;
-		
-		virtual ~Exception() dxDECL_NOEXCEPT dxDECL_OVERRIDE;
-		
-		virtual const char* what() const dxDECL_NOEXCEPT dxDECL_OVERRIDE;
-		
-		virtual const string_t& getMessage() const dxDECL_NOEXCEPT;
-	
-	protected:
-		string_t m_message;
-	};
-	
-	#define DECL_DETAILED_EXCEPTION(className)                       \
-    class className : public Exception                               \
-    {                                                                \
-    public:                                                          \
-        explicit className(const string_t& message = string_t());    \
-        template <typename ... Args>                                 \
-        explicit className(string_t&& message, Args&& ... args)      \
-            : Exception()                                            \
-            {                                                        \
-               VarArgMessageFormat<Args...>::                        \
-                       format(message,                               \
-                       		std::forward<Args>(args)...);            \
-               m_message = message;        		                     \
-            };                                                       \
-        template <typename ... Args>                                 \
-        explicit className(const char* message, Args&& ... args)     \
-            : className(string_t(message), args...)                  \
-            {};                                                      \
-        ~className() dxDECL_NOEXCEPT dxDECL_OVERRIDE;                \
-        const char* what() const dxDECL_NOEXCEPT dxDECL_OVERRIDE;    \
-        const string_t& getMessage() const dxDECL_NOEXCEPT           \
-        dxDECL_OVERRIDE;                                             \
-    };
-	
-	DECL_DETAILED_EXCEPTION(NotImplementedException)
-	
-	DECL_DETAILED_EXCEPTION(IllegalArgumentException)
-	
-	DECL_DETAILED_EXCEPTION(NullPointerException)
-	
-	DECL_DETAILED_EXCEPTION(NotFoundException)
-	
-	DECL_DETAILED_EXCEPTION(RangeException)
-	
-	DECL_DETAILED_EXCEPTION(SQLException)
-	
-	struct DJBHash
-	{
-		size_t operator()(const string_t& hashKey) const;
+		static void format(TString& message, Args&& ... args);
 	};
 	
 	/// ClassInfo<> implementation
 	template<class T>
 	std::unique_ptr<ClassInfo<T>> ClassInfo<T>::m_classInstance = nullptr;
 	
-	template<class T> size_t ClassInfo<T>::s_size = 0;
+	template<class T> TSize
+			ClassInfo<T>::m_size {};
 	
 	template<class T>
 	ClassInfo<T>::ClassInfo()
-			: m_className {typeid(T).name()}
+			: m_className(typeid(T).name())
 	{
-		if (!std::is_null_pointer<T>::value)
-			s_size = sizeof(T);
+		#ifdef HAVE_CXX17
+		if constexpr (not std::is_null_pointer<TClass>::value)
+		#else
+		if (not std::is_null_pointer<T>::m_value)
+			#endif
+			m_size = sizeof(TClass);
 		else
-			s_size = 0;
+			m_size = 0;
 	}
-	
-	template<class T>
-	ClassInfo<T>::~ClassInfo()
-	{}
 	
 	template<class T>
 	inline std::unique_ptr<ClassInfo<T>>&
 	ClassInfo<T>::getInstance()
 	{
-		if (m_classInstance == nullptr)
-			m_classInstance = std::unique_ptr<ClassInfo>(new ClassInfo());
+		if (not m_classInstance)
+			m_classInstance = std::unique_ptr<ClassInfo>(new ClassInfo);
 		
 		return m_classInstance;
 	}
 	
 	template<class T>
-	inline string_t ClassInfo<T>::getName()
+	inline TString ClassInfo<T>::getName()
 	{
 		return ClassNameConvertor::getName(getRawName());
 	}
 	
 	template<class T>
-	inline const char* ClassInfo<T>::getRawName()
+	inline constexpr const char*
+	ClassInfo<T>::getRawName()
 	{
 		return getInstance()->m_className;
 	}
 	
 	template<class T>
 	template<class Other>
-	inline constexpr bool ClassInfo<T>::compare()
+	inline constexpr bool
+	ClassInfo<T>::compare()
 	{
 		#ifdef HAVE_CXX17
 		return std::is_same_v<T, Other>;
 		#else
-		return std::is_same<T, Other>::value;
+		return std::is_same<T, Other>::m_value;
 		#endif
 	}
 	
 	template<class T>
-	inline constexpr i32 ClassInfo<T>::compareTo(const ClassInfo<T>& other)
+	inline Int32
+	ClassInfo<T>::compareTo(const ClassInfo<T>& other) noexcept
 	{
-		if (getSize() - other.getSize() < 0)
-			return -1;
-		else if (getSize() - other.getSize() > 0)
-			return 1;
-		else
-			return 0;
+		return ( getSize() == other.getSize()
+		         ? 0
+		         : ( getSize() > other.getSize())
+		           ? 1
+		           : -1 );
 	}
 	
 	template<class T>
-	inline const size_t& ClassInfo<T>::getSize()
+	inline constexpr
+	const TSize& ClassInfo<T>::getSize()
 	{
-		return getInstance()->s_size;
+		return getInstance()->m_size;
+	}
+	
+	inline double StopWatch::elapsed(bool showOnDelete)
+	{
+		auto t = SystemClock::now() - m_time;
+		constexpr double mt = 0.000000001;
+		m_showOnDelete = showOnDelete;
+		return t.count() * mt;
 	}
 	
 	template<typename... Args>
-	inline void VarArgMessageFormat<Args...>::format(string_t& message, Args&&... args)
+	inline void VarArgMessageFormat<Args...>::format(TString& message, Args&& ... args)
 	{
 		auto __pFmt = new Format(message);
-		std::initializer_list<any_t> __argumentsAny {std::forward<Args>(args)..., sizeof...(Args)};
+		std::initializer_list<any_t> __argumentsAny { std::forward<Args>(args)..., sizeof...(Args) };
 		
 		for (auto& __anyArg : __argumentsAny)
 		{
-			append<string_t>(__pFmt, __anyArg);
-			append<ustring_t>(__pFmt, __anyArg);
+			append<TString>(__pFmt, __anyArg);
+			append<TUString>(__pFmt, __anyArg);
 			append<const char*>(__pFmt, __anyArg);
 			append<int>(__pFmt, __anyArg);
 			append<double>(__pFmt, __anyArg);
@@ -515,12 +421,13 @@ namespace Dixter
 		}
 		message.clear();
 		message = __pFmt->str();
-		SAFE_RELEASE(__pFmt)
+		delete __pFmt;
 	}
 	
 	template<typename... Args>
 	template<typename T>
-	inline constexpr bool VarArgMessageFormat<Args...>::checkTypeIdentity(const any_t& anyArg)
+	inline constexpr
+	bool VarArgMessageFormat<Args...>::checkTypeIdentity(const any_t& anyArg)
 	{
 		return typeid(T) == anyArg.type();
 	}
@@ -530,9 +437,15 @@ namespace Dixter
 	inline void VarArgMessageFormat<Args...>::append(Format* fmt, const any_t& arg)
 	{
 		if (checkTypeIdentity<T>(arg))
-		{
-			(*fmt) % Internal::any_cast<T>(arg);
-		}
-		return;
+			( *fmt ) % Internal::any_cast<T>(arg);
 	}
 } // namespace Dixter
+
+
+#ifdef PERFORMANCE_TEST
+#   define dxTIMER_START StopWatch t;
+#   define TIMER_STOP  printfm("\nOverall run time %.3lf ms.\n", t.elapsed());
+#else
+#   define dxTIMER_START
+#   define TIMER_STOP
+#endif
