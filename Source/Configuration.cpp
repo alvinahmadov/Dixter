@@ -7,726 +7,494 @@
  *  See README.md for more information.
  */
 
-#include <unicode/ustring.h>
+#include <memory>
+#include <mutex>
 
 #include "Configuration.hpp"
 #include "Utilities.hpp"
+#include "Exception.hpp"
 #include "Commons.hpp"
-#include "Node.hpp"
+#include "NodeData.hpp"
+#include "Constants.hpp"
 
 using namespace std;
 
 namespace Dixter
 {
-	using namespace Utilities::Strings;
+	namespace StringUtils = Utilities::Strings;
+	namespace AlgoUtils = Utilities::Algorithms;
+	template<typename T>
+	using TList = std::list<T>;
 	
-	// NodeEntry implementation
-	NodeEntry::NodeEntry(ExceptionCase throws)
-			: m_index { },
-			  m_throw { throws },
-			  m_nodeEntries { new Entry }
-	{ }
+	#ifdef HAVE_CXX17
+	template<typename T>
+	using scoped_lock = std::scoped_lock<T>;
+	#else
+	template<typename T>
+	using scoped_lock = std::unique_lock<T>;
+	#endif
 	
-	NodeEntry::~NodeEntry()
+	static std::set<TString> g_confPath { g_langConfigPath, g_voiceConfigPath, g_panelConfigPath };
+	
+	static std::set<TString> g_confPathIni { g_panelConfigPathIni };
+	
+	TNodeData* xmlLoadHelper(const PropertyTree& prop, const TString& parent, std::function<
+			TString(const TString&, const TUString&,
+					const TUString&, bool)
+	> fn)
 	{
-		SAFE_RELEASE(m_nodeEntries)
-	}
-	
-	bool NodeEntry::insertEntry(NodeData* nodeEntry)
-	{
-		std::lock_guard<std::mutex> l(m_mutex);
-		if (m_nodeEntries->find(m_index) == m_nodeEntries->end())
+		TNodeData* __configData(new TNodeData);
+		const TString __attributeKey("<xmlattr>");
+		TString __nodeName;
+		for (const PropertyTree::value_type& __node : prop)
 		{
-			m_nodeEntries->insert({ m_index, std::shared_ptr<NodeData>(nodeEntry) });
-			++m_index;
-			return true;
-		}
-		return false;
-	}
-	
-	bool NodeEntry::setEntry(const string_t& key, const ustring_t& value)
-	{
-		std::lock_guard<std::mutex> l(m_mutex);
-		bool __found { checkKey(key) };
-		if (__found)
-		{
-			for (auto& __valuePair : *m_nodeEntries)
+			auto __nodeValue = __node.second.get_value<TUString>();
+			// Not attribute
+			if (__node.first != __attributeKey)
 			{
-				for (auto& __node : __valuePair.second->getNodes())
-					if (__node->name.compare(key) == 0)
+				if (__node.second.size() > 0)
+				{
+					__nodeName = fn(__node.first, TUString(), TUString(), false);
+					for (const PropertyTree::value_type& __withAttr : __node.second)
 					{
-						__node->value = value;
+						auto __nodeNameTemp = __nodeName;
+						__nodeName = fn(__withAttr.first, TUString(), TUString(), true);
+						__configData->insertData(__nodeName, __withAttr.second.get_value<TUString>(), parent);
+						__nodeName = __nodeNameTemp;
 					}
-			}
-		} else
-		{
-			if (m_throw == ExceptionCase::Throw)
-			{
-				throw NotFoundException { "%s:%d Node data for name %s not found.", __FILE__, __LINE__, key};
-			}
-		}
-		
-		return __found;
-	}
-	
-	bool NodeEntry::setEntry(size_t index, const ustring_t& value)
-	{
-		std::lock_guard<std::mutex> l(m_mutex);
-		if (checkIndex(index))
-		{
-			auto iter = m_nodeEntries->find(index);
-			auto __nodeName = findEntry(value)->name;
-			
-			std::replace_if(
-					iter->second->getNodes().begin(), iter->second->getNodes().end(),
-					[ &__nodeName ](shared_ptr<const Node> node)
-					{ return node->name.compare(__nodeName) == 0; },
-					std::make_shared<Node>(__nodeName, value)
-			);
-			return true;
-		}
-		return false;
-	}
-	
-	bool NodeEntry::removeEntry()
-	{
-		return false;
-	}
-	
-	std::shared_ptr<const Node>
-	NodeEntry::findEntry(const string_t& key) const
-	{
-		std::lock_guard<std::mutex> l(m_mutex);
-		std::shared_ptr<Node> __data;
-		for (const auto& __valuePair : *m_nodeEntries)
-		{
-			for (shared_ptr<Node>& __node : __valuePair.second->getNodes())
-			{
-				if (__node->name.compare(key) == 0)
+				}
+				else
 				{
-					__data = __node;
+					__nodeName = fn(__node.first, TUString(), TUString(), false);
+					__configData->insertData(__nodeName, __nodeValue, parent);
 				}
 			}
-		}
-		if (m_throw == ExceptionCase::Throw)
-		{
-			if (!__data)
+			else
 			{
-				throw NotFoundException { "%s:%d Node data for %s not found.", __FILE__, __LINE__, key};
-			}
-		}
-		return __data;
-	}
-	
-	std::shared_ptr<const Node>
-	NodeEntry::findEntry(const ustring_t& value) const
-	{
-		std::lock_guard<std::mutex> l(m_mutex);
-		std::shared_ptr<Node> __data;
-		for (const auto& __valuePair : *m_nodeEntries)
-		{
-			for (shared_ptr<Node>& __node : __valuePair.second->getNodes())
-				if (__node->value.compare(value) == 0)
+				if (__node.second.size() > 1)
 				{
-					__data = __node;
+					xmlLoadHelper(__node.second, parent, fn);
 				}
-		}
-		if (m_throw == ExceptionCase::Throw)
-		{
-			if (__data == nullptr)
-			throw NotFoundException { "%s:%d Node data for %s not found.", __FILE__, __LINE__, value.asUTF8()};
-		}
-		return __data;
-	}
-	
-	std::shared_ptr<const NodeData>
-	NodeEntry::findEntryData(i32 index) const
-	{
-		std::lock_guard<std::mutex> l(m_mutex);
-		std::shared_ptr<NodeData> __data;
-		if (index != -1)
-		{
-			if (checkIndex(static_cast<size_t>(index)))
-			{
-				for (const auto& __p : *m_nodeEntries)
+				else
 				{
-					if (__p.first == index)
+					__nodeName = fn(
+							__node.second.front().first, __node.second.front().first,
+							__node.second.front().second.get_value<TUString>(), false);
+					if (not __nodeValue.empty())
 					{
-						__data = __p.second;
+						__configData->insertData(
+								__nodeName, __nodeValue, parent, __node.second.front().first,
+								__node.second.front().second.get_value<TUString>());
 					}
 				}
 			}
 		}
+		return __configData;
+	}
+	
+	TString xmlAttributeNameBuilder(const TUString& attributeName, const TUString& attributeValue)
+	{
+		static TString __rootNameWithAttr;
 		
-		if (m_throw == ExceptionCase::Throw)
+		if (not attributeValue.empty() and not attributeName.empty())
 		{
-			if (__data == nullptr)
-			{
-				throw NotFoundException { "%s:%d Node data for index %d not found.", __FILE__, __LINE__, index};
-			}
-		}
-		return __data;
-	}
-	
-	i32 NodeEntry::findEntryIndex(const string_t& key) const
-	{
-		i32 __index = -1;
-		for (const auto& __p : *m_nodeEntries)
-			for (const auto& __node : __p.second->getNodes())
-				if (__node->name.compare(key) == 0)
-				{
-					__index = __p.first;
-				}
-		
-		return __index;
-	}
-	
-	size_t NodeEntry::getSize() const
-	{
-		return m_nodeEntries->size();
-	}
-	
-	const NodeEntry::Entry*
-	NodeEntry::get() const
-	{
-		return m_nodeEntries;
-	}
-	
-	bool NodeEntry::checkKey(const string_t& key) const
-	{
-		bool __found { };
-		if (!key.empty())
-		{
-			try
-			{
-				if (findEntry(key) != nullptr)
-				{
-					__found = true;
-				}
-			} catch (std::exception& e)
-			{
-				__found = false;
-				printerr(e.what())
-			}
-		} else
-		{
-			__found = false;
+			if (not __rootNameWithAttr.empty())
+				__rootNameWithAttr.clear();
+			__rootNameWithAttr.push_back('<');
+			__rootNameWithAttr.append(attributeValue.asUTF8()).push_back('>');
 		}
 		
-		return __found;
-	}
-	
-	bool NodeEntry::checkIndex(size_t index) const
-	{
-		if (index >= std::numeric_limits<size_t>::min() && index <= std::numeric_limits<size_t>::max())
-		{
-			if (index <= m_nodeEntries->size())
-			{
-				if (m_nodeEntries->find(index) != m_nodeEntries->end())
-				{
-					return true;
-				}
-			}
-		}
-		return false;
+		return __rootNameWithAttr;
 	}
 	
 	// INIConfiguration implementation
-	INIConfiguration::INIConfiguration(const string_t& file)
-			: m_configurationList { list<shared_ptr<NodeData>>() },
-			  m_propertyTree(unique_ptr<PropertyTree>(new PropertyTree()))
+	TConfigurationINI::TConfigurationINI(const TString& file) noexcept
+			: m_file(file),
+			  m_propertyTree(new PropertyTree),
+			  m_entries(new TNodeEntry)
 	{
-		boost::property_tree::ini_parser::read_ini<PropertyTree>(file, *m_propertyTree);
-	}
-	
-	INIConfiguration::~INIConfiguration()
-	{
-		m_propertyTree.reset(nullptr);
-	}
-	
-	void INIConfiguration::load()
-	{
-		PropertyTree __localTree = *m_propertyTree;
-		auto __configData = std::shared_ptr<NodeData>(new NodeData());
-		for (const auto& __value : __localTree)
+		try
 		{
-			for (const auto& __node : __value.second)
-			{
-				__configData->insertData(__node.first, __node.second.get_value<ustring_t>());
-			}
+			boost::property_tree::ini_parser::read_ini<PropertyTree>(m_file, *m_propertyTree);
 		}
-		m_configurationList.push_back(__configData);
+		catch (boost::exception& e)
+		{
+			printerr("Read ini error")
+		}
 	}
 	
-	void INIConfiguration::save()
+	void TConfigurationINI::load()
 	{
-		printl("Not implemented yet")
+		TNodeData* __configData(new TNodeData);
+		
+		for (const auto& __node : *m_propertyTree)
+			__configData->insertData(__node.first, __node.second.get_value<TUString>());
+		
+		m_entries->insertEntry(__configData);
 	}
 	
-	void INIConfiguration::getKey(list<string_t>& keyList) const
+	void TConfigurationINI::save()
+	{
+		println("Not implemented yet")
+	}
+	
+	void TConfigurationINI::set(const TString& key, const TUString& value)
+	{
+		m_entries->setEntry(key, value);
+	}
+	
+	void TConfigurationINI::keys(list<TString>& keyList) const
 	{
 		for (auto& __treeKey : *m_propertyTree)
 			keyList.push_back(__treeKey.first);
 	}
 	
-	ustring_t
-	INIConfiguration::getValue(const string_t& key) const
+	void TConfigurationINI::get(const TString& key,
+								std::vector<TUString>& values) const
 	{
-		return m_propertyTree->find(key)->second.data();
+		for (const auto& __data : *m_entries)
+			__data.second->getValues(key, values);
+	}
+	
+	TUString
+	TConfigurationINI::get(const TString& key,
+						   dxMAYBE_UNUSED const TUString& byValue) const
+	{
+		return get(key);
+	}
+	
+	TUString
+	TConfigurationINI::get(const TString& key) const
+	{
+		return m_entries->findEntry(key)->m_value;
 	}
 	
 	// XMLConfiguration implementation
-	XMLConfiguration::XMLConfiguration(const string_t& file)
-			: m_file { file },
-			  m_entries { new NodeEntry() },
-			  m_propertyTree(new PropertyTree())
+	TConfigurationXML::TConfigurationXML(const TString& file) noexcept
+			: m_file(file),
+			  m_entries(new TNodeEntry),
+			  m_propertyTree(new PropertyTree)
 	{
 		try
 		{
-			boost::property_tree::xml_parser::read_xml<PropertyTree>(file, *m_propertyTree);
-		} catch (Exception& e)
+			boost::property_tree::xml_parser::read_xml<PropertyTree>(m_file, *m_propertyTree);
+		}
+		catch (std::exception& e)
 		{
-			printerr(e.getMessage())
+			printerr("Error reading XML: " << e.what())
+			return;
 		}
 	}
 	
-	XMLConfiguration::~XMLConfiguration()
+	void TConfigurationXML::load()
 	{
-		SAFE_RELEASE(m_propertyTree)
-	}
-	
-	void XMLConfiguration::load()
-	{
-		lock_guard<mutex> loadLock(m_mutex);
+		lock_guard<mutex> __lg(m_mutex);
 		
-		static string_t __parentBefore { };
-		string_t __parent { };
-		string_t __nodeName { };
-		const string_t __attributeKey { "<xmlattr>" };
+		TString __parent;
 		m_rootNode = m_propertyTree->front().first;
-		const auto* __rootNodeName = &m_propertyTree->front().first;
-		NodeData* __configData { nullptr };
+		const auto& __rootNodeName = m_propertyTree->front().first;
 		const auto& __childTree = m_propertyTree->front().second;
 		
-		auto __createNodeName = [ &__nodeName, &__parent, &__rootNodeName ]
-				(const string_t& node, const ustring_t& attributeName = ustring_t(),
-				 const ustring_t& attributeVal = ustring_t(), bool child = false)
+		auto __f_createNodeName = [ &__parent, &__rootNodeName ]
+				(const TString& node, const TUString& attributeName = TUString(),
+				 const TUString& attributeVal = TUString(), bool child = false)
 		{
-			static string_t __rootNameWithAttr { };
-			if (!attributeVal.empty() && !attributeName.empty())
+			static TString __nodeName {};
+			if (not child)
 			{
-				if (!__rootNameWithAttr.empty()) __rootNameWithAttr.clear();
-				__rootNameWithAttr.push_back('<');
-				__rootNameWithAttr.append(attributeVal.asUTF8()).push_back('>');
-			} else
-			{
-				if (child)
-				{
-					Utilities::Strings::buildPath(__nodeName, '.', node);
-				} else
-				{
-					__nodeName.clear();
-					Utilities::Strings::buildPath(__nodeName, '.', *__rootNodeName, __parent);
-					Utilities::Strings::buildPath(__nodeName, '.', __rootNameWithAttr, node);
-				}
+				__nodeName.clear();
+				StringUtils::buildPath(__nodeName, '.', __rootNodeName, __parent);
+				StringUtils::buildPath(__nodeName, '.', xmlAttributeNameBuilder(attributeName, attributeVal), node);
 			}
+			else
+				StringUtils::buildPath(__nodeName, '.', node);
+			
+			return __nodeName;
 		};
-		function<
-				void(const PropertyTree&, const string_t&)> internalLoad =
-				[ & ](const PropertyTree& prop, const string_t& parent)
-				{
-					__configData = new NodeData;
-					for (const PropertyTree::value_type& node : prop)
-					{
-						auto __nodeValue = node.second.get_value<ustring_t>();
-						// Not attribute
-						if (node.first != __attributeKey)
-						{
-							if (node.second.size() > 0)
-							{
-								__createNodeName(node.first);
-								for (const PropertyTree::value_type& __withAttr : node.second)
-								{
-									auto __nodeNameTemp = __nodeName;
-									__createNodeName(__withAttr.first, ustring_t(), ustring_t(), true);
-									__configData->insertData(__nodeName, __withAttr.second.get_value<ustring_t>(), parent);
-									__nodeName = __nodeNameTemp;
-								}
-							} else
-							{
-								__createNodeName(node.first);
-								__configData->insertData(__nodeName, __nodeValue, parent);
-							}
-						} else
-						{
-							if (node.second.size() > 1)
-							{
-								internalLoad(node.second, parent);
-							} else
-							{
-								
-								__createNodeName(node.second.front().first,
-								                 node.second.front().first,
-								                 node.second.front().second.get_value<ustring_t>());
-								if (!__nodeValue.empty())
-								{
-									__configData->insertData(__nodeName, __nodeValue, parent, node.second.front().first,
-									                         node.second.front().second.get_value<ustring_t>());
-								}
-							}
-						}
-					}
-					m_entries->insertEntry(__configData);
-				};
 		
+		for (const auto& __value : __childTree)
 		{
-			for (const auto& value : __childTree)
-			{
-				__parent.clear();
-				__parent = value.first;
-				if (__parent != __parentBefore)
-				{
-					__parentBefore = __parent;
-				}
-				
-				internalLoad(value.second, __parent);
-			}
+			__parent.clear();
+			__parent = __value.first;
+			m_entries->insertEntry(xmlLoadHelper(__value.second, __parent, __f_createNodeName));
 		}
 	}
 	
-	void XMLConfiguration::save()
+	void TConfigurationXML::save()
 	{
-		throw NotImplementedException("%s:d% Saving xml configuration not implemented yet", __FILE__, __LINE__);
+		throw TNotImplementedException("%s:d% Saving XML configuration not implemented yet", __FILE__, __LINE__);
 	}
 	
-	void XMLConfiguration::getKey(list<string_t>& keyList) const
+	void TConfigurationXML::set(const TString& key, const TUString& value)
+	{
+		m_entries->setEntry(key, value);
+	}
+	
+	void TConfigurationXML::keys(list<TString>& keyList) const
 	{
 		keyList.push_back(m_rootNode);
 	}
 	
+	TUString TConfigurationXML::get(const TString& key) const
+	{
+		return m_entries->findEntry(key)->m_value;
+	}
+	
+	TUString TConfigurationXML::get(const TString& key, const TUString& neighborValue) const
+	{
+		for (const auto& __confData : *m_entries)
+		{
+			for (const auto& __node : __confData.second->getNodes())
+			{
+				if (__node->m_value.compare(neighborValue) == 0)
+					return m_entries->findEntryData(__confData.first)->getValue(key);
+			}
+		}
+	}
+	
+	void TConfigurationXML::get(const TString& key, std::vector<TUString>& values) const
+	{
+		for (const auto& __data : *m_entries)
+			__data.second->getValues(key, values);
+	}
+	
 	// ConfigurationProxy implementation
-	ConfigurationFactory::ConfigurationFactory(const string_t& configPath, ConfigurationType type)
-			: m_type { type }
-	{
-		switch (type)
-		{
-			case ConfigurationType::ConfigIni: m_configuration = std::make_shared<INIConfiguration>(configPath);
-				break;
-			case ConfigurationType::ConfigXml: m_configuration = std::make_shared<XMLConfiguration>(configPath);
-				break;
-			case ConfigurationType::ConfigJson : throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
-			default: throw IllegalArgumentException { "%s:%d Unknown type.\n", __FILE__, __LINE__};
-		}
-	}
-	
-	ConfigurationFactory::~ConfigurationFactory()
-	{}
-	
-	void ConfigurationFactory::load()
-	{
-		if (m_configuration == nullptr)
-		{
-			throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-		}
-		switch (m_type)
-		{
-			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration.get())->load();
-				break;
-			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration.get())->load();
-				break;
-			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
-			default: throw NotImplementedException("%s:%d Configuration is not initialised", __FILE__, __LINE__);
-		}
-	}
-	
-	void ConfigurationFactory::save()
-	{
-		if (m_configuration == nullptr)
-		{
-			throw IllegalArgumentException("%s:%d Configuration is not initialised.");
-		}
-		switch (m_type)
-		{
-			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration.get())->save();
-				break;
-			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration.get())->save();
-				break;
-			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
-			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-		}
-	}
-	
-	void ConfigurationFactory::getKey(list<string_t>& keyList) const
+	TConfigurationFactory::TConfigurationFactory(const TString& configPath, EConfiguration type)
+			: m_type(type)
 	{
 		switch (m_type)
 		{
-			case ConfigurationType::ConfigIni: dynamic_cast<INIConfiguration*>(m_configuration.get())->getKey(keyList);
+			case EConfiguration::INI:
+				m_configuration = dxMAKE_SHARED(TConfigurationINI, configPath);
 				break;
-			case ConfigurationType::ConfigXml: dynamic_cast<XMLConfiguration*>(m_configuration.get())->getKey(keyList);
+			case EConfiguration::XML:
+				m_configuration = dxMAKE_SHARED(TConfigurationXML, configPath);
 				break;
-			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
-			default: throw IllegalArgumentException { "%s:%d Configuration is not initialised.", __FILE__, __LINE__ };
+			case EConfiguration::JSON :
+				throw TNotImplementedException("%s:%d Reading configuration from JSON is not implemented yet.\n", __FILE__, __LINE__);
+			default:
+				throw TIllegalArgumentException("%s:%d Unknown type.\n", __FILE__, __LINE__);
 		}
 	}
 	
-	void ConfigurationManagerInterface::checkKey(const ConfigurationProperty::const_iterator key,
-	                                             ConfigurationProperty* properties, string_t errorMsg) const
+	void TConfigurationFactory::load()
 	{
-		if (properties != nullptr && key == properties->end())
-		{
-			throw NotFoundException { errorMsg };
-		}
+		if (not m_configuration)
+			throw TIllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
+		
+		m_configuration->load();
 	}
 	
-	ConfigurationInterface* ConfigurationFactory::getConfiguration()
+	void TConfigurationFactory::save()
 	{
-		switch (m_type)
-		{
-			case ConfigurationType::ConfigXml : return dynamic_cast<XMLConfiguration*>(m_configuration.get());
-			case ConfigurationType::ConfigIni : return dynamic_cast<INIConfiguration*>(m_configuration.get());
-			case ConfigurationType::ConfigJson: throw NotImplementedException { "%s:%d Reading configuration from json file is not implemented yet.\n", __FILE__, __LINE__ };
-			default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-		}
+		if (not m_configuration)
+			throw TIllegalArgumentException("%s:%d Configuration is not initialised.");
+		
+		m_configuration->save();
 	}
 	
-	const ConfigurationType&
-	ConfigurationFactory::getType() const
+	inline void TConfigurationFactory::keys(std::list<TString>& keyList) const
+	{
+		m_configuration->keys(keyList);
+	}
+	
+	const std::shared_ptr<IConfiguration>&
+	TConfigurationFactory::getConfiguration()
+	{
+		return m_configuration;
+	}
+	
+	EConfiguration
+	TConfigurationFactory::getType() const
 	{
 		return m_type;
 	}
 	
 	///ConfigurationManager implementation
-	ConfigurationManager*
-	ConfigurationManager::getManager(ConfigurationType type, const list<string_t>& configPaths)
+	TConfigurationManager::TInstancePtr&
+	TConfigurationManager::getManager(EConfiguration type, std::set<TString> paths)
 	{
-		if (m_instance == nullptr)
-		{
-			m_instance = new ConfigurationManager(type, configPaths);
-		} else if (m_instance->m_factory->getType() != type)
-		{
-			m_instances->insert(m_instance);
-			m_instance = new ConfigurationManager(type, configPaths);
-		}
+		m_instance.reset(new TSelf(type, ( paths.empty() ? g_confPath : paths )));
 		return m_instance;
 	}
 	
-	const ConfigurationManager::Accessor* const
-	ConfigurationManager::getAccessor() const
+	const TConfigurationManager::TAccessor*
+	TConfigurationManager::getAccessor() const
 	{
 		return m_accessor;
 	}
 	
-	ConfigurationManager::Mutator*
-	ConfigurationManager::getMutator()
+	TConfigurationManager::TMutator*
+	TConfigurationManager::getMutator()
 	{
 		return m_mutator;
 	}
 	
-	void ConfigurationManager::read(ConfigurationType type, const string_t& path)
+	void TConfigurationManager::read(EConfiguration type, const TString& path)
 	{
-		m_factory = new ConfigurationFactory(path, type);
-		list<string_t> __keyList;
+		m_factory.reset(new TConfigurationFactory(path, type));
+		TList<TString> __keyList;
 		m_factory->load();
-		m_factory->getKey(__keyList);
-		for (auto& val : __keyList)
-			m_properties->emplace(val, m_factory->getConfiguration());
+		m_factory->keys(__keyList);
+		for (auto& __key : __keyList)
+			m_properties.emplace(__key, m_factory->getConfiguration());
 	}
 	
-	void ConfigurationManager::write(ConfigurationType type, const string_t& path)
+	void TConfigurationManager::write(EConfiguration type, const TString& path)
 	{
-		printl_log(path)
-		
+		dxUNUSED(path)
 		switch (type)
 		{
-			case ConfigurationType::ConfigXml : printl_log("XML write")
+			case EConfiguration::XML :
+				printl_log("XML write")
 				break;
-			case ConfigurationType::ConfigJson : printl_log("JSON write")
+			case EConfiguration::JSON :
+				printl_log("JSON write")
 				break;
-			case ConfigurationType::ConfigIni : printl_log("INI write")
+			case EConfiguration::INI :
+				printl_log("INI write")
 				break;
-			default: printl_log("None")
+			default:
+				printl_log("None")
 				break;
 		}
 	}
 	
-	ConfigurationManager::~ConfigurationManager()
+	void TConfigurationManager::checkKey(const TConfigurationManager::TConstIterator key,
+										 TString errorMsg) const
 	{
-		SAFE_RELEASE(m_factory)
-		SAFE_RELEASE_MAP((*m_properties))
-		if (m_instances->size() > 0)
-		{
-			for (ConfigurationManager* v : *m_instances)
-				SAFE_RELEASE(v)
-		};
-		SAFE_RELEASE(m_instances)
+		if (key == m_properties.end())
+			throw TNotFoundException(errorMsg);
 	}
 	
-	void ConfigurationManager::checkKey(const ConfigurationProperty::const_iterator key,
-	                                    string_t errorMsg) const
-	{
-		ConfigurationManagerInterface::checkKey(key, m_properties, errorMsg);
-	}
-	
-	ConfigurationManager::ConfigurationManager(ConfigurationType type, const list<string_t>& paths)
-			: m_pathList { paths },
-			  m_properties { new ConfigurationProperty() },
-			  m_accessor { new Accessor(this) }
+	TConfigurationManager::TConfigurationManager(EConfiguration type, const std::set<TString>& paths)
+			: m_factory(nullptr),
+			  m_properties(),
+			  m_accessor(new TAccessor(this)),
+			  m_mutator(new TMutator(this))
 	{
 		for (const auto& path : paths)
-			read(type, path);
+			this->read(type, path);
 	}
 	
-	ConfigurationManager::Accessor::Accessor(ConfigurationManager* manager)
-			: m_manager { manager }
+	TString EConfTypeToString(EConfiguration econf)
+	{
+		switch (econf)
+		{
+			case EConfiguration::XML :
+				return "XML Conf.";
+			case EConfiguration::INI :
+				return "INI Conf.";
+			case EConfiguration::JSON :
+				return "JSON Conf";
+			default:
+				return "None";
+		}
+	}
+	
+	TConfigurationManager::~TConfigurationManager() noexcept
+	{
+		delete m_accessor;
+		delete m_mutator;
+	}
+	
+	TConfigurationManager::
+	TAccessor::TAccessor(TConfigurationManager* manager) noexcept
+			: m_manager(manager)
 	{ }
 	
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wreturn-type"
-	
-	ustring_t
-	ConfigurationManager::Accessor::getValue(const string_t& root, const string_t& key) const
+	TUString
+	TConfigurationManager::
+	TAccessor::getValue(const TString& key, const TString& root) const
 	{
-		auto iter = m_manager->m_properties->find(root);
-		
-		if (iter != m_manager->m_properties->end())
-		{
-			switch (m_instance->m_factory->getType())
-			{
-				case ConfigurationType::ConfigXml :
-				{
-					return dynamic_cast<XMLConfiguration*>(iter->second)
-							->m_entries->findEntry(key)->value;
-				}
-				case ConfigurationType::ConfigIni :
-				{
-					return dynamic_cast<INIConfiguration*>(iter->second)
-							->m_propertyTree->find(key)->second.data();
-				}
-				case ConfigurationType::ConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-			}
-		}
+		return this->get(m_manager, key, root)->get(key);
 	}
 	
-	ustring_t
-	ConfigurationManager::Accessor::getValue(const string_t& root, const ustring_t& value, const string_t& key) const
+	TUString
+	TConfigurationManager::
+	TAccessor::getValue(const TString& key, const TUString& byValue,
+						const TString& root) const
 	{
-		auto iter = m_manager->m_properties->find(root);
-		
-		if (iter != m_manager->m_properties->end())
-		{
-			switch (m_instance->m_factory->getType())
-			{
-				case ConfigurationType::ConfigXml :
-				{
-					auto __entries { dynamic_cast<XMLConfiguration*>(iter->second)->m_entries };
-					
-					for (const auto& __confData : *__entries->get())
-					{
-						for (const auto& __node : __confData.second->getNodes())
-						{
-							if (__node->value.compare(value) == 0)
-							{
-								return __entries->findEntryData(__confData.first)->getValue(key);
-							}
-						}
-					}
-					break;
-				}
-				case ConfigurationType::ConfigIni :
-				{
-					return dynamic_cast<INIConfiguration*>(iter->second)
-							->m_propertyTree->find(key)->second.data();
-				}
-				case ConfigurationType::ConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-			}
-		}
+		return get(m_manager, key, root)->get(key, byValue);
 	}
 	
-	#pragma GCC diagnostic pop
-	
-	void ConfigurationManager::Accessor::getValues(const string_t& root, const string_t& key, vector<ustring_t>& values) const
+	const TConfigurationManager::TAccessor*
+	TConfigurationManager::
+	TAccessor::getValues(const TString& key, vector<TUString>& values, const TString& root) const
 	{
-		auto iter = m_manager->m_properties->find(root);
-		
-		if (iter != m_manager->m_properties->end())
-		{
-			switch (m_instance->m_factory->getType())
-			{
-				case ConfigurationType::ConfigXml :
-				{
-					auto __entries { dynamic_cast<XMLConfiguration*>(iter->second)->m_entries };
-					for (const auto& __data : *__entries->get())
-						__data.second->getValues(key, values);
-					break;
-				}
-				case ConfigurationType::ConfigIni : break;
-				case ConfigurationType::ConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-			}
-		}
+		get(m_manager, key, root)->get(key, values);
+		return this;
 	}
 	
-	ConfigurationManager::Mutator::Mutator(ConfigurationManager* manager)
-			: m_manager { manager }
+	IConfiguration*
+	TConfigurationManager::
+	TAccessor::get(TConfigurationManager* manager, const TString& key, const TString& root)
+	{
+		auto __iter = manager->m_properties.find(root.empty() ? key : root);
+		snprintfm(__msg, "Key \"%s\" not found", key.data());
+		manager->checkKey(__iter, __msg);
+		delete[] __msg;
+		
+		return __iter->second.get();
+	}
+	
+	TConfigurationManager::
+	TMutator::TMutator(TConfigurationManager* manager) noexcept
+			: m_manager(manager)
 	{ }
 	
-	void ConfigurationManager::Mutator::setValue(const string_t& root, const string_t& key, const ustring_t& value) const
+	const TConfigurationManager::TMutator*
+	TConfigurationManager::
+	TMutator::setValue(const TString& key, const TUString& value, const TString& root)
 	{
 		scoped_lock<mutex> lockGuard(m_mutex);
-		auto iter = m_manager->m_properties->find(root);
-		
-		if (iter != m_manager->m_properties->end())
-		{
-			switch (m_instance->m_factory->getType())
-			{
-				case ConfigurationType::ConfigXml :
-				{
-					dynamic_cast<XMLConfiguration*>(iter->second)
-							->m_entries->setEntry(key, value);
-				}
-				case ConfigurationType::ConfigIni : break;
-				case ConfigurationType::ConfigJson : break;
-				default: throw IllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-			}
-		}
+		this->get(key, root)->set(key, value);
+		return this;
 	}
 	
-	ConfigurationManager*
-			ConfigurationManager::ConfigurationManager::m_instance = nullptr;
-	
-	set<ConfigurationManager*>*
-			ConfigurationManager::ConfigurationManager::m_instances = new set<ConfigurationManager*>();
-	
-	bool ConfigurationManager::update()
+	IConfiguration*
+	TConfigurationManager::
+	TMutator::get(const TString& key, const TString& root)
 	{
-		bool success = false;
-		try
-		{
-			auto __type = m_factory->getType();
-			auto __paths = m_pathList;
-			SAFE_RELEASE(m_instance)
-			m_instance = new ConfigurationManager(__type, __paths);
-			success = true;
-		} catch (Exception& e)
-		{
-			printerr(e.getMessage())
-		}
-		if (success)
-			printl("Updated")
+		auto __iter = m_manager->m_properties.find(root.empty() ? key : root);
+		snprintfm(__msg, "Key \"%s\" not found", key.data());
+		m_manager->checkKey(__iter, __msg);
+		delete[] __msg;
+		
+		return __iter->second.get();
+	}
+	
+	TConfigurationManager::TInstancePtr
+			TConfigurationManager::TConfigurationManager::m_instance {};
+	
+	bool TConfigurationManager::update()
+	{
+		bool success(false);
+		// try
+		// {
+		// 	auto __type = m_factory->getType();
+		// 	auto __paths = m_pathList;
+		// 	m_instance.reset(new TConfigurationManager(__type, __paths));
+		// 	success = true;
+		// }
+		// catch (Exception& e)
+		// {
+		// 	printerr(e.getMessage())
+		// }
+		// if (success)
+		// 	println("Updated")
 		return success;
 	}
 	
-	const ConfigurationType&
-	ConfigurationManager::getType() const
+	EConfiguration
+	TConfigurationManager::getType() const
 	{
 		return m_factory->getType();
 	}
 	
-	bool ConfigurationManager::release()
+	bool TConfigurationManager::release()
 	{
-		SAFE_RELEASE(m_instance)
+		m_instance.reset();
 		return m_instance == nullptr;
 	}
 }
