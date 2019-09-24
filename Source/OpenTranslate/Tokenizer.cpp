@@ -11,14 +11,17 @@
 #include <sstream>
 #include "Tokenizer.hpp"
 #include "Exception.hpp"
+#include "Constants.hpp"
+#include "Utilities.hpp"
+#include "Commons.hpp"
 
 namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		const int nonAllowedCharsSize = 6;
+		const Int32 nonAllowedCharsSize = 6;
 		
-		const int nonAllowedChars[nonAllowedCharsSize] {
+		const Int32 nonAllowedChars[nonAllowedCharsSize] {
 				9,
 				10, //newline
 				32, //whitespace
@@ -27,65 +30,37 @@ namespace Dixter
 				-1  //EOF
 		};
 		
+		namespace AlgoUtils   = Utilities::Algorithms;
+		namespace StringUtils = Utilities::Strings;
+		
 		#ifdef HAVE_CXX17
 		
-		std::ostream&
-		operator<<(std::ostream& out, const std::vector<TToken*>& pTokens)
-		{
-			for (const auto& tokenData : pTokens)
-			{
-				if (tokenData->getChunks())
-				{
-					// printl_log(tokenData->getInfo())
-					for (const auto& token : tokenData->getChunks().value())
-					{
-						out << token;
-						out << std::endl;
-					}
-				}
-			}
-			return out;
-		}
-		
-		std::ostream&
-		operator<<(std::ostream& out, const TTokenizer* tokenizer)
-		{
-			out << tokenizer->getTokens();
-			return out;
-		}
-		
-		inline void removePrefix(TStringView& strView, size_t n)
+		inline void removePrefix(TStringView& strView, TSize n)
 		{
 			strView.remove_prefix(n);
 		};
 		
-		inline void removeSuffix(TStringView& strView, size_t n)
+		inline void removeSuffix(TStringView& strView, TSize n)
 		{
 			strView.remove_suffix(n);
 		};
 		
-		inline TStringView range(const TStringView& stringView, size_t begin, size_t end)
-		{
-			auto len = std::min(end, stringView.length());
-			return TStringView(stringView.data() + begin, len);
-		}
-		
 		#else
 		
-		inline void removePrefix(TString& str, size_t n)
+		inline void removePrefix(TString& str, TSize n)
 		{
 			dxUNUSED(str)
 			dxUNUSED(n)
 		};
 		
-		inline void removeSuffix(TString& str, size_t n)
+		inline void removeSuffix(TString& str, TSize n)
 		{
 			dxUNUSED(str)
 			dxUNUSED(n)
 		};
 		
 		inline TString
-		range(const TString& string, size_t begin, size_t end)
+		range(const TString& string, TSize begin, TSize end)
 		{
 			auto len = std::min(end, string.length());
 			return TString{string.data() + begin, len};
@@ -93,374 +68,223 @@ namespace Dixter
 		
 		#endif
 		
+		bool isWhiteSpace(const TByte& c)
+		{
+			return c == g_whiteSpace;
+		}
+		
 		///TokenData Impl.
-		std::ostream& operator<<(std::ostream& out, const TToken::TokenInfo& info)
-		{
-			out << "Lines: " << info.lines
-			    << ", Word Count: " << info.wordCount
-			    << ", Punctuations: " << info.punctuationChars
-			    << ", Positions: ";
-			for (const auto& position : info.punctPositions)
-			{
-				out << position;
-			}
-			out << std::endl;
-			return out;
-		}
-		
-		
-		TString tokenModeToString(TokenMode mode)
-		{
-			TString ret { };
-			switch (mode)
-			{
-				case TokenMode::kSimple : ret = xSTR(kSimple);
-					break;
-				case TokenMode::kMultiLine : ret = xSTR(kMultiLine);
-					break;
-				case TokenMode::kComplex : ret = xSTR(kComplex);
-					break;
-				default: ret = xSTR(kNone);
-					break;
-			}
-			return ret;
-		}
-		
-		TToken::TToken(TConstValue part) noexcept
-				: m_token { part },
-				  m_chunks { new TTokenValueHolder{} }
+		TToken::TToken() noexcept
+				: m_chunks(TTokenValueHolder()),
+				  m_info(TTokenInfo())
 		{ }
 		
 		TToken::TToken(const TToken& o) noexcept
 				: CopyConstructible(o),
-				  m_token { o.m_token },
-				  m_chunks { new TTokenValueHolder(*o.m_chunks) }
+				  m_chunks(o.m_chunks)
 		{ }
 		
-		TToken::~TToken() noexcept
+		bool TToken::push(TToken::TConstValue chunk, const TToken::TTokenInfo& info)
 		{
-			delete m_chunks;
-		}
-		
-		bool TToken::push(TConstValue chunk, const TokenInfo& info)
-		{
-			if (!chunk.empty())
+			if (not chunk.empty())
 			{
-				m_chunks->tokens.push_back(chunk);
-				m_chunks->tokenInfo = info;
+				m_chunks.push_back(chunk);
+				m_info = info;
 				return true;
 			}
-			
 			return false;
 		}
 		
 		inline bool TToken::isEmpty() const
 		{
-			return m_chunks->tokens.empty();
+			return m_chunks.empty();
 		}
 		
-		inline size_t TToken::size() const
+		inline TSize TToken::size() const
 		{
-			return m_chunks->tokens.size();
+			return m_chunks.size();
 		}
 		
-		TOptional<TToken::TTokenVector>
+		const TToken::TTokenValueHolder&
 		TToken::getChunks() const
 		{
-			TOptional<TToken::TTokenVector> ret {};
-			ret = m_chunks->tokens;
-			return ret;
+			return m_chunks;
 		}
 		
 		TToken::TConstValue
-		TToken::getChunk(size_t index) const
+		TToken::getChunk(TSize index) const
 		{
-			if (m_chunks->tokens.size() == 1)
-				return m_chunks->tokens.back();
+			if (m_chunks.size() == 1)
+				return m_chunks.back();
 			
-			if (m_chunks->tokens.size() > 1)
-				return m_chunks->tokens.at(index);
-			
-			if (index > m_chunks->tokens.size())
-				throw RangeException("Index %d > size: %d.", index, m_chunks->tokens.size());
+			if (m_chunks.size() > 1)
+				return m_chunks.at(index);
 			
 			throw NotFoundException("%s:%d View by index %d not found", __FILE__, __LINE__, index);
 		}
 		
-		TToken::TConstValue
-		TToken::getPart() const
-		{
-			return m_token;
-		}
-		
-		const TToken::TokenInfo&
+		const TToken::TTokenInfo&
 		TToken::getInfo() const
 		{
-			return m_chunks->tokenInfo;
+			return m_info;
 		}
 		
-		TToken::TokenInfo&
+		TToken::TTokenInfo&
 		TToken::getInfo()
 		{
-			return m_chunks->tokenInfo;
+			return m_info;
 		}
 		
-		void TToken::setInfo(const TokenInfo& info)
+		void TToken::setInfo(const TToken::TTokenInfo& info)
 		{
-			m_chunks->tokenInfo = info;
+			m_info = info;
 		}
 		
 		///Tokenizer Impl.
-		TTokenizer::TTokenizer()
-				: m_mode { TokenMode::kNone },
-				  m_token {},
-				  m_tokens {}
+		const TByte TTokenizer::s_delimiter { g_whiteSpace };
+		
+		const TByte TTokenizer::s_separator { g_comma };
+		
+		TTokenizer::TTokenizer(TTokenizer::TConstValue sentence) noexcept
+				: m_token(new TToken())
 		{
+			if (sentence.length() > 0)
+				this->tokenize(sentence);
 		}
 		
-		TTokenizer::~TTokenizer()
+		TTokenizer::~TTokenizer() noexcept
 		{
-			for (auto& t : m_tokens)
-				delete t;
+			delete m_token;
 		}
 		
-		void TTokenizer::tokenize(TConstValue sentence)
+		void TTokenizer::tokenize(TTokenizer::TConstValue sentence)
 		{
-			m_token = sentence;
-			tokenizeLines(m_token);
-			tokenizeWords(m_token);
+			TToken::TTokenValueHolder __chunks;
+			TToken::TTokenInfo __info;
+			
+			const UInt32 __wordCount = countWords(sentence);
+			__info.wordCount = __wordCount;
+			__info.punctuationChars = std::count(sentence.cbegin(), sentence.cend(), s_separator);
+			__info.punctuations.try_emplace(
+					std::count(sentence.cbegin(), sentence.cend(), s_separator),
+					s_separator);
+			__info.isComplex = AlgoUtils::count<std::initializer_list<TByte>>
+					(sentence.cbegin(), sentence.cend(), { ',', ':', '\"' }) > 0;
+			
+			this->readToken(sentence, __wordCount + 1, g_whiteSpace, __chunks);
+			
+			for (const auto& __chunk : __chunks)
+				m_token->push(__chunk, __info);
 		}
 		
-		bool TTokenizer::isMultiline(TConstValue token, UInt32& lineCount) const
+		const TToken::TTokenValueHolder&
+		TTokenizer::getTokens() const
 		{
-			const TValue::value_type __point { '.' };
-			lineCount = contains(token, [ & ](TValue::const_reference pt)
-			{
-				return pt == __point;
-			});
-			return lineCount > 1;
-		}
-		
-		bool TTokenizer::isComplex(TConstValue token, UInt32& complexCount) const
-		{
-			const TValue::value_type __point { ',' };
-			complexCount = contains(token,
-			                        [ & ](TValue::const_reference pt)
-			                        {
-				                        return pt == __point;
-			                        });
-			return complexCount > 0;
+			return m_token->getChunks();
 		}
 		
 		UInt32
-		TTokenizer::countWords(TConstValue token)
+		TTokenizer::countWords(TTokenizer::TConstValue token)
 		{
-			UInt32 __count { };
-			for (UInt32 i = 0; i < token.size(); ++i)
-			{
-				if (token.at(i) == 32)
+			UInt32 __count {};
+			for (const auto& __c : token)
+				if (isWhiteSpace(__c))
 					++__count;
-			}
 			return __count;
-		}
-		
-		const std::vector<TToken*>&
-		TTokenizer::getTokens() const
-		{
-			return m_tokens;
 		}
 		
 		TString
 		TTokenizer::toString() const
 		{
-			std::ostringstream str{};
-	
-			if (not getTokens().empty())
-			for (const auto& tokenData : getTokens())
-			{
-				auto __chunks {tokenData->getChunks()};
-				
-				#ifdef HAVE_CXX17
-				if (__chunks)
-				#else
-				if (not __chunks.empty())
-				#endif
-				{
-					size_t index{};
-					#ifdef HAVE_CXX17
-					for (const auto& __chunk : *__chunks)
-					#else
-					for (const auto& __chunk : __chunks)
-					#endif
-					{
-						str << __chunk;
-						str << std::endl;
-						++index;
-					}
-				}
-			}
-			return str.str();
+			std::ostringstream __oss;
+			auto __chunks = m_token->getChunks();
+			
+			if (not __chunks.empty())
+				for (const auto& __chunk : __chunks)
+					__oss << __chunk << std::endl;
+			
+			return __oss.str();
 		};
 		
-		bool TTokenizer::tokenizeLines(TConstValue token)
-		{
-			const UInt32 delim = 46;
-			UInt32 lines { };
-			if (not isMultiline(token, lines))
-				return false;
-			
-			m_mode = TokenMode::kMultiLine;
-			std::vector<TValue*> __tokens { };
-			readToken(token, delim, lines, __tokens);
-			m_tokens.reserve(lines);
-			if (not __tokens.empty())
-			{
-				for (const auto& __token : __tokens)
-				{
-					m_tokens.push_back(new TToken(*__token));
-					auto __tokInfo = m_tokens.back()->getInfo();
-					__tokInfo.lines = lines;
-					m_tokens.back()->setInfo(__tokInfo);
-				}
-			}
-			return not m_tokens.back()->isEmpty();
-		}
-		
-		bool TTokenizer::tokenizeComplex(TConstValue token)
+		/*
+		bool TTokenizer::tokenizeComplex(TTokenizer::TConstValue token)
 		{
 			UInt32 parts { };
 			if (not isComplex(token, parts))
 				return false;
 			
 			std::vector<TValue> __tokens { };
-			TToken::TokenInfo __info { };
-			// if (m_tokens.empty())
-			// 	m_tokens.push_back(new TToken());
+			TToken::TTokenInfo __info { };
+			// if (m_token.empty())
+			// 	m_token.push_back(new TToken());
 			
-			__info = m_tokens.back()->getInfo();
+			__info = m_token.back()->getInfo();
 			__info.punctuationChars = parts;
 			
-			m_tokens.back()->setInfo(__info);
+			m_token.back()->setInfo(__info);
 			tokenizeWords(token);
+			
 			return true;
 		}
+		*/
 		
-		bool TTokenizer::tokenizeWords(TConstValue token)
+		void TTokenizer::readToken(TTokenizer::TConstValue token, const Int64& maxCount,
+								   TByte sep, TTokenizer::TTokenValueHolder& chunks)
 		{
-			const Int8 delim = 32;
-			const Int8 sep = ',';
-			std::vector<TValue*> __tokens { };
-			TToken::TokenInfo __info;
-			if (m_mode == TokenMode::kMultiLine)
+			if (token.empty() or not maxCount)
 			{
-				m_mode = TokenMode::kSimple;
-				__info = m_tokens.back()->getInfo();
-				__info.wordCount = countWords(token);
-				__info.punctuationChars = std::count(token.cbegin(), token.cend(), sep);
-				
-				if (__info.wordCount == 0)
-					return false;
-				
-				m_tokens.back()->setInfo(__info);
-				readToken(token, delim, __info.wordCount + 1, __tokens);
-				for (auto& __tok : __tokens)
-				{
-					sanitizeExcluded(*__tok);
-					m_tokens.back()->push(*__tok, __info);
-				}
-			} else
-			{
-				static UInt32 line { };
-				m_mode = TokenMode::kSimple;
-				if (m_tokens.empty())
-				{
-					m_tokens.push_back(new TToken(token));
-					m_tokens.reserve(1);
-				}
-				for (auto& data : m_tokens)
-				{
-					auto part = data->getPart();
-					const UInt32 __wordCount = countWords(part);
-					readToken(part, delim, __wordCount + 1, __tokens);
-					__info = TToken::TokenInfo();
-					__info.wordCount = __wordCount;
-					__info.punctuationChars = std::count(token.cbegin(), token.cend(), sep);
-					__info.lines = line++;
-					
-					for (auto& __tok : __tokens)
-					{
-						sanitizeExcluded(*__tok);
-						data->push(*__tok, __info);
-					}
-				}
-			}
-			return true;
-		}
-		
-		void TTokenizer::readToken(TConstValue token, char delim,
-		                           const Int64& maxCount, std::vector<TValue*>& tokens)
-		{
-			if (token.empty() or maxCount == 0)
+				printl_log("Token is empty")
 				return;
+			}
 			
-			size_t __pos { };
-			size_t __end { };
-			
-			while ((__end = token.find_first_of(delim, __pos)) <= token.length())
+			TSize __pos {}, __end {};
+			TValue __chunk;
+			while (( __end = token.find_first_of(sep, __pos)) <= token.length())
 			{
-				auto __range = range(token, __pos, __end - __pos);
-				sanitizeExcluded(__range);
-				tokens.push_back(new TValue(__range));
+				__chunk = cleanExcluded(token, __pos, __end - __pos);
+				chunks.push_back(__chunk);
 				__pos = std::min(__end + 1, token.length());
 			}
-			
-			if (m_mode == TokenMode::kSimple)
-			{
-				auto __range = range(token, __pos, token.length() - __pos - 1);
-				sanitizeExcluded(__range);
-				tokens.push_back(new TValue(__range));
-			}
+			__chunk = cleanExcluded(token, __pos, token.length() - __pos - 1);
+			chunks.push_back(__chunk);
 		}
 		
-		void
-		TTokenizer::sanitizeExcluded(TValue& token)
+		inline TTokenizer::TValue&
+		TTokenizer::cleanExcluded(TTokenizer::TValue& token, TSize begin, TSize end)
 		{
-			sanitize(token, nonAllowedChars);
+			auto __range = StringUtils::range(token, begin, end);
+			return cleanJunk(__range, nonAllowedChars);
 		}
 		
-		void
-		TTokenizer::sanitizeExcluded(TValue&& token)
-		{
-			sanitize(token, nonAllowedChars);
-		}
-		
-		void
-		TTokenizer::sanitize(TValue& token, const int* charList)
+		TTokenizer::TValue&
+		TTokenizer::cleanJunk(TTokenizer::TValue& token, const int* charList)
 		{
 			if (not charList)
 				return;
 			
-			int index = 0;
-			int chr = 0;
-			while ((chr = charList[index++]) != -1)
+			Int32 index = 0;
+			Int32 chr = 0;
+			while (( chr = charList[index++] ) != -1)
 			{
 				removePrefix(token, std::min(token.find_first_not_of(chr), token.size()));
 				removeSuffix(token, token.size() - std::min(token.find(chr), token.size()));
 			}
+			
+			return token;
 		}
 		
 		inline UInt32
-		TTokenizer::contains(TConstValue token,
-		                     std::function<bool(TValue::const_reference)>&& predicate)
+		TTokenizer::contains(TTokenizer::TConstValue token,
+							 std::function<bool(TTokenizer::TValue::const_reference)>&& predicate)
 		{
 			return static_cast<UInt32>(std::count_if(token.cbegin(), token.cend(), predicate));
 		}
 		
-		bool TTokenizer::empty(TValue::const_iterator token)
+		bool TTokenizer::empty(TTokenizer::TValue::const_iterator token)
 		{
 			int index = 0;
 			Int32 ch = 0;
-			while ((ch = token[index]) != '\0')
+			while (( ch = token[index] ) != '\0')
 			{
 				if (not std::isalnum(ch))
 					return false;
