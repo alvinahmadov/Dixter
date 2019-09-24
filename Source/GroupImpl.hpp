@@ -7,102 +7,110 @@
  */
 #pragma once
 
+#include "Exception.hpp"
+
 namespace Dixter
 {
 	/// Group implementation
 	template<class T, typename ID>
-	Group<T, ID>::Group()
-			: m_count { 0 },
-			  m_group { new Group<T, ID>::multimap_type() }
+	TGroup<T, ID>::TGroup() noexcept
+			: m_count(),
+			  m_group(new TMultimap)
 	{ }
 	
 	template<class T, typename ID>
-	Group<T, ID>::Group(Group <T, ID>&& src)
+	TGroup<T, ID>::TGroup(TGroup<T, ID>&& src) noexcept
+			: m_group(std::move(src.m_group)),
+			  m_count(std::move(src.m_count))
+	{ }
+	
+	template<class T, typename ID>
+	TGroup<T, ID>&
+	TGroup<T, ID>::operator=(TGroup&& src) noexcept
 	{
-		if (this != std::addressof(src))
-		{
-			m_group = std::move(src.m_group);
-			m_count = std::move(src.m_count);
-		}
+		m_group = std::move(src.m_group);
+		m_count = std::move(src.m_count);
 	}
 	
 	template<class T, typename ID>
-	Group<T, ID>::~Group()
+	TGroup<T, ID>::~TGroup() noexcept
 	{
-		for (auto& group_pair : *m_group)    // pair<string, list<GE*>*>
+		for (auto& group_pair : *m_group)
 			for (auto& __element : *group_pair.second)
-			{
-				SAFE_RELEASE(__element)
-			}
-		SAFE_RELEASE(m_group)
+				delete __element;
+		
+		delete m_group;
 	}
 	
 	template<class T, typename ID>
-	typename Group<T, ID>::object_type*
-	Group<T, ID>::add(Group<T, ID>::key_type& groupName, Group<T, ID>::element_type* groupElement)
+	typename TGroup<T, ID>::TObject*
+	TGroup<T, ID>::doAdd(const TGroup<T, ID>::TKey& groupName,
+						 TGroup<T, ID>::TElement* groupElement)
 	{
 		std::lock_guard<std::mutex> addLock(m_mutex);
-		bool __bGroupExists { hasGroup(groupName) };
-		bool __bElementExist { hasElement(groupName, groupElement->getProperties()->getId()) };
+		bool __groupExists(this->hasGroup(groupName));
+		bool __elementExists(this->hasElement(groupName, groupElement->getProperties()->getId()));
 		
 		// create both group and element
-		if (!__bGroupExists && !__bElementExist)
+		if (not __groupExists and not __elementExists)
 		{
 			/// If we don't have the item then create group and add child item to the new group
-			m_group->insert(Group<T, ID>::value_type { groupName, (new Group<T, ID>::container_type { groupElement }) });
-			m_count++;
-		} else if (__bGroupExists && !__bElementExist)
+			m_group->insert({ groupName, new TGroup<T, ID>::TContainer { groupElement }});
+			++m_count;
+		}
+		else if (__groupExists and not __elementExists)
 		{
 			// create only item in existing group
-			getGroup(groupName)->push_back(groupElement);
-		} else
-		{
-			throw IllegalArgumentException("%s:%d\nThe specified m_element can not be added to the group %s", __FILE__, __LINE__, groupName);
+			this->getGroup(groupName)->push_back(groupElement);
 		}
+		else
+			throw TIllegalArgumentException(
+					"%s:%d\nThe specified element can not be added to the group %s",
+					__FILE__, __LINE__, groupName);
+		
 		return groupElement->getElement();
 	}
 	
-	template<class T, typename ID>
-	template<class cast_type>
-	inline cast_type*
-	Group<T, ID>::add(Group<T, ID>::key_type& groupName, object_type* element, ID id,
-	                  bool autoRelease, const string_t& description)
-	{
-		if (hasElement(groupName, id))
-		{
-			return get<cast_type>(groupName, id);
-		}
-		try
-		{
-			// assert(validGroupName(groupName));
-			// assert(validElement(element));
-			
-			auto gElement = new GroupElement<object_type*, ID>(element, id, description, autoRelease);
-			
-			return dynamic_cast<cast_type*>(add(groupName, gElement));
-		} catch (Exception& e)
-		{
-			printerr(e.what())
-		}
-		return nullptr;
-	}
+	// Mutators
 	
 	template<class T, typename ID>
-	template<class cast_type>
-	inline cast_type*
-	Group<T, ID>::add(object_type* element, ID id,
-	                  bool autoRelease, const string_t& description)
+	template<class TCast>
+	TCast*
+	TGroup<T, ID>::add(const TGroup<T, ID>::TKey& groupName, TObject* element, ID id,
+					   bool autoRelease, TStringView description)
 	{
-		key_type groupNameDefault {"Default"};
+		if (this->hasElement(groupName, id))
+			return this->get<TCast>(groupName, id);
 		
+		dxASSERT_MSG(this->isValidGroupName(groupName), "Not a valid group m_name.");
+		dxASSERT_MSG(this->isValidElement(element), "Not a valid element.");
 		try
 		{
-			assert(validElement(element));
-			
-			auto gElement = new GroupElement<object_type*, ID>(element, id, description, autoRelease);
-			
-			return dynamic_cast<cast_type*>(add(groupNameDefault, gElement));
-		} catch (Exception& e)
+			return dynamic_cast<TCast*>(this->doAdd(
+					groupName,
+					new TGroupElement<TObject*, ID> { element, id, description, autoRelease }));
+		}
+		catch (TException& e)
+		{
+			printerr(e.getMessage())
+		}
+		return nullptr;
+	}
+	
+	template<class T, typename ID>
+	template<class TCast>
+	TCast*
+	TGroup<T, ID>::add(TObject* element, ID id, bool autoRelease,
+					   TStringView description)
+	{
+		dxASSERT_MSG(this->isValidElement(element), "Not a valid element.");
+		try
+		{
+			return dynamic_cast<TCast*>(this->doAdd(
+					s_defaultGroup,
+					new TGroupElement<TObject*, ID>(element, id, description, autoRelease)));
+		}
+		catch (TException& e)
 		{
 			printerr(e.what())
 		}
@@ -110,182 +118,218 @@ namespace Dixter
 	}
 	
 	template<class T, typename ID>
-	bool Group<T, ID>::remove(Group<T, ID>::key_type& groupName, ID id)
+	bool TGroup<T, ID>::remove(const TGroup<T, ID>::TKey& groupName, ID id)
 	{
-		bool __bExists { hasElement(groupName, id) };
-		Group<T, ID>::mapped_type __elementList = nullptr;
+		bool __bExists(this->hasElement(groupName, id));
+		TGroup<T, ID>::TMapped __elementList {};
 		if (__bExists)
 		{
-			std::for_each(m_group->begin(), m_group->end(), [ & ](Group<T, ID>::value_type& values)
-			{
-				if (values.first == groupName)
-				{
-					__elementList = values.second;
-					for (auto __listIter = __elementList->begin(); __listIter != __elementList->end(); __listIter++)
+			std::for_each(
+					m_group->begin(), m_group->end(),
+					[ & ](TGroup<T, ID>::TValue& values)
 					{
-						if (((*__listIter)->equal(id)) && !((*__listIter)->empty()))
+						if (values.first == groupName)
 						{
-							releaseElement((*__listIter));
-							__elementList->erase(__listIter);
-							--m_count;
-							__bExists = hasElement(groupName, id);
-							return !__bExists;
+							__elementList = values.second;
+							for (auto __listIter = __elementList->begin();
+								 __listIter != __elementList->end();
+								 ++__listIter)
+							{
+								if ((( *__listIter )->equal(id)) and not(( *__listIter )->empty()))
+								{
+									this->releaseElement(( *__listIter ));
+									__elementList->erase(__listIter);
+									--m_count;
+									__bExists = this->hasElement(groupName, id);
+									return not __bExists;
+								}
+							}
 						}
-					}
-				}
-				return __bExists;
-			});
+						return __bExists;
+					});
 		}
 		return false;
 	}
 	
 	template<class T, typename ID>
-	Group<T, ID>& Group<T, ID>::append(T* element, ID id)
+	inline void TGroup<T, ID>::clear()
 	{
-		auto mp = getGroup(getGroupCount() - 1);
+		m_group->clear();
+	}
+	
+	template<class T, typename ID>
+	TGroup<T, ID>&
+	TGroup<T, ID>::append(T* element, ID id)
+	{
+		auto mp = this->getGroup(getSize() - 1);
 		
-		mp->insert(mp->end(), new GroupElement<object_type*, ID>(element, id));
+		mp->insert(mp->end(), new TGroupElement<TObject*, ID>(element, id));
 		return *this;
 	}
 	
 	template<class T, typename ID>
-	typename Group<T, ID>::mapped_type
-	inline& Group<T, ID>::getGroup(Group<T, ID>::key_type& groupName)
+	inline typename TGroup<T, ID>::TMapped&
+	TGroup<T, ID>::getGroup(const TGroup<T, ID>::TKey& groupName)
 	{
-		if (hasGroup(groupName))
-		{
+		if (this->hasGroup(groupName))
 			return m_group->at(groupName);
-		} else
-		{
-			throw NotFoundException("%s:%d\nThe group %s is not found");
-		} // , __FILE__, __LINE__, groupName);
+		else
+			throw TNotFoundException(
+					"%s:%d\nThe group %s is not found",
+					__FILE__, __LINE__, groupName);
 	}
 	
 	template<class T, typename ID>
-	template<class cast_type>
-	cast_type*
-	Group<T, ID>::get(ID id)
+	template<class TCast>
+	TCast*
+	TGroup<T, ID>::get(ID id)
 	{
 		auto __first = m_group->begin();
 		auto __last = m_group->end();
 		
-		for (auto __iter = __first; __iter != __last; __iter++)
+		for (auto __iter = __first;
+			 __iter != __last; __iter++)
 		{
 			auto __container = __iter->second;
 			for (auto __groupItem : *__container)
-			{
 				if (__groupItem->equal(id))
-				{
-					return dynamic_cast<cast_type*>(__groupItem->getElement());
-				}
-			}
+					return dynamic_cast<TCast*>(__groupItem->getElement());
 		}
-		throw NotFoundException("%s:%d Item with id %d not found."); //, __FILE__, __LINE__, id};
+		throw TNotFoundException("%s:%d Item with id %d not found.", __FILE__, __LINE__, id);
 	}
 	
 	template<class T, typename ID>
-	template<class cast_type>
-	inline cast_type*
-	Group<T, ID>::get(Group<T, ID>::key_type& groupName, ID id)
+	template<class TCast>
+	inline TCast*
+	TGroup<T, ID>::get(const TGroup<T, ID>::TKey& groupName, ID id)
 	{
 		if (m_group->find(groupName) == m_group->end())
-			throw NotFoundException(string_t("%s:%d Item with id %d not found in group \"%s\""));
-		
+			throw TNotFoundException(
+					"%s:%d Item with id %d not found in group \"%s\"",
+					__FILE__, __LINE__, groupName);
 		
 		for (const auto& __groupItem : *m_group->find(groupName)->second)
 		{
 			if (__groupItem->equal(id))
-			{
-				return dynamic_cast<cast_type*>(__groupItem->getElement());
-			}
+				return dynamic_cast<TCast*>(__groupItem->getElement());
 		}
-		throw NotFoundException(string_t("%s:%d Item with id %d not found in group \"%s\""));
+		throw TNotFoundException(
+				"%s:%d Item with id %d not found in group \"%s\"",
+				__FILE__, __LINE__, groupName);
 	}
 	
 	template<class T, typename ID>
-	inline size_t
-	Group<T, ID>::getGroupCount() const
+	template<
+			typename TReturn,
+			typename... TArgs
+	>
+	void
+	TGroup<T, ID>::forEach(TReturn(T::*method)(TArgs ...), TArgs... args)
+	{
+		auto __methodCallback = TMethodCallback<T, TReturn, TArgs...>(method);
+		std::for_each(
+				begin(), end(), [ &__methodCallback, &args... ](auto& pair)
+				{
+					for (TElement* __item : *pair.second)
+					{
+						if (not __item->empty())
+							__methodCallback(__item->getElement(), std::forward<TArgs>(args)...);
+					}
+				});
+	}
+	
+	template<class T, typename ID>
+	template<
+			typename TReturn,
+			typename... TArgs
+	>
+	inline void
+	TGroup<T, ID>::forEach(const TGroup<T, ID>::TKey& groupName,
+						   TReturn(T::*method)(TArgs...),
+						   TArgs... args)
+	{
+		auto __methodCallback = TMethodCallback<T, TReturn, TArgs...>(method);
+		for (auto& __item : *getGroup(groupName))
+			__methodCallback(__item->getElement(), std::forward<TArgs>(args)...);
+	}
+	
+	// Accessors
+	template<class T, typename ID>
+	inline TSize
+	TGroup<T, ID>::getSize() const
 	{
 		return m_group->size();
 	}
 	
 	template<class T, typename ID>
-	inline size_t
-	Group<T, ID>::getItemCount(Group<T, ID>::key_type& groupName)
+	inline TSize
+	TGroup<T, ID>::getItemCount(const TGroup<T, ID>::TKey& groupName) const
 	{
-		auto __groupItems = getGroup(groupName);
+		auto __groupItems = this->getGroup(groupName);
 		if (__groupItems->size())
-		{
-			return getGroup(groupName)->size();
-		}
+			return this->getGroup(groupName)->size();
 		return 0;
 	}
 	
 	template<class T, typename ID>
-	template<typename R, typename ... Args>
-	void
-	Group<T, ID>::forEach(R(T::*method)(Args ...), Args ... args)
+	inline bool TGroup<T, ID>::empty() const noexcept
 	{
-		auto __methodCallback = MethodCallback<T, R, Args ...>(method);
-		std::for_each(begin(), end(), [ &__methodCallback, &args ... ](Group<T, ID>::value_type& pair)
-		{
-			for (element_type* __item : *pair.second)
-			{
-				if (!__item->empty())
-				{
-					__methodCallback(__item->getElement(), args...);
-				}
-			}
-		});
+		return m_group->empty();
 	}
 	
 	template<class T, typename ID>
-	template<typename R, typename ... Args>
-	void
-	Group<T, ID>::forEach(Group<T, ID>::key_type& groupName, R(T::*method)(Args ...), Args ... args)
+	inline bool TGroup<T, ID>::empty(const TGroup<T, ID>::TKey& key) const noexcept
 	{
-		auto __methodCallback = MethodCallback<T, R, Args ...>(method);
-		for (auto& __item : *(getGroup(groupName)))
-		{
-			__methodCallback(__item->getElement(), args...);
-		}
+		this->getGroup(key)->empty();
 	}
 	
 	template<class T, typename ID>
-	inline auto
-	Group<T, ID>::begin()
+	inline bool TGroup<T, ID>::isEmpty() const noexcept
+	{
+		return this->empty();
+	}
+	
+	template<class T, typename ID>
+	inline bool TGroup<T, ID>::isEmpty(const TGroup<T, ID>::TKey& key) const noexcept
+	{
+		return this->empty(key);;
+	}
+	
+	template<class T, typename ID>
+	typename TGroup<T, ID>::TIterator
+	inline TGroup<T, ID>::begin() noexcept
 	{
 		return m_group->begin();
 	}
 	
 	template<class T, typename ID>
-	inline auto
-	Group<T, ID>::end()
+	typename TGroup<T, ID>::TIterator
+	inline TGroup<T, ID>::end() noexcept
 	{
 		return m_group->end();
 	}
 	
 	template<class T, typename ID>
-	inline const auto
-	Group<T, ID>::cbegin() const dxDECL_NOEXCEPT
+	typename TGroup<T, ID>::TConstIterator
+	inline TGroup<T, ID>::cbegin() const noexcept
 	{
-		return m_group->cbegin();
+		return m_group->begin();
 	}
 	
 	template<class T, typename ID>
-	inline const auto
-	Group<T, ID>::cend() const dxDECL_NOEXCEPT
+	typename TGroup<T, ID>::TConstIterator
+	inline TGroup<T, ID>::cend() const noexcept
 	{
-		return m_group->cend();
+		return m_group->end();
 	}
 	
 	template<class T, typename ID>
 	bool
-	Group<T, ID>::hasElement(const Group<T, ID>::key_type& groupName, const ID& id) const
+	TGroup<T, ID>::hasElement(const TGroup<T, ID>::TKey& groupName, const ID& id) const
 	{
-		bool __bExists { };
+		bool __bExists {};
 		
-		if (hasGroup(groupName))
+		if (this->hasGroup(groupName))
 		{
 			auto __first = m_group->begin();
 			auto __last = m_group->end();
@@ -294,10 +338,8 @@ namespace Dixter
 			{
 				for (const auto& __element : *__iterator->second)
 				{
-					if (__element->getProperties()->getId() == id && __element->getElement() != nullptr)
-					{
+					if (__element->getProperties()->getId() == id and __element->getElement() != nullptr)
 						__bExists = true;
-					}
 				}
 			}
 		}
@@ -305,14 +347,29 @@ namespace Dixter
 	}
 	
 	template<class T, typename ID>
-	bool Group<T, ID>::hasGroup(const Group<T, ID>::key_type& groupName) const
+	inline bool
+	TGroup<T, ID>::isValidGroupName(const TGroup<T, ID>::TKey& groupName) const
 	{
-		for (const value_type& __value : *m_group)
+		return this->hasGroup(groupName) or ( groupName.size() > 0 );
+	}
+	
+	template<class T, typename ID>
+	inline bool
+	TGroup<T, ID>::isValidElement(const TGroup<T, ID>::TObject* element) const
+	{
+		return ( element != nullptr );
+	}
+	
+	template<class T, typename ID>
+	bool TGroup<T, ID>::hasGroup(const TGroup<T, ID>::TKey& groupName) const
+	{
+		for (const TValue& __value : *m_group)
 			if (__value.first.compare(groupName) == 0)
-			{
 				return true;
-			}
-		
 		return false;
 	}
+	
+	template<class T, typename ID>
+	const typename TGroup<T, ID>::TKey
+			TGroup<T, ID>::s_defaultGroup("Default");
 }
