@@ -18,19 +18,32 @@ namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		std::ostream& operator<<(std::ostream& out, const std::multimap<TString, std::vector<TString>>& rs);
-		std::ostream& operator<<(std::ostream& out, const std::vector<TString>& sv);
+		inline TString toString(std::unordered_multimap<TString, std::vector<TString>>& resultMap)
+		{
+			std::ostringstream __oss{};
+			
+			for(const auto&[__k,__vs] : resultMap)
+			{
+				__oss << __k << ": {";
+				for (const auto& __v : __vs)
+					__oss << __v << " ";
+				
+				__oss << "}\n";
+			}
+			
+			return __oss.str();
+		}
 		
 		class TDictionary
 		{
 			using TDatabaseManager      = Database::TManager;
 			using TDatabaseManagerPtr   = std::shared_ptr<TDatabaseManager>;
 			using TStringVector         = std::vector<TString>;
-			using TSearchResult         = std::multimap<TString, TStringVector>;
+			using TSearchResult         = std::unordered_multimap<TString, TStringVector>;
 			#ifdef HAVE_CXX17
 			using TWord = TStringView;
 			#else
-			using TWord = const TString&;
+			using TSentence = const TString&;
 			#endif
 		public:
 			TDictionary(TDatabaseManagerPtr manager, TString table, TString column) noexcept;
@@ -38,12 +51,12 @@ namespace Dixter
 			~TDictionary() noexcept = default;
 			
 			const TSearchResult&
-			search(TWord word, const TString& column, bool asRegex = false) noexcept;
+			search(TWord word, const TString& column, bool fullsearch = false) noexcept;
 			
 		protected:
-			void _search(TByte key, TDatabaseManager::TClause clause);
+			void doSearch(TByte key, TDatabaseManager::TClause clause);
 			
-			void _collect(const TString& table, TDatabaseManager::TClause clause);
+			void fetch(const TString& table, TDatabaseManager::TClause clause);
 		
 		private:
 			TString m_table;

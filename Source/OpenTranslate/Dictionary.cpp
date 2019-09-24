@@ -16,47 +16,22 @@ namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		std::ostream& operator<<(std::ostream& out, const std::vector<TString>& sv)
-		{
-			if(sv.empty())
-				return out;
-			out << '[';
-			uint index {};
-			for (const auto& v : sv)
-				out << v << (index++ != sv.size() - 1 ? ", " : "]");
-			
-			return out;
-		}
-		
-		std::ostream& operator<<(std::ostream& out, const std::multimap<TString, std::vector<TString>>& rs)
-		{
-			if(rs.empty())
-				return out;
-			out << '{';
-			
-			uint oidx {};
-			for(const auto&[__k, __sv] : rs)
-				out << __k << ": " << __sv << (oidx++ != rs.size() - 1 ? ",\n" : "}" );
-			
-			return out;
-		}
-		
 		TDictionary::TDictionary(TDatabaseManagerPtr manager, TString table, TString column) noexcept
-				: m_table { table },
-				  m_column { column },
-				  m_databaseManager { manager }
+				: m_table(table),
+				  m_column(column),
+				  m_databaseManager(manager)
 		{ }
 		
 		const TDictionary::TSearchResult&
-		TDictionary::search(TWord word, const TString& column, bool asRegex) noexcept
+		TDictionary::search(TWord word, const TString& column, bool fullsearch) noexcept
 		{
-			auto __clause = asRegex ? column + " LIKE \"" + word.data() + "%\""
-			                        : column + "=\"" + word.data() + "\"";
-	
+			auto __clause = fullsearch ? column + " LIKE \"" + word.data() + "%\""
+									   : column + "=\"" + word.data() + "\"";
+			
 			try
 			{
-				const TByte __key = std::toupper(word.at(0));
-				JoinThread jthread(&TDictionary::_search, this, __key, __clause);
+				const TByte __key = std::toupper(word[0]);
+				JoinThread jthread(&TDictionary::doSearch, this, __key, __clause);
 			}
 			catch (const std::exception& e)
 			{
@@ -66,7 +41,7 @@ namespace Dixter
 		}
 		
 		void
-		TDictionary::_search(TByte key, TDatabaseManager::TClause clause)
+		TDictionary::doSearch(TByte key, TDatabaseManager::TClause clause)
 		{
 			if (not m_resultMap.empty())
 				m_resultMap.clear();
@@ -84,23 +59,22 @@ namespace Dixter
 			
 			while (__resultSetPtr->next())
 			{
-				if (__resultSetPtr->getString(1)[0] == key)
+				if (auto __key = __resultSetPtr->getString(1)[0]; __key == key)
 				{
 					const TString table = __resultSetPtr->getString(1);
-					_collect(table, clause);
+					this->fetch(table, clause);
 				}
 			}
 		}
 		
-		void TDictionary::_collect(const TString& table, TDatabaseManager::TClause clause)
+		void TDictionary::fetch(const TString& table, TDatabaseManager::TClause clause)
 		{
 			auto __cols = m_databaseManager->getColumns(table);
-			
 			auto __resultSetPtr = m_databaseManager->selectColumnsWhere(table, __cols, clause);
 			
 			while (__resultSetPtr->next())
 			{
-				for (size_t i = 0; i < __cols.size(); ++i)
+				for (TSize i = 0; i < __cols.size(); ++i)
 				{
 					auto __colValue = __resultSetPtr->getString(i + 1);
 					if (not __colValue.length())
