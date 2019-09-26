@@ -7,11 +7,10 @@ set(${DIXTER_BASE}_SOURCE_FILES
     ${DIXTER_SOURCE_DIR}/NodeEntry.cpp
     ${DIXTER_SOURCE_DIR}/Configuration.cpp
     ${DIXTER_SOURCE_DIR}/SettingsController.cpp
-    ${DIXTER_SOURCE_DIR}/Utilities.cpp
-    ${DIXTER_SOURCE_DIR}/Database/Manager.cpp
     ${DIXTER_SOURCE_DIR}/Database/QueryBuilder.cpp
     ${DIXTER_SOURCE_DIR}/Database/Table.cpp
     ${DIXTER_SOURCE_DIR}/Database/Value.cpp
+    ${DIXTER_SOURCE_DIR}/Database/Manager.cpp
     )
 
 file(GLOB DB_SOURCE_FILES ${DIXTER_SOURCE_DIR}/database/*.cpp)
