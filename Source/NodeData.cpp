@@ -9,6 +9,7 @@
 
 #include "NodeData.hpp"
 #include "Exception.hpp"
+#include "Macros.hpp"
 
 namespace Dixter
 {

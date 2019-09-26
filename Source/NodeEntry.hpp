@@ -152,8 +152,6 @@ namespace Dixter
 		TEntryMap m_nodeEntries;
 		mutable std::mutex m_mutex;
 	};
-	
-	using NodeEntryPtr = std::shared_ptr<TNodeEntry>;
 }
 
 namespace Dixter
@@ -194,10 +192,10 @@ namespace Dixter
 		auto __methodCallback = TMethodCallback<TNodeData, TReturn, TArgs...>(method);
 		std::for_each(
 				m_nodeEntries.begin(), m_nodeEntries.end(),
-				[ &__methodCallback, &args... ](auto& pair)
+				[ &__methodCallback, &args... ](TNodeEntry::TEntryMap::value_type& pair)
 				{
 					if (pair.second)
 						__methodCallback(pair.second, args...);
 				});
 	}
-}
+} // namespace Dixter

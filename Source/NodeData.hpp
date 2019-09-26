@@ -21,8 +21,8 @@ namespace Dixter
 	{
 		TAttribute() = delete;
 		
-		TAttribute(const TString& attributeName,
-				   const TUString& attributeValue) noexcept;
+		explicit TAttribute(const TString& attributeName,
+							const TUString& attributeValue) noexcept;
 		
 		TAttribute(const TAttribute&) = default;
 		
@@ -47,8 +47,8 @@ namespace Dixter
 		 * @param nodeName name of the node
 		 * @param nodeValue value of node
 		 * */
-		TNode(const TString& nodeName, const TUString& nodeValue,
-			  const TString& parent = TString()) noexcept;
+		explicit TNode(const TString& nodeName, const TUString& nodeValue,
+					   const TString& parent = TString()) noexcept;
 		
 		TNode(const TNode&) = default;
 		
@@ -79,9 +79,9 @@ namespace Dixter
 		/**
 		 * Default constructor
 		 **/
-		TNodeData() = default;
+		TNodeData() noexcept = default;
 		
-		~TNodeData() = default;
+		~TNodeData() noexcept = default;
 		
 		/**
 		 * Add node for configuration

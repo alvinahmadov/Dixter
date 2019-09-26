@@ -9,6 +9,7 @@
 
 #include <mutex>
 
+#include "Macros.hpp"
 #include "NodeEntry.hpp"
 #include "Exception.hpp"
 
@@ -49,7 +50,7 @@ namespace Dixter
 		}
 		else if (m_throw == EException::Throw)
 			throw TNotFoundException(
-					"%s:%d Node data for name %s not found.", __FILE__, __LINE__, key);
+					"%s:%d Node data for name \"%s\" not found.", __FILE__, __LINE__, key);
 		
 		return __found;
 	}
@@ -60,14 +61,15 @@ namespace Dixter
 		if (checkIndex(index))
 		{
 			auto iter = m_nodeEntries.find(index);
-			auto __nodeName = findEntry(value)->m_name;
+			auto& __nodes = iter->second->getNodes();
+			const auto& __nodeName = findEntry(value)->m_name;
+			
+			auto __f_pred = [ &__nodeName ](std::shared_ptr<TNode>& node)
+			{ return node->m_name.compare(__nodeName) == 0; };
 			
 			std::replace_if(
-					iter->second->getNodes().begin(), iter->second->getNodes().end(),
-					[ &__nodeName ](auto& node)
-					{ return node->m_name.compare(__nodeName) == 0; },
-					dxMAKE_SHARED(TNode, __nodeName, value)
-						   );
+					__nodes.begin(), __nodes.end(),
+					__f_pred, dxMAKE_SHARED(TNode, __nodeName, value));
 			return true;
 		}
 		return false;
@@ -110,7 +112,7 @@ namespace Dixter
 		if (m_throw == EException::Throw)
 			if (not __data)
 				throw TNotFoundException(
-						"%s:%d Node data for %s not found.", __FILE__, __LINE__, value.asUTF8());
+						"%s:%d Node data for \"%s\" not found.", __FILE__, __LINE__, value.asUTF8());
 		
 		return __data;
 	}
@@ -134,7 +136,7 @@ namespace Dixter
 		
 		if (m_throw == EException::Throw)
 			if (not __data)
-				throw TNotFoundException("%s:%d Node data for index %d not found.", __FILE__, __LINE__, index);
+				throw TNotFoundException("%s:%d Node data for index \'%d\' not found.", __FILE__, __LINE__, index);
 		
 		return __data;
 	}
