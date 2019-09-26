@@ -9,6 +9,10 @@
 
 #include <cppconn/resultset.h>
 #include <cppconn/exception.h>
+
+#include "Group.hpp"
+#include "Macros.hpp"
+#include "Constants.hpp"
 #include "Dictionary.hpp"
 #include "JoinThread.hpp"
 
@@ -16,10 +20,8 @@ namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		TDictionary::TDictionary(TDatabaseManagerPtr manager, TString table, TString column) noexcept
-				: m_table(table),
-				  m_column(column),
-				  m_databaseManager(manager)
+		TDictionary::TDictionary(TDatabaseManagerPtr manager) noexcept
+				: m_databaseManager(manager)
 		{ }
 		
 		const TDictionary::TSearchResult&
@@ -27,6 +29,9 @@ namespace Dixter
 		{
 			auto __clause = fullsearch ? column + " LIKE \"" + word.data() + "%\""
 									   : column + "=\"" + word.data() + "\"";
+			
+			if (not m_resultMap.empty())
+				m_resultMap.clear();
 			
 			try
 			{
@@ -41,46 +46,44 @@ namespace Dixter
 		}
 		
 		void
-		TDictionary::doSearch(TByte key, TDatabaseManager::TClause clause)
+		TDictionary::doSearch(TByte key, TDatabaseManager::TClause&& clause)
 		{
-			if (not m_resultMap.empty())
-				m_resultMap.clear();
-			
-			std::lock_guard lockGuard(m_mutex);
-			TDatabaseManager::TResultSetPtr __resultSetPtr {};
-			
 			try
 			{
-				__resultSetPtr = m_databaseManager->selectColumn(m_table, m_column);
-			} catch (sql::SQLException& e)
+				std::lock_guard<std::mutex> __lg(m_mutex);
+				auto __resultSetPtr = m_databaseManager->selectColumn(g_indexTable, g_indexColumn);
+				while (__resultSetPtr->next())
+				{
+					if (auto __key = __resultSetPtr->getString(1)[0];
+							__key == key)
+					{
+						const TString table = __resultSetPtr->getString(1);
+						this->fetch(table, clause);
+					}
+				}
+			}
+			catch (sql::SQLException& e)
 			{
 				printerr(e.what())
 			}
-			
-			while (__resultSetPtr->next())
-			{
-				if (auto __key = __resultSetPtr->getString(1)[0]; __key == key)
-				{
-					const TString table = __resultSetPtr->getString(1);
-					this->fetch(table, clause);
-				}
-			}
 		}
 		
-		void TDictionary::fetch(const TString& table, TDatabaseManager::TClause clause)
+		void TDictionary::fetch(const TString& table, TDatabaseManager::TClause& clause)
 		{
 			auto __cols = m_databaseManager->getColumns(table);
 			auto __resultSetPtr = m_databaseManager->selectColumnsWhere(table, __cols, clause);
 			
 			while (__resultSetPtr->next())
 			{
-				for (TSize i = 0; i < __cols.size(); ++i)
+				for (TSize i { 0UL }; i < __cols.size(); ++i)
 				{
 					auto __colValue = __resultSetPtr->getString(i + 1);
+					
 					if (not __colValue.length())
 						break;
 					
-					if (auto __pos = m_resultMap.find(__cols.at(i)); __pos != m_resultMap.end())
+					if (auto __pos = m_resultMap.find(__cols.at(i));
+							__pos != m_resultMap.end())
 						__pos->second.push_back(__colValue);
 					else
 						m_resultMap.emplace_hint(
@@ -89,5 +92,5 @@ namespace Dixter
 				}
 			}
 		}
-	}
-}
+	} // namespace OpenTranslate
+} // namespace Dixter

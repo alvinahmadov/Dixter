@@ -10,12 +10,17 @@
 
 #include <mutex>
 
-#include "Group.hpp"
 #include "Database/Manager.hpp"
 #include "setup.h"
 
 namespace Dixter
 {
+	template<
+			typename T,
+			typename ID
+	>
+	class TGroup;
+	
 	namespace OpenTranslate
 	{
 		inline TString toString(std::unordered_multimap<TString, std::vector<TString>>& resultMap)
@@ -43,27 +48,32 @@ namespace Dixter
 			#ifdef HAVE_CXX17
 			using TWord = TStringView;
 			#else
-			using TSentence = const TString&;
+			using TWord = const TString&;
 			#endif
+		
 		public:
-			TDictionary(TDatabaseManagerPtr manager, TString table, TString column) noexcept;
+			explicit TDictionary(TDatabaseManagerPtr manager) noexcept;
 			
 			~TDictionary() noexcept = default;
 			
 			const TSearchResult&
 			search(TWord word, const TString& column, bool fullsearch = false) noexcept;
-			
+		
 		protected:
-			void doSearch(TByte key, TDatabaseManager::TClause clause);
+			void doSearch(TByte key, TDatabaseManager::TClause&& clause);
 			
-			void fetch(const TString& table, TDatabaseManager::TClause clause);
+			void fetch(const TString& table, TDatabaseManager::TClause& clause);
 		
 		private:
 			TString m_table;
+			
 			TString m_column;
-			mutable std::mutex m_mutex;
+			
 			TSearchResult m_resultMap;
+			
 			TDatabaseManagerPtr m_databaseManager;
+			
+			mutable std::mutex m_mutex;
 		};
-	}
-}
+	} // namespace OpenTranslate
+} // namespace Dixter
