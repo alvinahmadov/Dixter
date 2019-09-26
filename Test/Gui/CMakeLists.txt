@@ -2,9 +2,10 @@ list(APPEND DIXTER_GUI_INCLUDES     ${DIXTER_INCLUDE_DIR} ${DIXTER_INCLUDE_DIR}/
 list(APPEND DIXTER_GUI_LIBRARIES    ${DIXTER_GUI})
 
 set(GUI_TARGET DixterGui)
-set(SOURCES DixterGui.cpp ../../app.qrc)
+set(GUI_TARGET_SOURCES DixterGui.cpp ../../app.qrc)
 
-add_target_module(${GUI_TARGET} DIXTER_GUI "${SOURCES}" "${DIXTER_GUI_INCLUDES}" "${DIXTER_GUI_LIBRARIES}")
+add_target_module(${GUI_TARGET} DIXTER_GUI "${GUI_TARGET_SOURCES}"
+                  "${DIXTER_GUI_INCLUDES}" "${DIXTER_GUI_LIBRARIES}")
 
 add_custom_command(
         TARGET ${GUI_TARGET} POST_BUILD
