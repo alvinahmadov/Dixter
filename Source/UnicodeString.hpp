@@ -30,9 +30,10 @@ namespace Dixter
 	
 	class TUnicodeString : public icu::UnicodeString
 	{
-	private:
+	public:
 		using TBase = icu::UnicodeString;
 		using TSelf = TUnicodeString;
+		using value_type = char;
 	public:
 		TUnicodeString() = default;
 		
@@ -71,6 +72,14 @@ namespace Dixter
 		TSelf& append(const char16_t* uswd);
 		
 		TSelf& append(const TSelf& self);
+		
+		TSelf& prepend(uint32_t i);
+		
+		TSelf& prepend(const std::string& s);
+		
+		TSelf& prepend(const char16_t* uswd);
+		
+		TSelf& prepend(const TSelf& self);
 		
 		bool empty() const
 		{

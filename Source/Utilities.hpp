@@ -15,7 +15,6 @@
 #include <boost/format.hpp>
 #include <list>
 #include <cstring>
-#include <unicode/ustring.h>
 #include <clocale>
 
 #ifdef HAVE_CXX17
@@ -279,8 +278,8 @@ namespace Dixter
 				// }
 			}
 			
-			template<typename String, typename Char = typename String::value_type>
-			void encloseWith(String& returnValue, Char startChar, Char endChar)
+			template<typename String, typename TChar = typename String::value_type>
+			void encloseWith(String& returnValue, TChar startChar, TChar endChar)
 			{
 				returnValue.insert(0, 1, startChar);
 				returnValue.insert(returnValue.length(), 1, endChar);
@@ -300,7 +299,8 @@ namespace Dixter
 				for(; first != last; ++first, ++__counter)
 				{
 					__oss << *first;
-					__oss << sep;
+					if (__distance != 1 && __counter != __distance - 1)
+						__oss << sep;
 					if (width > 0 && __counter%width == 0)
 						__oss << '\n';
 				}
@@ -309,15 +309,27 @@ namespace Dixter
 				return __oss.str();
 			}
 			
+			template<typename TIIterator>
+			TString toString(TIIterator first, TIIterator last, int width)
+			{
+				return std::move(toString(first, last, ", ", width));
+			}
+			
 			template<typename TSeqContainer>
 			inline TString toString(TSeqContainer container, const TByte* sep = ", ", int width = -1)
 			{
 				return toString(std::begin(container), std::end(container), sep, width);
 			}
 			
-			TWString toWstring(const std::string& str);
+			template<typename TSeqContainer>
+			inline TString toString(TSeqContainer container, Int32 width)
+			{
+				return std::move(toString(std::begin(container), std::end(container), width));
+			}
 			
-			int wstrToInt(const std::wstring& value);
+			TWString toWstring(const TString& str);
+			
+			int wstrToInt(const TWString& value);
 			
 			#ifdef HAVE_CXX17
 			
@@ -443,7 +455,7 @@ namespace Dixter
 			
 			int uStringToInt(const TUString& value);
 			
-			TUString intToUstring(int value);
+			TUString intToUstring(Int32 value);
 		} // namespace Strings
 	} // namespace Utilities
 } // namespace Dixter

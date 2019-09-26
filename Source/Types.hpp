@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <memory>
 #include "UnicodeString.hpp"
-#include "Macros.hpp"
 
 namespace Dixter
 {
@@ -56,6 +55,7 @@ namespace Dixter
 	using TString       = std::string;
 	using TWString      = std::wstring;
 	using TUString      = TUnicodeString;
+	using TStringPair	= std::pair<TString, TString>;
 } // namespace Dixter
 
 #ifdef HAVE_CXX17

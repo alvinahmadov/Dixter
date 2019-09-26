@@ -8,25 +8,39 @@
  */
 
 #include "SettingsController.hpp"
+#include "Exception.hpp"
+#include "Constants.hpp"
+#include "Types.hpp"
 
 namespace Dixter
 {
-	SettingsController::SettingsController(const string_t& configRoot)
-			: m_root {configRoot}
+	static std::set<TString> g_confPath { g_langConfigPath, g_voiceConfigPath, g_guiConfigPath };
+	
+	SettingsController::SettingsController(const TString& configRoot) noexcept
+			: m_root(configRoot),
+			  m_type(EConfiguration::None)
 	{
-		m_type = ConfigurationManager::getManager(ConfigurationType::ConfigXml)->getType();
+		try
+		{
+			m_type = getManager(EConfiguration::XML, g_confPath)->getType();
+		}
+		catch (TException& e)
+		{
+			printerr(e.getMessage())
+		}
 	}
 	
-	SettingsController::~SettingsController()
-	{}
-	
-	void SettingsController::read(const string_t& key, ustring_t& value)
+	void SettingsController::read(const TString& key, TUString& value)
 	{
-		value = ConfigurationManager::getManager(m_type)->getAccessor()->getValue(m_root, key);
+		value = getManager(m_type, g_confPath)
+				->accessor()
+				->getValue(key, m_root);
 	}
 	
-	void SettingsController::write(const string_t& key, const ustring_t& value)
+	void SettingsController::write(const TString& key, const TUString& value)
 	{
-		ConfigurationManager::getManager(m_type)->getMutator()->setValue(m_root, key, value);
+		getManager(m_type, g_confPath)
+				->mutator()
+				->setValue(key, value, m_root);
 	}
 }

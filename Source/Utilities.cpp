@@ -17,7 +17,7 @@ namespace Dixter
 {
 	namespace Utilities
 	{
-		TWString Strings::toWstring(const std::string& str)
+		TWString Strings::toWstring(const TString& str)
 		{
 			TWString __val { };
 			for (const auto& chr: str)
@@ -26,7 +26,7 @@ namespace Dixter
 			return __val;
 		}
 		
-		int Strings::wstrToInt(const std::wstring& value)
+		int Strings::wstrToInt(const TWString& value)
 		{
 			int number = 0;
 			for (TSize i = 0; i < value.size(); ++i)
@@ -42,7 +42,7 @@ namespace Dixter
 			return 1;
 		}
 		
-		TUString Strings::intToUstring(int value)
+		TUString Strings::intToUstring(Int32 value)
 		{
 			TUString __val {};
 			__val << value;

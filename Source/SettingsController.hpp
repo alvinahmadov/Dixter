@@ -12,19 +12,19 @@
 
 namespace Dixter
 {
-	class SettingsController
+	class SettingsController : public NonCopyable
 	{
 	public:
-		explicit SettingsController(const string_t& configRoot);
+		explicit SettingsController(const TString& configRoot) noexcept;
 		
-		~SettingsController();
+		~SettingsController() = default;
 		
-		void read(const string_t& key, ustring_t& value);
+		void read(const TString& key, TUString& value);
 		
-		void write(const string_t& key, const ustring_t& value);
+		void write(const TString& key, const TUString& value);
 	
 	private:
-		const string_t& m_root;
-		ConfigurationType m_type;
+		const TString& m_root;
+		EConfiguration m_type;
 	};
 }

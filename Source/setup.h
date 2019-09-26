@@ -27,28 +27,24 @@
 #        define HAVE_CXX17
 #        define HAVE_CXX14
 #        define HAVE_CXX11
-#   elif   __cplusplus < 201703L || __cplusplus >= 201402L
+#   elif   __cplusplus >= 201402L and __cplusplus < 201703L
 #        define HAVE_CXX14
 #        define HAVE_CXX11
-#   elif __cplusplus < 201402L || __cplusplus >= 201103L
+#   elif __cplusplus == 201103L
 #        define HAVE_CXX11
 #   else
-#        define CXX_03
-#        define CXX_LEGACY
+#        error("Dixter requires modern C++")
 #   endif
 #endif
 
-#ifndef DIXTER_DEBUG
+#if __has_include(<QString>)
+#define HAS_QSTRING
+#endif
+
 #undef DIXTER_DEBUG
-#endif
-
-#ifndef SSYNTH_DEBUG
+#undef USE_ESPEAK
+#define USE_LOGGING
 #define SSYNTH_DEBUG 0
-#endif
-
-#ifndef NOTHEME
-#define NOTHEME 0
-#endif
 
 #if defined(__GLIBCXX__) || defined(__linux__) || defined(linux)
 #   ifndef UNIX
@@ -60,13 +56,13 @@
 #   endif
 #endif
 
-#ifndef USE_WCHART
+#ifndef HAS_WCHAR
 #   ifdef UNIX
 #       ifdef _GLIBCXX_USE_WCHAR_T
-#           define USE_WCHART
+#           define HAS_WCHAR
 #       endif
 #   elif defined(WIN32)
-#       define USE_WCHART
+#       define HAS_WCHAR
 #   endif
 #endif
 
@@ -86,22 +82,6 @@
 #define USE_WCHART32
 #endif
 
-#ifndef USE_WXWIDGETS
-#define USE_WXWIDGETS
-#endif
-
-#ifndef USE_ESPEAK
-#undef USE_ESPEAK
-#endif
-
-#ifndef USE_LOGGING
-#define USE_LOGGING
-#endif
-
 #ifdef USE_TO_STRING_CONVERSION
 #undef USE_TO_STRING_CONVERSION
-#endif
-
-#ifndef STRING_CAST
-#define STRING_CAST(str) dix::string_t{str}
 #endif

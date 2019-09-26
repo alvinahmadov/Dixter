@@ -87,6 +87,34 @@ namespace Dixter
 	}
 	
 	TUnicodeString&
+	TUnicodeString::prepend(uint32_t i)
+	{
+		icu::UnicodeString::insert(0, static_cast<UChar32>(i));
+		return *this;
+	}
+	
+	TUnicodeString&
+	TUnicodeString::prepend(const std::string& s)
+	{
+		icu::UnicodeString::append(s.data());
+		return *this;
+	}
+	
+	TUnicodeString&
+	TUnicodeString::prepend(const char16_t* s)
+	{
+		icu::UnicodeString::insert(0, s);
+		return *this;
+	}
+	
+	TUnicodeString&
+	TUnicodeString::prepend(const TSelf& s)
+	{
+		icu::UnicodeString::insert(0, s);
+		return *this;
+	}
+	
+	TUnicodeString&
 	TUnicodeString::fromUTF32(const UChar32 *src, size_t codePointLen)
 	{
 		UChar * dst = new UChar[codePointLen];
