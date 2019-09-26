@@ -9,60 +9,73 @@
 
 #pragma once
 
-
-#include <map>
 #include <vector>
-
-#include "Value.hpp"
-
+#include <mutex>
+#include <list>
 
 namespace Dixter
 {
 	namespace Database
 	{
+		class TValue;
+		
 		/**
 		 * @brief A wrapper for Database queries
 		 * @namespace dix::dictionary
 		 * */
-		class QueryBuilder
+		class TQueryBuilder
 		{
+			using Self              = TQueryBuilder;
+			using TStringVector     = std::vector<TString>;
+			#ifdef HAVE_CXX17
+			using TClause           = TStringView;
+			using TQuery            = TStringView;
+			#else
+			using TClause           = TString;
+			using TQuery            = TString;
+			#endif
 		public:
 			/**
 			 * @brief Initializes structures
 			 * */
-			QueryBuilder();
+			TQueryBuilder() noexcept;
 			
-			~QueryBuilder();
+			~TQueryBuilder() noexcept = default;
 			
-			const string_t& describeQuery(const string_t& tableName);
+			TQuery describeQuery(const TString& tableName);
 			
-			const string_t& dropQuery(const string_t& tableName);
+			TQuery dropQuery(const TString& tableName);
 			
-			const string_t& createQuery(const string_t& tableName, const std::list<Value*>& dbValueList, size_t& parametersNum);
+			TQuery createQuery(const TString& tableName, const std::list<TValue*>& dbValueList,
+							   TSize& parametersNum);
 			
-			const string_t& insertQuery(const string_t& tableName, const size_t& parametersNum);
+			TQuery insertQuery(const TString& tableName, const TSize& parametersNum);
 			
 			/**
 			 * Create query
 			 * */
-			const string_t& selectQuery(const std::vector<string_t>& tables, const std::vector<string_t>& columns,
-			                            ui32 indexColumn, ui32 leftTableIndex);
+			TQuery selectQuery(const TStringVector& tables, const TStringVector& columns,
+							   UInt32 indexColumn, UInt32 leftTableIndex);
 			
-			const string_t& selectQuery(const string_t& table, const string_t& column, string_t clause = "");
+			TQuery selectQuery(const TString& table, const TString& column, TClause clause = "");
 			
-			const string_t& selectQuery(const string_t& table, const std::vector<string_t>& columns, ui32 indexColumn);
+			TQuery selectQuery(const TString& table, const TStringVector& columns, UInt32 indexColumn);
 			
-			const string_t& selectQuery(const string_t& table, const std::vector<string_t>& columns, string_t clause);
+			TQuery selectQuery(const TString& table, const TStringVector& columns, TClause clause);
 			
-			const string_t& selectLikeQuery(const std::vector<string_t>& tables, const std::vector<string_t>& columns,
-			                                const string_t& text, ui32 comparatorColumn, ui32 leftTableIndex, ui32 fieldIndex,
-			                                bool asRegex = false);
+			TQuery selectLikeQuery(const TStringVector& tables, const TStringVector& columns,
+								   const TString& text, UInt32 comparatorColumn,
+								   UInt32 leftTableIndex, UInt32 fieldIndex, bool asRegex = false);
 			
-			const string_t& updateQuery(const string_t& tableName, const std::list<Value*>& dbValueList);
+			TQuery updateQuery(const TString& tableName, const std::list<TValue*>& dbValueList);
 		
 		private:
-			/// Query string to build
-			string_t m_query;
+			TString& resetQuery(std::ostringstream& stream);
+		
+		private:
+			TString m_query;
+			
+			mutable std::mutex m_mutex;
 		};
-	}
-}
+	} // namespace Database
+} // namespace Dixter

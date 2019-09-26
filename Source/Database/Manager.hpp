@@ -7,16 +7,13 @@
  *  See README.md for more information.
  */
 
-#ifndef _DIXTER_DBMANAGER_H_
-#define _DIXTER_DBMANAGER_H_
-
+#pragma once
 
 #include <set>
+#include <mutex>
 
 #include "Commons.hpp"
-#include "Constants.hpp"
 #include "Utilities.hpp"
-
 
 namespace sql
 {
@@ -29,131 +26,144 @@ namespace sql
 	class PreparedStatement;
 	
 	class Statement;
-}
+} // namespace sql
 
 namespace Dixter
 {
 	namespace Database
 	{
-		class Table;
+		class TTable;
 		
-		class Value;
+		class TValue;
 		
-		class QueryBuilder;
+		class TQueryBuilder;
 		
-		struct ConnectionManager
-		{
-			ConnectionManager(const string_t& hostname, const string_t& database,
-			                  const string_t& username, const string_t& password,
-			                  const string_t& port)
-					: _host { Utilities::Strings::concat(kDatabaseProtocol, hostname, ":", port) },
-					  _database { database },
-					  _name { username },
-					  _password { password }
-			{ }
-			
-			string_t _host;
-			
-			string_t _database;
-			
-			string_t _name;
-			
-			string_t _password;
-		};
-		
-		class Manager
+		class TManager : public NonCopyable
 		{
 		public:
-			Manager(const string_t& host, const string_t& database,
-			        const string_t& userName, const string_t& password,
-			        const string_t& port = kDatabasePort);
+			using TResultSetPtr = std::shared_ptr<sql::ResultSet>;
+			using TPreparedStatementMap = std::map<TString, sql::PreparedStatement*>;
+			using TTableMap = std::map<TString, TTable*>;
+			#ifdef HAVE_CXX17
+			using TClause = TStringView;
+			#else
+			using TClause = const TString&;
+			#endif
+		public:
+			struct TConnectionManager
+			{
+				TConnectionManager() = delete;
+				
+				TConnectionManager(const TString& hostName, const TString& userName,
+								   const TString& userPassword) noexcept;
+				
+				TConnectionManager(const TConnectionManager&) = default;
+				
+				TConnectionManager(TConnectionManager&&) = default;
+				
+				TConnectionManager& operator=(const TConnectionManager&) = default;
+				
+				TConnectionManager& operator=(TConnectionManager&&) = default;
+				
+				TString host_;
+				
+				TString name_;
+				
+				TString password_;
+			};
+		
+		public:
+			TManager(const TString& hostName, const TString& dbUser, const TString& dbPassword) noexcept;
 			
-			Manager(const ConnectionManager& connectionManager);
+			explicit TManager(const TConnectionManager& connectionManager) noexcept;
 			
-			~Manager();
+			~TManager() noexcept;
 			
-			void createTable(const string_t& tableName,
-			                 const std::list<Value*>& valueList, bool drop = true);
+			void selectDatabase(const TString& database);
 			
-			void insertValues(const string_t& tableName);
+			void createTable(const TString& tableName,
+							 const std::list<TValue*>& valueList, bool drop = true);
 			
-			sql::ResultSet* selectColumn(const string_t& table,
-			                             const string_t& column,
-			                             string_t clause = "");
+			void insertValues(const TString& tableName);
 			
-			std::vector<string_t> getColumns(const string_t& table);
+			std::vector<TString> getColumns(const TString& table);
+			
+			TResultSetPtr selectColumn(const TString& table,
+									   const TString& column,
+									   TClause clause = "");
 			
 			/**
 			 *
 			 * */
-			sql::ResultSet* selectColumns(const std::vector<string_t>& tables,
-			                              const std::vector<string_t>& columns,
-			                              ui32 comparatorColumn,
-			                              ui32 leftTableIndex);
+			TResultSetPtr selectColumns(const std::vector<TString>& tables,
+										const std::vector<TString>& columns,
+										UInt32 comparatorColumn,
+										UInt32 leftTableIndex);
 			
-			sql::ResultSet* selectColumnsWhere(const string_t& table,
-			                                   const std::vector<string_t>& columns,
-			                                   string_t clause);
+			TResultSetPtr selectColumnsWhere(const TString& table,
+											 const std::vector<TString>& columns,
+											 TClause clause);
 			
 			/**
 			 *
 			 * */
-			sql::ResultSet* selectColumns(const string_t& table,
-			                              const std::vector<string_t>& columns,
-			                              ui32 comparatorColumn);
+			TResultSetPtr selectColumns(const TString& table,
+										const std::vector<TString>& columns,
+										UInt32 comparatorColumn);
 			
 			/**
 			 * Get values of columns matching regex value
 			 * @param tables
 			 * */
-			sql::ResultSet* selectColumnsLike(const std::vector<string_t>& tables,
-			                                  const std::vector<string_t>& columns,
-			                                  const string_t& searchText,
-			                                  ui32 comparatorColumn, ui32 leftTableIndex,
-			                                  ui32 fieldIndex);
+			TResultSetPtr selectColumnsLike(const std::vector<TString>& tables,
+											const std::vector<TString>& columns,
+											const TString& searchText,
+											UInt32 comparatorColumn, UInt32 leftTableIndex,
+											UInt32 fieldIndex);
 			
 			/**
 			 *
 			 * */
-			void setBigInt(const string_t& tableName, ui32 parameterIndex,
-			               const string_t& value);
+			void setBigInt(const TString& tableName, UInt32 parameterIndex,
+						   const TString& value);
 			
-			void setBlob(const string_t& tableName, ui32 parameterIndex,
-			             std::istream* blob);
+			void setBlob(const TString& tableName, UInt32 parameterIndex,
+						 std::istream* blob);
 			
-			void setBoolean(const string_t& tableName, ui32 parameterIndex, bool value);
+			void setBoolean(const TString& tableName, UInt32 parameterIndex, bool value);
 			
-			void setDateTime(const string_t& tableName, ui32 parameterIndex,
-			                 const string_t& value);
+			void setDateTime(const TString& tableName, UInt32 parameterIndex,
+							 const TString& value);
 			
-			void setDouble(const string_t& tableName,
-			               ui32 parameterIndex, d32 value);
+			void setDouble(const TString& tableName,
+						   UInt32 parameterIndex, Real32 value);
 			
-			void setInt(const string_t& tableName,
-			            ui32 parameterIndex, i32 value);
+			void setInt(const TString& tableName,
+						UInt32 parameterIndex, Int32 value);
 			
-			void setUInt(const string_t& tableName,
-			             ui32 parameterIndex, ui32 value);
+			void setUInt(const TString& tableName,
+						 UInt32 parameterIndex, UInt32 value);
 			
-			void setInt64(const string_t& tableName,
-			              ui32 parameterIndex, i64 value);
+			void setInt64(const TString& tableName,
+						  UInt32 parameterIndex, Int64 value);
 			
-			void setUInt64(const string_t& tableName,
-			               ui32 parameterIndex, ui64 value);
+			void setUInt64(const TString& tableName,
+						   UInt32 parameterIndex, UInt64 value);
 			
-			void setNull(const string_t& tableName,
-			             ui32 parameterIndex);
+			void setNull(const TString& tableName,
+						 UInt32 parameterIndex);
 			
-			void setString(const string_t& tableName,
-			               ui32 parameterIndex, const string_t& value);
+			void setString(const TString& tableName,
+						   UInt32 parameterIndex, const TString& value);
 			
-			ui32 setStrings(const string_t& tableName, const ui32& parameterStartIndex,
-			                std::list<string_t>& list, ui32 stringColumnNum = 0);
+			UInt32 setStrings(const TString& tableName, const UInt32& parameterStartIndex,
+							  std::list<TString>& list, UInt32 stringColumnNum = 0);
 			
-			int executeUpdate(const string_t& tableName);
-			
-			sql::ResultSet* execute(const string_t& tableName,
-			                        string_t query);
+			int executeUpdate(const TString& tableName);
+		
+		private:
+			inline TResultSetPtr
+			execute(const TString& query);
 		
 		private:
 			sql::Driver* m_driver;
@@ -162,16 +172,15 @@ namespace Dixter
 			
 			sql::Statement* m_statement;
 			
-			std::map<string_t, Table*>* m_tables;
+			TTableMap m_tables;
 			
-			std::map<string_t, sql::PreparedStatement*>* m_preparedStmts;
+			TPreparedStatementMap m_prepStmts;
 			
-			QueryBuilder* m_queryBuilder;
+			TQueryBuilder* m_queryBuilder;
 			
-			ConnectionManager* m_connectionManager;
+			TConnectionManager m_connManager;
+			
+			mutable std::mutex m_mutex;
 		};
-		
-	}
-}
-
-#endif //_DATA_BUILDER_H_
+	} // namespace Database
+} // namespace Dixter
