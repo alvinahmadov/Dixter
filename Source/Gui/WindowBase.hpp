@@ -8,9 +8,6 @@
  */
 #pragma once
 
-#include "Constants.hpp"
-#include "Group.hpp"
-
 #include <QMainWindow>
 
 class QObject;
@@ -21,9 +18,19 @@ class QMenuEvent;
 
 namespace Dixter
 {
+	template<
+			typename T,
+			typename ID
+	>
+	class TGroup;
+	
+	enum class EMenuID;
+	enum class EWidgetID;
+	
 	namespace Gui
 	{
 		class TSettingsDialog;
+		
 		class TWindowBase : public virtual QMainWindow
 		{
 		Q_OBJECT
@@ -35,7 +42,7 @@ namespace Dixter
 		public:
 			TWindowBase();
 			
-			TWindowBase(const QString& title, int width, int height,
+			explicit TWindowBase(const QString& title, int width, int height,
 						bool visible = true, bool hasMenu = true, bool hasStatusbar = true);
 			
 			TWindowBase(QWidget* parent, const QString& title, int width, int height,
@@ -68,7 +75,7 @@ namespace Dixter
 			
 			void onQuit();
 			
-			virtual void setSize(Int32 width, Int32 height);
+			virtual void setSize(int width, int height);
 			
 			virtual void connectEvents();
 		

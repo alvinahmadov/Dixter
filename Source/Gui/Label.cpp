@@ -8,7 +8,6 @@
  */
 
 #include "Commons.hpp"
-#include "Configuration.hpp"
 #include "Gui/Label.hpp"
 
 namespace Dixter
@@ -27,8 +26,5 @@ namespace Dixter
 		TLabel::TLabel(const QString& label, const QSize& size)
 				: TLabel(label, nullptr, size)
 		{}
-		
-		TLabel::~TLabel()
-		{ }
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

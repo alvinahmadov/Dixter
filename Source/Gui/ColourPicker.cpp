@@ -13,7 +13,7 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		ColourPicker::ColourPicker(QWidget* parent, const QColor& colour, const QSize& size)
+		ColourPicker::ColourPicker(QWidget* parent, const QColor& colour, const QSize& size) noexcept
 				: QColorDialog(parent)
 		{
 			setCurrentColor(colour);
@@ -26,5 +26,5 @@ namespace Dixter
 		
 		void ColourPicker::connectEvents()
 		{ }
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

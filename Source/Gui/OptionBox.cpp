@@ -8,9 +8,9 @@
  */
 #include <QDebug>
 
-#include "Commons.hpp"
 #include "Utilities.hpp"
 #include "Configuration.hpp"
+#include "Constants.hpp"
 #include "Gui/OptionBox.hpp"
 
 namespace AlgoUtils = Dixter::Utilities::Algorithms;
@@ -56,14 +56,14 @@ namespace Dixter
 							   const QString& placeholder,
 							   const QSize& size, bool sort)
 				: QComboBox(parent),
-				  m_isPlaceholderSet { },
-				  m_sort { sort },
-				  m_placeHolder { placeholder }
+				  m_isPlaceholderSet(),
+				  m_sort(sort),
+				  m_placeHolder(placeholder)
 		{
 			setPlaceholder(placeholder);
 			if (size.height() > 0 and size.width() > 0)
 				setMinimumSize(size);
-			
+			init();
 			connectEvents();
 		}
 		
@@ -187,6 +187,17 @@ namespace Dixter
 		void TOptionBox::onChanged(int)
 		{
 			resetPlaceholder();
+		}
+		
+		void TOptionBox::init()
+		{
+			auto __confMan = getIniManager({ g_guiConfigPath})->accessor();
+			auto __bgColour = __confMan->getValue(NodeKey::kWinBgColourNode).asCustom();
+			auto __fontName = __confMan->getValue(NodeKey::kWinFontNameNode).asCustom();
+			int __fontSize = __confMan->getValue(NodeKey::kWinFontSizeNode);
+			__bgColour.prepend('#');
+			setPalette(QPalette(__bgColour));
+			setFont(QFont(__fontName, __fontSize));
 		}
 		
 		void TOptionBox::connectEvents()

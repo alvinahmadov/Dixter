@@ -7,14 +7,13 @@
  *  See README.md for more information.
  */
 
-#include <memory>
 #include <QCoreApplication>
 #include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
-#include <QDialog>
 
 #include "Group.hpp"
+#include "Constants.hpp"
 #include "Gui/WindowBase.hpp"
 #include "Gui/SettingsDialog.hpp"
 

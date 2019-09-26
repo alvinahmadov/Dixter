@@ -28,14 +28,10 @@ namespace Dixter
 				  m_charCount(0),
 				  m_placeholderText(placeholder)
 		{
-			auto textDocument = new QTextDocument(this);
-			setAcceptRichText(false);
-			setWordWrapMode(QTextOption::WordWrap);
-			setDocument(textDocument);
+			init();
 			m_maxCharCount = static_cast<TSize>(size().height() / font().pointSize() *
 					size().width() / font().pointSize());
 			setPlaceholder();
-			setFontPointSize(fontSize);
 			setReadOnly(readOnly);
 			connectEvents();
 		}
@@ -61,6 +57,24 @@ namespace Dixter
 				setFontItalic(false);
 				m_placeholderSet = false;
 			}
+		}
+		
+		void TTextEdit::init()
+		{
+			auto __confMan = getIniManager({ g_guiConfigPath})->accessor();
+			auto __bgColour = __confMan->getValue(NodeKey::kAreaBgColourNode).asCustom();
+			auto __fontName = __confMan->getValue(NodeKey::kAreaFontNameNode).asCustom();
+			int __fontSize = __confMan->getValue(NodeKey::kAreaFontSizeNode);
+			__bgColour.prepend('#');
+			QPalette __palette(__bgColour);
+			setPalette(__palette);
+			setFont(QFont(__fontName, __fontSize));
+			
+			auto textDocument = new QTextDocument(this);
+			setAcceptRichText(true);
+			setWordWrapMode(QTextOption::WordWrap);
+			setDocument(textDocument);
+			setFontPointSize(m_fontSize);
 		}
 		
 		void TTextEdit::resizeEvent(QResizeEvent* sizeEvent)

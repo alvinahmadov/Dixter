@@ -13,7 +13,7 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		FontPicker::FontPicker(QWidget* parent, const QColor& initial, const QSize& size)
+		FontPicker::FontPicker(QWidget* parent, const QColor& initial, const QSize& size) noexcept
 				: QColorDialog(initial, parent)
 		{
 			init();
@@ -36,5 +36,5 @@ namespace Dixter
 		}
 		
 		*/
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

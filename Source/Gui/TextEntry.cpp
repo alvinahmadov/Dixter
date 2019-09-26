@@ -14,7 +14,7 @@ namespace Dixter
 	namespace Gui
 	{
 		TTextEntry::TTextEntry(QWidget* parent, const QString& value,
-		                       const QSize& size, const QString& name)
+							   const QSize& size, const QString& name)
 				: QLineEdit(value, parent)
 		{
 			setObjectName(name);
@@ -23,17 +23,7 @@ namespace Dixter
 			connectEvents();
 		}
 		
-		/*
-		void TextEntry::onEntryChanged(wxKeyEvent& event)
-		{
-			printl_log(event.m_keyCode)
-			event.Skip();
-		}
-		*/
-		
 		void TTextEntry::connectEvents()
-		{
-			// Bind(wxEVT_CHAR, &TTextEntry::onEntryChanged, this);
-		}
+		{ }
 	}
 }

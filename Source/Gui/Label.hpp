@@ -9,10 +9,7 @@
 
 #pragma once
 
-#include <QPushButton>
 #include <QLabel>
-
-#include "Types.hpp"
 
 class QWidget;
 
@@ -28,7 +25,7 @@ namespace Dixter
 		
 			explicit TLabel(const QString& label, const QSize& size = QSize(1, 1));
 			
-			~TLabel() override;
+			~TLabel() noexcept override = default;
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

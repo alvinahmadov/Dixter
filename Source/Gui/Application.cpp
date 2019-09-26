@@ -7,6 +7,7 @@
  *  See README.md for more information.
  */
 
+#include "Macros.hpp"
 #include "Configuration.hpp"
 #include "Gui/Application.hpp"
 

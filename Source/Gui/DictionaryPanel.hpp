@@ -9,39 +9,39 @@
 
 #pragma once
 
-#include "Group.hpp"
-#include "Commons.hpp"
 #include "Gui/Panel.hpp"
-#include "Gui/SearchEntry.hpp"
+#include "Gui/OptionBox.hpp"
+
+class QMutex;
 
 namespace Dixter
 {
-	namespace Database
-	{
-		class TManager;
-	}
+	enum class EWidgetID;
+	
+	template<
+			typename T,
+			typename ID
+	>
+	class TGroup;
 	
 	namespace Gui
 	{
-		class TOptionBox;
-		
 		class TDictionaryPanel : public TPanel
 		{
 		Q_OBJECT
 		private:
-			using ColumnList    = std::list<TUString>;
 			using WidgetGroup   = TGroup<QWidget, EWidgetID>;
 			using GridGroup     = TGroup<QLayout, EWidgetID>;
 		
 		public:
 			explicit TDictionaryPanel(QWidget* parent, int width = -1, int height = -1,
-			                          const QString& name = g_dictionaryName);
+									  const QString& name = QString("Dictionary"));
 			
 			virtual ~TDictionaryPanel() override;
 			
 			void show(bool show = true);
 			
-			std::shared_ptr<TOptionBox>
+			TOptionBoxPtr
 			getOptionBox(EWidgetID widgetID);
 			
 			QWidget* getWidget(EWidgetID id);
@@ -61,7 +61,7 @@ namespace Dixter
 			void onLanguageChange(void);
 		protected slots:
 			
-			void onSearch(const QString& text);
+			void onSearch() noexcept;
 		
 		private:
 			bool m_isLanguageSet;
@@ -70,5 +70,5 @@ namespace Dixter
 			
 			WidgetGroup* m_widgets;
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

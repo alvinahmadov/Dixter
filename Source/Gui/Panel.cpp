@@ -8,7 +8,7 @@
  */
 
 #include "Commons.hpp"
-#include "Configuration.hpp"
+#include "Constants.hpp"
 #include "Panel.hpp"
 
 namespace Dixter
@@ -22,9 +22,6 @@ namespace Dixter
 			setFixedSize(size);
 			setObjectName(name);
 		}
-		
-		TPanel::~TPanel()
-		{ }
 		
 		void TPanel::connectEvents()
 		{ }

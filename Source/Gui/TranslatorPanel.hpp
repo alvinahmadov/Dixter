@@ -9,23 +9,26 @@
  */
 #pragma once
 
-#include <boost/functional.hpp>
-#include <QLayoutItem>
-
-#include "Group.hpp"
 #include "Gui/Panel.hpp"
 
 #ifdef USE_SPEECHD
 #include "SpeechSynthesizer/SpeechDispatcher.h"
 #endif
 
+class QLayoutItem;
 
 namespace Dixter
 {
+	template<
+			typename T,
+			typename ID
+	>
+	class TGroup;
+	
 	namespace Gui
 	{
-		class TOptionBox;
 		class TTextEdit;
+		
 		class TTranslatorPanel : public TPanel
 		{
 		Q_OBJECT
@@ -39,18 +42,19 @@ namespace Dixter
 		public:
 			TTranslatorPanel(QWidget* parent,
 			                 int width = 200, int height = 200,
-			                 const QString& name = g_translatorName);
+			                 const QString& name = QString("Translater"));
 			
 			~TTranslatorPanel() override;
 			
 			void show(bool show);
 			
-			std::shared_ptr<TOptionBox>
+			TOptionBoxPtr
 			getOptionBox(EWidgetID id);
 			
-			QWidget* getWidget(EWidgetID id);
+			QWidget*
+			getWidget(EWidgetID id);
 			
-			std::pair<TString, TString>
+			TStringPair
 			getCurrentLanguage();
 		
 		protected:

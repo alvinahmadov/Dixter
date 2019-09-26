@@ -16,6 +16,7 @@
 #include "Macros.hpp"
 
 class QTableWidgetItem;
+
 namespace Dixter
 {
 	namespace Gui
@@ -25,6 +26,7 @@ namespace Dixter
 			QTableWidgetItem* item;
 			Int64 index;
 		};
+		
 		class TTextList : public QTableWidget
 		{
 		Q_OBJECT

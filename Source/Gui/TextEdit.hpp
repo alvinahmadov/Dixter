@@ -48,6 +48,8 @@ namespace Dixter
 			void resetPlaceholder();
 		
 		protected:
+			void init();
+			
 			void resizeEvent(QResizeEvent* sizeEvent) override;
 			
 			void connectEvents();

@@ -9,8 +9,7 @@
 #pragma once
 
 #include <QTabWidget>
-
-#include "Configuration.hpp"
+#include <memory>
 
 class QWidget;
 class QResizeEvent;
@@ -31,7 +30,8 @@ namespace Dixter
 			
 			void addPage(QWidget* page, const QString& title);
 			
-			TPanel* getPage(int pageNumber);
+			TPanel*
+			getPage(int pageNumber);
 			
 			int getPageNumber(QWidget* page) const;
 		
@@ -41,5 +41,5 @@ namespace Dixter
 		protected:
 			void connectEvents();
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

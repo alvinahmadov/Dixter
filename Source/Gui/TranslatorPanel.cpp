@@ -10,16 +10,16 @@
 #include <QBoxLayout>
 #include <QButtonGroup>
 #include <QGroupBox>
-#include <QDebug>
 
 #include "Configuration.hpp"
+#include "Constants.hpp"
+#include "Group.hpp"
 #include "Utilities.hpp"
 #include "Gui/TranslatorPanel.hpp"
 #include "Gui/TextEdit.hpp"
+#include "Gui/Label.hpp"
 #include "Gui/Button.hpp"
 #include "Gui/OptionBox.hpp"
-#include "Gui/Label.hpp"
-#include "OpenTranslate/LanguageBook.hpp"
 
 namespace Dixter
 {
@@ -32,8 +32,8 @@ namespace Dixter
 		#ifdef USE_SPEECHD
 				m_narrator {new VSynth::SpeechDispatcher("dix", "Dixter_conn", "Dixter_user", SPDConnectionMode::SPD_MODE_SINGLE)},
 		#endif
-		          m_grids(new GridGroup),
-		          m_widgets(new WidgetGroup)
+				  m_grids(new GridGroup),
+				  m_widgets(new WidgetGroup)
 		{
 			init();
 			connectEvents();
@@ -54,7 +54,7 @@ namespace Dixter
 			m_widgets->forEach(&QWidget::setVisible, show);
 		}
 		
-		std::shared_ptr<TOptionBox>
+		TPanel::TOptionBoxPtr
 		TTranslatorPanel::getOptionBox(EWidgetID id)
 		{
 			return dxMAKE_SHARED(TOptionBox, m_widgets->get<TOptionBox>(g_controlGroup, id));
@@ -70,7 +70,7 @@ namespace Dixter
 			try
 			{
 				TConfigurationManager::getManager(EConfiguration::XML)
-						->getAccessor()
+						->accessor()
 						->getValues(NodeKey::kLangNameNode, __langNameList, NodeKey::kLangRoot)
 						->getValues(NodeKey::kLangNameDisplayNode, __langNameDisplayList, NodeKey::kLangRoot)
 						->getValues(NodeKey::kLangIdNode, __langIdList, NodeKey::kLangRoot)
@@ -99,14 +99,20 @@ namespace Dixter
 		void TTranslatorPanel::init()
 		{
 			// init widgets
-			auto __pvoiceBox = m_widgets->add<TOptionBox>(g_widgetGroup,
-														  new TOptionBox(nullptr, tr("Select voice...")), EWidgetID::VoiceBoxT);
-			auto __pAreaWest = m_widgets->add<TTextEdit>(g_widgetGroup,
-			                                             new TTextEdit(this, tr("Translation")), EWidgetID::TranslatorAreaWest);
+			const QSize __buttonSize = QSize(150, 50);
+			auto __pvoiceBox = m_widgets->add<TOptionBox>(
+					g_widgetGroup,
+					new TOptionBox(nullptr, tr("Select voice...")), EWidgetID::VoiceBoxT);
+			auto __pAreaWest = m_widgets->add<TTextEdit>(
+					g_widgetGroup,
+					new TTextEdit(this, tr("Translation")), EWidgetID::TranslatorAreaWest);
 			auto __pAreaEast = m_widgets->add<TTextEdit>(g_widgetGroup,
-			                                             new TTextEdit(this, tr("Translation"), true), EWidgetID::TranslatorAreaEast);
-			auto __pLangBoxL = m_widgets->add<TOptionBox>(g_widgetGroup, new TOptionBox(tr("Select language...")), EWidgetID::LangboxWest);
-			auto __pLangBoxR = m_widgets->add<TOptionBox>(g_widgetGroup, new TOptionBox(tr("Select language...")), EWidgetID::LangboxEast);
+					new TTextEdit(this, tr("Translation"), true), EWidgetID::TranslatorAreaEast);
+			auto __pLangBoxL = m_widgets->add<TOptionBox>(g_widgetGroup,
+					new TOptionBox(tr("Select language...")), EWidgetID::LangboxWest);
+			auto __pLangBoxR = m_widgets->add<TOptionBox>(g_widgetGroup,
+					new TOptionBox(tr("Select language...")), EWidgetID::LangboxEast);
+			
 			auto __widgetLayoutWest = new QVBoxLayout();
 			auto __widgetLayoutEast = new QVBoxLayout();
 			auto __widgetGroupWest = new QGroupBox();
@@ -116,19 +122,22 @@ namespace Dixter
 			
 			//Buttons
 			auto __btnSpeakWest = m_widgets->add<TButton>(g_controlGroup,
-														  new TButton(QIcon(":Resources/icons/speak.png")), EWidgetID::ButtonSpeakWest);
+					new TButton(QIcon(":Resources/icons/speak.png")),
+					EWidgetID::ButtonSpeakWest);
 			auto __btnTranslateWest = m_widgets->add<TButton>(g_controlGroup,
-															  new TButton(QIcon(":Resources/icons/translate.png")), EWidgetID::ButtonTranslateWest);
+					new TButton(QIcon(":Resources/icons/translate.png")),
+					EWidgetID::ButtonTranslateWest);
 			auto __btnSpeakEast = m_widgets->add<TButton>(g_controlGroup,
-														  new TButton(QIcon(":Resources/icons/speak.png")), EWidgetID::ButtonSpeakEast);
+					new TButton(QIcon(":Resources/icons/speak.png")),
+					EWidgetID::ButtonSpeakEast);
 			auto __btnTranslateEast = m_widgets->add<TButton>(g_controlGroup,
-															  new TButton(QIcon(":Resources/icons/translate.png")), EWidgetID::ButtonTranslateEast);
+					new TButton(QIcon(":Resources/icons/translate.png")),
+					EWidgetID::ButtonTranslateEast);
 			
-			
-			__btnSpeakWest->setFixedSize(QSize(150, 50));
-			__btnSpeakEast->setFixedSize(QSize(150, 50));
-			__btnTranslateWest->setFixedSize(QSize(150, 50));
-			__btnTranslateEast->setFixedSize(QSize(150, 50));
+			__btnSpeakWest->setFixedSize(__buttonSize);
+			__btnSpeakEast->setFixedSize(__buttonSize);
+			__btnTranslateWest->setFixedSize(__buttonSize);
+			__btnTranslateEast->setFixedSize(__buttonSize);
 			
 			// auto btnGroup = new QButtonGroup()
 			__buttonLayoutL->addWidget(__btnSpeakWest);
@@ -148,11 +157,16 @@ namespace Dixter
 			
 			// Set central box
 			auto __widgetLayoutCenter = new QVBoxLayout();
-			__widgetLayoutCenter->addSpacing(10);
-			__widgetLayoutCenter->addWidget(m_widgets->add<TButton>(g_controlGroup, new TButton(tr("Flip")), EWidgetID::ButtonFlip));
-			__widgetLayoutCenter->addSpacing(8);
-			__widgetLayoutCenter->addWidget(__pvoiceBox);
-			__widgetLayoutCenter->addSpacing(10);
+			auto __flipBtn = m_widgets->add<TButton>(
+					g_controlGroup,
+					new TButton(QIcon(":Resources/icons/flip.png")),
+					EWidgetID::ButtonFlip
+					);
+			__flipBtn->setFixedSize(__buttonSize);
+			__widgetLayoutCenter->addSpacing(44);
+			__widgetLayoutCenter->addWidget(__pvoiceBox, 0, Qt::AlignmentFlag::AlignTop);
+			__widgetLayoutCenter->addWidget(__flipBtn, 0, Qt::AlignmentFlag::AlignBottom);
+			__widgetLayoutCenter->addSpacing(15);
 			
 			// Set right box
 			auto __optBoxR = new QHBoxLayout();
@@ -165,8 +179,9 @@ namespace Dixter
 			__widgetGroupEast->setLayout(__widgetLayoutEast);
 			
 			// Main grid
-			auto __pMainGrid = m_grids->add<QHBoxLayout>(g_layoutGroup, new QHBoxLayout(this),
-			                                             EWidgetID::Grid);
+			auto __pMainGrid = m_grids->add<QHBoxLayout>(
+					g_layoutGroup, new QHBoxLayout(this),
+					EWidgetID::Grid);
 			__pMainGrid->addWidget(__widgetGroupWest);
 			__pMainGrid->addLayout(__widgetLayoutCenter);
 			__pMainGrid->addWidget(__widgetGroupEast);
@@ -175,23 +190,23 @@ namespace Dixter
 			setLayout(__pMainGrid);
 		}
 		
-		std::pair<TString, TString>
+		TStringPair
 		TTranslatorPanel::getCurrentLanguage()
 		{
-			TString __langId { };
-			TString __langName { };
+			TString __langId {};
+			TString __langName {};
 			try
 			{
 				auto __pBox = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest);
 				if (__pBox->isPlaceholderSet())
-				{
-					return std::pair<TString, TString>();
-				}
+					return {};
+				
 				__langName = __pBox->currentText().toStdString();
 				__langId = TConfigurationManager::getManager(EConfiguration::XML)
-						->getAccessor()
+						->accessor()
 						->getValue(NodeKey::kLangNameNode, __langName, NodeKey::kLangRoot).asUTF8();
-			} catch (TException& e)
+			}
+			catch (TException& e)
 			{
 				printerr(e.what())
 			}
@@ -214,7 +229,18 @@ namespace Dixter
 		
 		void TTranslatorPanel::onSpeakWest()
 		{
-			qDebug() << __FUNCTION__;
+			auto __content = m_widgets->get<TTextEdit>(g_widgetGroup, EWidgetID::TranslatorAreaWest)
+									  ->getContent();
+			if (not __content.isEmpty())
+			{
+				#ifdef USE_SPEECHD
+				if (not __langId.empty())
+					m_narrator->setLanguage(TargetMode::DirAll, lang.first.c_str());
+				m_narrator->say(SPD_TEXT, __content);
+				#endif
+			}
+			
+			// frame->PushStatusText("Talking...");
 		}
 		
 		void TTranslatorPanel::onTranslateWest()
@@ -222,12 +248,12 @@ namespace Dixter
 		
 		void TTranslatorPanel::onSpeakEast()
 		{
-			qDebug() << __FUNCTION__;
+			printl_log(__FUNCTION__)
 		}
 		
 		void TTranslatorPanel::onTranslateEast()
 		{
-			qDebug() << __FUNCTION__;
+			printl_log(__FUNCTION__)
 		}
 		
 		void TTranslatorPanel::onLanguageChangeFrom()
@@ -262,7 +288,7 @@ namespace Dixter
 			{
 				auto confMgr = ConfigurationManager::getManager();
 				__voiceId = confMgr->xmlManager()->getValue(NodeKey::kVoiceRoot, NodeKey::kVoiceNameNode, __voiceName);
-			#ifdef DIXTER_DEBUG
+				#ifdef DIXTER_DEBUG
 			delete confMgr;
 			#endif
 			} catch (...) {}
@@ -276,22 +302,27 @@ namespace Dixter
 		
 		void TTranslatorPanel::connectEvents()
 		{
-			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonFlip),
-			        SIGNAL(clicked()), SLOT(onFlip()));
-			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakWest),
-			        SIGNAL(clicked()), SLOT(onSpeakWest()));
-			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateWest),
-			        SIGNAL(clicked()), SLOT(onTranslateWest()));
+			connect(
+					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonFlip),
+					SIGNAL(clicked()), SLOT(onFlip()));
+			connect(
+					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakWest),
+					SIGNAL(clicked()), SLOT(onSpeakWest()));
+			connect(
+					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateWest),
+					SIGNAL(clicked()), SLOT(onTranslateWest()));
 			
-			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakEast),
-			        SIGNAL(clicked()), SLOT(onSpeakEast()));
-			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateEast),
-			        SIGNAL(clicked()), SLOT(onTranslateEast()));
+			connect(
+					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakEast),
+					SIGNAL(clicked()), SLOT(onSpeakEast()));
+			connect(
+					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateEast),
+					SIGNAL(clicked()), SLOT(onTranslateEast()));
 		}
 		
 		QWidget* TTranslatorPanel::getWidget(EWidgetID id)
 		{
 			return m_widgets->get(id);
 		}
-	}
-}
+	} // namespace Gui
+} //namespace Dixter

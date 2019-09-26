@@ -9,6 +9,7 @@
 #pragma once
 
 #include <QComboBox>
+#include "Types.hpp"
 
 class QWidget;
 
@@ -51,6 +52,7 @@ namespace Dixter
 			void onChanged(int i);
 		
 		protected:
+			virtual void init();
 			
 			void connectEvents();
 		
@@ -61,5 +63,5 @@ namespace Dixter
 			
 			QString m_placeHolder;
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

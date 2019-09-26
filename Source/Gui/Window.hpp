@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include <memory>
 #include "WindowBase.hpp"
 
 namespace Dixter
@@ -27,17 +28,26 @@ namespace Dixter
 		 * */
 		class TWindow : public TWindowBase
 		{
-			Q_OBJECT
+		Q_OBJECT
+		private:
+			using TBase = TWindowBase;
+		
 		public:
-			TWindow(const QString& title, int width = -1, int height = -1, bool visible = true);
+			using TDictionaryPanelPtr = std::shared_ptr<TDictionaryPanel>;
+			using TTranslatorPanelPtr = std::shared_ptr<TTranslatorPanel>;
+		
+		public:
+			explicit TWindow(const QString& title, int width = -1, int height = -1, bool visible = true);
 			
 			virtual ~TWindow() noexcept override;
 			
 			void showAll(bool visible = true, bool showChildren = true);
 			
-			TDictionaryPanel* getDictionary();
+			TDictionaryPanelPtr
+			getDictionary();
 			
-			TTranslatorPanel* getTranslator();
+			TTranslatorPanelPtr
+			getTranslator();
 		
 		protected:
 			

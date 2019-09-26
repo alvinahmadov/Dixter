@@ -37,19 +37,20 @@ namespace Dixter
 		void TNotebook::connectEvents()
 		{ }
 		
-		TPanel* TNotebook::getPage(int pageNum)
+		TPanel*
+		TNotebook::getPage(int pageNum)
 		{
 			int __index {};
 			for (const auto* __child : children())
 			{
 				if (__index == pageNum)
 					return const_cast<TPanel*>(static_cast<const TPanel*>(__child));
-				
 				++__index;
 			}
+			return nullptr;
 		}
 		
 		int TNotebook::getPageNumber(QWidget*) const
 		{ }
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

@@ -7,17 +7,17 @@
  *  See README.md for more information.
  */
 #include "Button.hpp"
-#include <Commons.hpp>
-#include <Configuration.hpp>
+#include "Constants.hpp"
+#include "Configuration.hpp"
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		//Button implementation
 		TButton::TButton(QWidget* parent, const QString& label)
 				: QPushButton(label, parent)
 		{
+			init();
 		}
 		
 		TButton::TButton(QIcon icon, QWidget* parent)
@@ -32,7 +32,17 @@ namespace Dixter
 		{
 		}
 		
-		TButton::~TButton()
-		{ }
-	}
-}
+		void TButton::init()
+		{
+			auto __confMan = getIniManager({ g_guiConfigPath })->accessor();
+			auto __bgColour = __confMan->getValue(NodeKey::kWinBtnColourNode).asCustom();
+			auto __fontName = __confMan->getValue(NodeKey::kWinFontNameNode).asCustom();
+			int __fontSize = __confMan->getValue(NodeKey::kWinFontSizeNode);
+			__bgColour.prepend('#');
+			QPalette __palette(__bgColour);
+			
+			setPalette(__palette);
+			setFont(QFont(__fontName, __fontSize));
+		}
+	} // namespace Gui
+} //namespace Dixter
