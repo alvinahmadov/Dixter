@@ -270,7 +270,7 @@ namespace Dixter
 		~StopWatch() noexcept
 		{
 			if (m_showOnDelete)
-				printfm("\nOverall run time %.3lf ms.\n", elapsed(true));
+				printf("\nOverall run time %.3lf ms.\n", elapsed(true));
 		}
 		
 		inline Real32 elapsed(bool showOnDelete = false);
@@ -444,7 +444,7 @@ namespace Dixter
 
 #ifdef PERFORMANCE_TEST
 #   define dxTIMER_START StopWatch t;
-#   define TIMER_STOP  printfm("\nOverall run time %.3lf ms.\n", t.elapsed());
+#   define dxTIMER_STOP  printf("\nOverall run time %.3lf ms.\n", t.elapsed());
 #else
 #   define dxTIMER_START
 #   define TIMER_STOP

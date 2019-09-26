@@ -78,8 +78,8 @@
 #endif
 
 #ifdef USE_C99_STDINT_TR1
-#define USE_WCHART16
-#define USE_WCHART32
+#	define USE_WCHART16
+#	define USE_WCHART32
 #endif
 
 #ifdef USE_TO_STRING_CONVERSION

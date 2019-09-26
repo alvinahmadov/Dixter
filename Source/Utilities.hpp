@@ -6,6 +6,7 @@
  *  License-Identifier: MIT License
  *  See README.md for more information.
  */
+ 
 #pragma once
 
 #include <iostream>
@@ -142,6 +143,7 @@ namespace Dixter
 				return __diff;
 			}
 		} // namespace Algorithms
+		
 		namespace Strings
 		{
 			// Utilities to work with string types

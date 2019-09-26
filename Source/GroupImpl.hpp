@@ -77,13 +77,14 @@ namespace Dixter
 	template<class TCast>
 	TCast*
 	TGroup<T, ID>::add(const TGroup<T, ID>::TKey& groupName, TObject* element, ID id,
-					   bool autoRelease, TStringView description)
+					   bool autoRelease, typename TElement::TDescription description)
 	{
 		if (this->hasElement(groupName, id))
 			return this->get<TCast>(groupName, id);
 		
-		dxASSERT_MSG(this->isValidGroupName(groupName), "Not a valid group m_name.");
-		dxASSERT_MSG(this->isValidElement(element), "Not a valid element.");
+		assert((this->isValidGroupName(groupName))&&("Not a valid group name."));;
+		assert((this->isValidElement(element))&&("Not a valid element."));;
+		
 		try
 		{
 			return dynamic_cast<TCast*>(this->doAdd(
@@ -92,7 +93,10 @@ namespace Dixter
 		}
 		catch (TException& e)
 		{
-			printerr(e.getMessage())
+			std::cerr << __DATE__ << ' '
+					  << __TIME__ << ' '
+					  << __FILE__ << ':'
+					  << __LINE__ << " " << e.getMessage() << std::endl;
 		}
 		return nullptr;
 	}
@@ -101,9 +105,9 @@ namespace Dixter
 	template<class TCast>
 	TCast*
 	TGroup<T, ID>::add(TObject* element, ID id, bool autoRelease,
-					   TStringView description)
+					   typename TElement::TDescription description)
 	{
-		dxASSERT_MSG(this->isValidElement(element), "Not a valid element.");
+		assert((this->isValidElement(element))&&("Not a valid element."));;
 		try
 		{
 			return dynamic_cast<TCast*>(this->doAdd(
@@ -112,7 +116,10 @@ namespace Dixter
 		}
 		catch (TException& e)
 		{
-			printerr(e.what())
+			std::cerr << __DATE__ << ' '
+					  << __TIME__ << ' '
+					  << __FILE__ << ':'
+					  << __LINE__ << " " << e.getMessage() << std::endl;
 		}
 		return nullptr;
 	}
@@ -227,8 +234,9 @@ namespace Dixter
 	TGroup<T, ID>::forEach(TReturn(T::*method)(TArgs ...), TArgs... args)
 	{
 		auto __methodCallback = TMethodCallback<T, TReturn, TArgs...>(method);
+
 		std::for_each(
-				begin(), end(), [ &__methodCallback, &args... ](auto& pair)
+				begin(), end(), [ &__methodCallback, &args... ](typename TMultimap::value_type& pair)
 				{
 					for (TElement* __item : *pair.second)
 					{

@@ -9,11 +9,11 @@
 
 #include <algorithm>
 #include <sstream>
-#include "Tokenizer.hpp"
+
 #include "Exception.hpp"
 #include "Constants.hpp"
 #include "Utilities.hpp"
-#include "Commons.hpp"
+#include "Tokenizer.hpp"
 
 namespace Dixter
 {
@@ -73,7 +73,18 @@ namespace Dixter
 			return c == g_whiteSpace;
 		}
 		
-		///TokenData Impl.
+		// TTokenInfo implementation
+		TString TToken::TTokenInfo::toString() const
+		{
+			std::ostringstream __oss;
+			__oss << "Words: " << wordCount
+				  << ", Punctuation chars: " << punctuationChars
+				  << ", is complex: " << ( isComplex ? "yes" : "no" )
+				  << ", punct. pos: " << Utilities::Strings::toString(punctPositions);
+			return __oss.str();
+		}
+		
+		// TToken implementation.
 		TToken::TToken() noexcept
 				: m_chunks(TTokenValueHolder()),
 				  m_info(TTokenInfo())
@@ -140,7 +151,7 @@ namespace Dixter
 			m_info = info;
 		}
 		
-		///Tokenizer Impl.
+		// Tokenizer implementation
 		const TByte TTokenizer::s_delimiter { g_whiteSpace };
 		
 		const TByte TTokenizer::s_separator { g_comma };
@@ -206,28 +217,6 @@ namespace Dixter
 			return __oss.str();
 		};
 		
-		/*
-		bool TTokenizer::tokenizeComplex(TTokenizer::TConstValue token)
-		{
-			UInt32 parts { };
-			if (not isComplex(token, parts))
-				return false;
-			
-			std::vector<TValue> __tokens { };
-			TToken::TTokenInfo __info { };
-			// if (m_token.empty())
-			// 	m_token.push_back(new TToken());
-			
-			__info = m_token.back()->getInfo();
-			__info.punctuationChars = parts;
-			
-			m_token.back()->setInfo(__info);
-			tokenizeWords(token);
-			
-			return true;
-		}
-		*/
-		
 		void TTokenizer::readToken(TTokenizer::TConstValue token, const Int64& maxCount,
 								   TByte sep, TTokenizer::TTokenValueHolder& chunks)
 		{
@@ -259,9 +248,6 @@ namespace Dixter
 		TTokenizer::TValue&
 		TTokenizer::cleanJunk(TTokenizer::TValue& token, const int* charList)
 		{
-			if (not charList)
-				return;
-			
 			Int32 index = 0;
 			Int32 chr = 0;
 			while (( chr = charList[index++] ) != -1)
@@ -269,7 +255,6 @@ namespace Dixter
 				removePrefix(token, std::min(token.find_first_not_of(chr), token.size()));
 				removeSuffix(token, token.size() - std::min(token.find(chr), token.size()));
 			}
-			
 			return token;
 		}
 		
@@ -293,5 +278,5 @@ namespace Dixter
 			}
 			return true;
 		}
-	}
-}
+	} // namespace OpenTranslate
+} // namespace Dixter

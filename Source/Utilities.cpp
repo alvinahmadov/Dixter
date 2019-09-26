@@ -1,5 +1,4 @@
 /**
- *  File
  *  Copyright (C) 2015-2019
  *  Author Alvin Ahmadov <alvin.dev.ahmadov@gmail.com>
  *
@@ -9,9 +8,7 @@
  */
 
 #include <cmath>
-#include <codecvt>
 #include "Utilities.hpp"
-#include "Macros.hpp"
 
 namespace Dixter
 {

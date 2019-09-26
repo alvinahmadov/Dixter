@@ -8,6 +8,7 @@
  */
 
 #include "SettingsController.hpp"
+#include "Configuration.hpp"
 #include "Exception.hpp"
 #include "Constants.hpp"
 #include "Types.hpp"

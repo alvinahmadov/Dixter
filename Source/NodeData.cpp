@@ -7,22 +7,20 @@
  *  See README.md for more information.
  */
 
-#include "NodeData.hpp"
-#include "Exception.hpp"
 #include "Macros.hpp"
+#include "Exception.hpp"
+#include "NodeData.hpp"
 
 namespace Dixter
 {
-	//////////////////////////////
-	// TAttribute Implementation //
-	//////////////////////////////
+	// TAttribute Implementation
 	TAttribute::TAttribute(const TString& attributeName, const TUString& attributeValue) noexcept
 			: m_index(),
 			  m_name(attributeName),
 			  m_value(attributeValue)
 	{ }
 	
-	///Node Implementation
+	// TNode Implementation
 	TNode::TNode(const TString& nodeName, const TUString& nodeValue, const TString& parent) noexcept
 			: m_index(),
 			  m_name(nodeName),
@@ -42,7 +40,7 @@ namespace Dixter
 		return not m_name.compare(name);
 	}
 	
-	///NodeData Implementation
+	// TNodeData Implementation
 	void TNodeData::insertData(const TString& nodeName, const TUString& nodeValue,
 							   const TString& parent,
 							   const TString& attributeName, const TUString& attributeValue)

@@ -10,11 +10,13 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
+#include <set>
+#include <mutex>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include "NodeEntry.hpp"
 #include "Commons.hpp"
 
 
@@ -22,22 +24,8 @@ namespace Dixter
 {
 	struct TNode;
 	class TNodeData;
+	class TNodeEntry;
 	struct IConfiguration;
-	
-	using PropertyTree          = boost::property_tree::basic_ptree<TString, TUString>;
-	using PropertyTreePtr       = std::unique_ptr<PropertyTree>;
-	using ConfigurationProperty = std::unordered_map<TString, std::shared_ptr<IConfiguration>>;
-	
-	/**
-	 * \brief Enum that defines which configuration reader/writer to use.
-	 * */
-	enum class EConfiguration
-	{
-		None,
-		INI,
-		XML,
-		JSON
-	};
 	
 	/**
 	 * \author Alvin Ahmadov
@@ -47,6 +35,11 @@ namespace Dixter
 	 * */
 	struct IConfiguration
 	{
+		using PropertyTree          = boost::property_tree::basic_ptree<TString, TUString>;
+		using PropertyTreePtr       = std::unique_ptr<PropertyTree>;
+		using NodeEntryPtr       	= std::shared_ptr<TNodeEntry>;
+		using ConfigurationProperty = std::unordered_map<TString, std::shared_ptr<IConfiguration>>;
+		
 		/**
 		 * \interface ConfigurationInterface
 		 * \brief Abstract method for loading data
@@ -72,7 +65,17 @@ namespace Dixter
 		virtual TUString get(const TString& key) const = 0;
 		
 		virtual ~IConfiguration() = default;
-		
+	};
+	
+	/**
+	 * \brief Enum that defines which configuration reader/writer to use.
+	 * */
+	enum class EConfiguration
+	{
+		None,
+		INI,
+		XML,
+		JSON
 	};
 	
 	class TConfigurationManager;
@@ -80,7 +83,8 @@ namespace Dixter
 	/**
 	 * @brief Class for reading and storing settings from ini file
 	 * */
-	class TConfigurationINI final : public IConfiguration, public NonCopyable
+	class TConfigurationINI final : public IConfiguration,
+									public NonCopyable
 	{
 	public:
 		explicit TConfigurationINI(const TString& file) noexcept;
@@ -103,7 +107,7 @@ namespace Dixter
 	
 	private:
 		TString m_file;
-		std::unique_ptr<PropertyTree> m_propertyTree;
+		PropertyTreePtr m_propertyTree;
 		NodeEntryPtr m_entries;
 	};
 	
@@ -112,7 +116,8 @@ namespace Dixter
 	 * \implements ConfigurationInterface
 	 * \brief Class for reading and storing settings from xml file
 	 * */
-	class TConfigurationXML final : public IConfiguration, public NonCopyable
+	class TConfigurationXML final : public IConfiguration,
+									public NonCopyable
 	{
 	public:
 		/**
@@ -152,41 +157,48 @@ namespace Dixter
 		
 		TUString get(const TString& key, const TUString& byValue) const override;
 		
-		/*
-		UStringVector GetAttributes(const TUString &attributeName) const;
-		
-		TUString GetAttributeValue(const TUString &nodeValue, const TUString &attributeName) const;
-		
-		TUString GetAttributeValueBySibling(const TUString &siblingValue, const TUString &nodeName);
-		*/
 	private:
-		TString m_rootNode;
 		TString m_file;
+		
+		TString m_rootNode;
+		
 		NodeEntryPtr m_entries;
-		std::unique_ptr<PropertyTree> m_propertyTree;
+		
+		PropertyTreePtr m_propertyTree;
+		
 		mutable std::mutex m_mutex;
 	};
 	
 	class TConfigurationJSON : public IConfiguration
 	{
-		explicit TConfigurationJSON(dxMAYBE_UNUSED const TString& config_file = "") {};
+	public:
+		using PropertyTree = boost::property_tree::basic_ptree<TString, TString>;
+	public:
+		explicit TConfigurationJSON(const TString& file) noexcept ;
 		
-		virtual ~TConfigurationJSON() = 0;
+		virtual ~TConfigurationJSON() noexcept override = default;
 		
-		virtual void load() = 0;
+		void load() override;
 		
-		virtual void save() = 0;
+		void save() override;
 		
-		virtual void getKey(std::list<TString>&) const = 0;
+		void set(const TString&, const TUString&) override {}
 		
-		virtual TUString get(const TString& nodeName) const = 0;
+		void keys(std::list<TString>&) const override;
 		
-		virtual TUString getValue(const TUString& siblingValue, const TString& nodeName) const = 0;
+		void get(const TString& key, std::vector<TUString>& values) const override;
 		
-		static TSize reference_count;
+		TUString get(const TString& key) const override;
+		
+		TUString get(const TString& key, const TUString& byValue) const override;
+		
 	private:
+		TString m_file;
+		
 		TString m_rootNode;
-		std::unordered_map<Int32, std::shared_ptr<TNodeData>>* m_pConfigMap;
+		
+		NodeEntryPtr m_entries;
+		
 		std::unique_ptr<PropertyTree> m_propertyTree;
 	};
 	
@@ -206,7 +218,8 @@ namespace Dixter
 		const std::shared_ptr<IConfiguration>&
 		getConfiguration();
 		
-		EConfiguration getType() const;
+		EConfiguration 
+		getType() const;
 	
 	private:
 		EConfiguration m_type;
@@ -225,8 +238,7 @@ namespace Dixter
 	public:
 		using TSelf 			= TConfigurationManager;
 		using TInstancePtr 		= std::shared_ptr<TSelf>;
-		using TInstances 		= std::set<TSelf*>;
-		using TConstIterator	= ConfigurationProperty::const_iterator;
+		using TConstIterator	= IConfiguration::ConfigurationProperty::const_iterator;
 		
 	private:
 		/**
@@ -254,7 +266,8 @@ namespace Dixter
 		 * \returns Found value.
 		 * \throws NotFoundException.
 		 * */
-			TUString getValue(const TString& key, const TString& root = "") const;
+			TUString getValue(const TString& key,
+							  const TString& root = TString()) const;
 			
 			/**
 			 * \class XMLConfiguration
@@ -264,14 +277,15 @@ namespace Dixter
 			 * \returns value
 			 * \throws NotFoundException
 			 * */
-			TUString getValue(const TString& key, const TUString& byValue, const TString& root = "") const;
+			TUString getValue(const TString& key, const TUString& byValue,
+							  const TString& root = TString()) const;
 			
 			/**
 			 * \brief Get all values of node with specified name.
 			 * \tparam Container Container to which save data.
 			 * */
 			const TAccessor* getValues(const TString& key, std::vector<TUString>& values,
-									   const TString& root = "") const;
+									   const TString& root = TString()) const;
 			
 		private:
 			static IConfiguration*
@@ -353,16 +367,17 @@ namespace Dixter
 		static TInstancePtr&
 		getManager(EConfiguration type, std::set<TString> paths = std::set<TString>());
 		
-		const TAccessor* getAccessor() const;
+		const TAccessor* accessor() const;
 		
-		TMutator* getMutator();
+		TMutator* mutator();
 		
 		/**
 		 * \class ConfigurationManager
 		 * \brief Gets the type of current instance.
 		 * \returns Instance's type.
 		 * */
-		EConfiguration getType() const;
+		EConfiguration 
+		getType() const;
 		
 		/**
 		 * \class ConfigurationManager
@@ -381,9 +396,28 @@ namespace Dixter
 	
 	private:
 		static TInstancePtr m_instance;
+		std::set<TString> m_paths;
 		std::unique_ptr<TConfigurationFactory> m_factory;
-		ConfigurationProperty m_properties;
+		IConfiguration::ConfigurationProperty m_properties;
 		TAccessor* m_accessor;
 		TMutator* m_mutator;
 	};
+	
+	inline TConfigurationManager::TInstancePtr&&
+	getManager(EConfiguration type, const std::set<TString>& path)
+	{
+		return std::move(TConfigurationManager::getManager(type, path));
+	}
+	
+	inline TConfigurationManager::TInstancePtr&&
+	getIniManager(const std::set<TString>& path)
+	{
+		return std::move(TConfigurationManager::getManager(EConfiguration::INI, path));
+	}
+	
+	inline TConfigurationManager::TInstancePtr&&
+	getXmlManager(const std::set<TString>& path = {})
+	{
+		return std::move(TConfigurationManager::getManager(EConfiguration::XML, path));
+	}
 } // namespace Dixter

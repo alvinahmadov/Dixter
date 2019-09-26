@@ -61,8 +61,8 @@ namespace Dixter
 		 * */
 		template<class TCast = TObject>
 		TCast*
-		add(const TKey& groupName, TObject* element, ID id,
-			bool autoDelete = false, TStringView description = "");
+		add(const TKey& groupName, TObject* element, ID id, bool autoDelete = false,
+			typename TElement::TDescription description = "");
 		
 		/**
 		 * \class Group
@@ -77,7 +77,7 @@ namespace Dixter
 		template<class TCast = TObject>
 		TCast*
 		add(TObject* element, ID id, bool autoDelete = false,
-			TStringView description = "");
+			typename TElement::TDescription description = "");
 		
 		/**
 		 * \class Group

@@ -14,7 +14,7 @@
 #include "Utilities.hpp"
 #include "Exception.hpp"
 #include "Commons.hpp"
-#include "NodeData.hpp"
+#include "NodeEntry.hpp"
 #include "Constants.hpp"
 
 using namespace std;
@@ -34,11 +34,11 @@ namespace Dixter
 	using scoped_lock = std::unique_lock<T>;
 	#endif
 	
-	static std::set<TString> g_confPath { g_langConfigPath, g_voiceConfigPath, g_panelConfigPath };
+	static std::set<TString> g_confPath { g_langConfigPath, g_voiceConfigPath};
 	
-	static std::set<TString> g_confPathIni { g_panelConfigPathIni };
+	static std::set<TString> g_settingsConfPath { g_guiConfigPath };
 	
-	TNodeData* xmlLoadHelper(const PropertyTree& prop, const TString& parent, std::function<
+	TNodeData* xmlLoadHelper(const IConfiguration::PropertyTree& prop, const TString& parent, std::function<
 			TString(const TString&, const TUString&,
 					const TUString&, bool)
 	> fn)
@@ -46,7 +46,7 @@ namespace Dixter
 		TNodeData* __configData(new TNodeData);
 		const TString __attributeKey("<xmlattr>");
 		TString __nodeName;
-		for (const PropertyTree::value_type& __node : prop)
+		for (const auto& __node : prop)
 		{
 			auto __nodeValue = __node.second.get_value<TUString>();
 			// Not attribute
@@ -55,7 +55,7 @@ namespace Dixter
 				if (__node.second.size() > 0)
 				{
 					__nodeName = fn(__node.first, TUString(), TUString(), false);
-					for (const PropertyTree::value_type& __withAttr : __node.second)
+					for (const auto& __withAttr : __node.second)
 					{
 						auto __nodeNameTemp = __nodeName;
 						__nodeName = fn(__withAttr.first, TUString(), TUString(), true);
@@ -117,9 +117,9 @@ namespace Dixter
 		{
 			boost::property_tree::ini_parser::read_ini<PropertyTree>(m_file, *m_propertyTree);
 		}
-		catch (boost::exception& e)
+		catch (std::exception& e)
 		{
-			printerr("Read ini error")
+			printerr(e.what())
 		}
 	}
 	
@@ -169,7 +169,7 @@ namespace Dixter
 		return m_entries->findEntry(key)->m_value;
 	}
 	
-	// XMLConfiguration implementation
+	// TConfigurationXML implementation
 	TConfigurationXML::TConfigurationXML(const TString& file) noexcept
 			: m_file(file),
 			  m_entries(new TNodeEntry),
@@ -258,8 +258,59 @@ namespace Dixter
 			__data.second->getValues(key, values);
 	}
 	
+	// TConfigurationJSON implementation
+	TConfigurationJSON::TConfigurationJSON(const Dixter::TString& file) noexcept
+			: m_file(file),
+			  m_rootNode(),
+			  m_entries(new TNodeEntry),
+			  m_propertyTree(new PropertyTree)
+	{
+		try
+		{
+			boost::property_tree::json_parser::read_json<PropertyTree>(file, *m_propertyTree);
+		} catch (std::exception& e)
+		{
+			printerr(e.what())
+		}
+	};
+	
+	void TConfigurationJSON::load()
+	{
+		printl_log("")
+	}
+	
+	
+	void TConfigurationJSON::save()
+	{
+		printl_log("")
+	}
+	
+	void TConfigurationJSON::keys(std::list<TString>&) const
+	{
+		printl_log("")
+	}
+	
+	void TConfigurationJSON::get(const TString&, std::vector<TUString>&) const
+	{
+	
+	}
+	
+	TUString 
+	TConfigurationJSON::get(const TString&) const 
+	{
+		printl_log("")
+	}
+	
+	TUString 
+	TConfigurationJSON::get(const TString&, const TUString&) const
+	{
+		printl_log("")
+	}
+	
+	
 	// ConfigurationProxy implementation
-	TConfigurationFactory::TConfigurationFactory(const TString& configPath, EConfiguration type)
+	TConfigurationFactory::TConfigurationFactory(const TString& configPath,
+												 EConfiguration type)
 			: m_type(type)
 	{
 		switch (m_type)
@@ -270,8 +321,9 @@ namespace Dixter
 			case EConfiguration::XML:
 				m_configuration = dxMAKE_SHARED(TConfigurationXML, configPath);
 				break;
-			case EConfiguration::JSON :
-				throw TNotImplementedException("%s:%d Reading configuration from JSON is not implemented yet.\n", __FILE__, __LINE__);
+			case EConfiguration::JSON:
+				m_configuration = dxMAKE_SHARED(TConfigurationJSON, configPath);
+				break;
 			default:
 				throw TIllegalArgumentException("%s:%d Unknown type.\n", __FILE__, __LINE__);
 		}
@@ -319,13 +371,13 @@ namespace Dixter
 	}
 	
 	const TConfigurationManager::TAccessor*
-	TConfigurationManager::getAccessor() const
+	TConfigurationManager::accessor() const
 	{
 		return m_accessor;
 	}
 	
 	TConfigurationManager::TMutator*
-	TConfigurationManager::getMutator()
+	TConfigurationManager::mutator()
 	{
 		return m_mutator;
 	}
@@ -367,8 +419,10 @@ namespace Dixter
 			throw TNotFoundException(errorMsg);
 	}
 	
-	TConfigurationManager::TConfigurationManager(EConfiguration type, const std::set<TString>& paths)
-			: m_factory(nullptr),
+	TConfigurationManager::TConfigurationManager(EConfiguration type,
+												 const std::set<TString>& paths)
+			: m_paths(paths),
+			  m_factory(nullptr),
 			  m_properties(),
 			  m_accessor(new TAccessor(this)),
 			  m_mutator(new TMutator(this))
@@ -470,19 +524,18 @@ namespace Dixter
 	bool TConfigurationManager::update()
 	{
 		bool success(false);
-		// try
-		// {
-		// 	auto __type = m_factory->getType();
-		// 	auto __paths = m_pathList;
-		// 	m_instance.reset(new TConfigurationManager(__type, __paths));
-		// 	success = true;
-		// }
-		// catch (Exception& e)
-		// {
-		// 	printerr(e.getMessage())
-		// }
-		// if (success)
-		// 	println("Updated")
+		try
+		{
+			auto __type = m_factory->getType();
+			auto __paths = m_paths;
+			m_instance.reset(new TConfigurationManager(__type, __paths));
+			success = true;
+		} catch (TException& e)
+		{
+			printerr(e.getMessage())
+		}
+		if (success)
+			println("Updated")
 		return success;
 	}
 	

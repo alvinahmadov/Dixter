@@ -9,21 +9,18 @@
 
 #pragma once
 
-#include <vector>
 #include <set>
-#include "Exception.hpp"
-#include "Types.hpp"
-#include <sstream>
+#include "Commons.hpp"
 
 #ifdef HAVE_CXX17
 
 #include <optional>
-#include <Utilities.hpp>
 
 #else
-#include <boost/optional.hpp>
-#endif
 
+#include <boost/optional.hpp>
+
+#endif
 
 namespace Dixter
 {
@@ -36,15 +33,7 @@ namespace Dixter
 			{
 				TTokenInfo() = default;
 				
-				inline TString toString() const
-				{
-					std::ostringstream __oss;
-					__oss << "Words: " << wordCount
-					      << ", Punctuation chars: " << punctuationChars
-					      << ", is complex: " << ( isComplex ? "yes" : "no" )
-					      << ", punct. pos: " << Utilities::Strings::toString(punctPositions);
-					return __oss.str();
-				}
+				TString toString() const;
 				
 				bool isComplex;
 				UInt32 wordCount;
@@ -141,7 +130,6 @@ namespace Dixter
 			TString toString() const;
 		
 		protected:
-			
 			static void readToken(TConstValue token, const Int64& maxCount,
 			                      TByte sep, TTokenValueHolder& chunks);
 			
@@ -166,5 +154,5 @@ namespace Dixter
 		private:
 			TToken* m_token;
 		};
-	}
-}
+	} // namespace OpenTranslate
+} // namespace Dixter

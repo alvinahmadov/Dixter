@@ -8,10 +8,12 @@
  */
 #pragma once
 
-#include "Configuration.hpp"
+#include "Commons.hpp"
 
 namespace Dixter
 {
+	enum class EConfiguration;
+	
 	class SettingsController : public NonCopyable
 	{
 	public:

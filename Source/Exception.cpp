@@ -10,6 +10,7 @@
 
 namespace Dixter
 {
+	// TException implementation
 	TException::TException(const char* message) noexcept
 			: std::exception(),
 			  m_message(message)
@@ -32,6 +33,7 @@ namespace Dixter
 		return m_message;
 	}
 	
+	// Generic TException class implementations
 	#define DEF_DETAILED_EXCEPTION(className)                   \
 	className::className(TString message) noexcept				\
 	: TException(message) {}									\
@@ -61,4 +63,4 @@ namespace Dixter
 	DEF_DETAILED_EXCEPTION(TRangeException)
 	
 	DEF_DETAILED_EXCEPTION(TSQLException)
-}
+} // namespace Dixter

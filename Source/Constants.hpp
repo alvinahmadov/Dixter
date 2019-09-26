@@ -16,113 +16,101 @@ namespace Dixter
 {
 	namespace
 	{
-		static const QString g_translatorName {"Translator"};
-		static const QString g_dictionaryName {"Dictionary"};
-		static const string_t g_widgetGroup {"widget"};
-		static const string_t g_controlGroup {"control"};
-		static const string_t g_menuGroup {"menu"};
-		static const string_t g_layoutGroup {"sizer"};
+		static const QString g_translatorName("Translator");
+		static const QString g_dictionaryName("Dictionary");
+		static const TString g_widgetGroup("widget");
+		static const TString g_controlGroup("control");
+		static const TString g_menuGroup("menu");
+		static const TString g_layoutGroup("sizer");
+		static const TString g_placeholderColour("#9b9b9b");
+		static const TString g_searhPlaceholder("Search word...");
 		
-		const string_t g_searhPlaceholder {"Search word..."};
+		static const TByte g_whiteSpace(' ');
+		static const TByte g_comma(',');
+		static const TByte g_endLine('\n');
 		
-		struct NodeKey
+		
+		struct NodeKey final
 		{
-			static inline const string_t kLangRoot              {"languages"};
-			static inline const string_t kVoiceRoot             {"voices"};
-			static inline const string_t kSettingsRoot          {"settings"};
+			static const TString kLangRoot, kVoiceRoot;
+			static const TString kVoiceNode, kVoiceNameNode, kVoiceValueNode;
+			static const TString kLangNode, kLangIdNode, kLangNameNode,
+								 kLangNameDisplayNode, kLangAlphabetNode, kLangStructureNode;
+			static const TString kWinFontSizeNode, kWinFontNameNode, kWinBgColourNode, kWinFgColourNode,
+								 kWinBtnColourNode, kWinWidthNode, kWinHeightNode;
+			static const TString kAreaFontSizeNode, kAreaFontNameNode, kAreaBgColourNode,
+								 kAreaFgColourNode;
 			
-			static inline const string_t kVoiceNode             {"voices.voice"};
-			static inline const string_t kVoiceNameNode         {"voices.voice.name"};
-			static inline const string_t kVoiceValueNode        {"voices.voice.value"};
-			static inline const string_t kLangNode              {"languages.language"};
-			static inline const string_t kLangIdNode            {"languages.language.id"};
-			static inline const string_t kLangNameNode          {"languages.language.name"};
-			static inline const string_t kLangNameDisplayNode   {"languages.language.display_name"};
-			static inline const string_t kLangAlphabetNode      {"languages.language.alphabet"};
-			static inline const string_t kLangStructureNode     {"languages.language.structure"};
-			static inline const string_t kWidgetNode            {"settings.widget"};
-			static inline const string_t kWindow                {"settings.widget<Window>"};
-			static inline const string_t kTextArea              {"settings.widget<TextArea>"};
-			static inline const string_t kWinFontSizeNode       {"settings.widget<Window>.font.size"};
-			static inline const string_t kWinFontNameNode       {"settings.widget<Window>.font.name"};
-			static inline const string_t kWinBgColourNode       {"settings.widget<Window>.bgcolour"};
-			static inline const string_t kWinFgColourNode       {"settings.widget<Window>.fgcolour"};
-			static inline const string_t kWinBtnColourNode      {"settings.widget<Window>.btncolour"};
-			static inline const string_t kWinWidthNode          {"settings.widget<Window>.width"};
-			static inline const string_t kWinHeightNode         {"settings.widget<Window>.height"};
-			static inline const string_t kAreaFontSizeNode      {"settings.widget<TextArea>.font.size"};
-			static inline const string_t kAreaFontNameNode      {"settings.widget<TextArea>.font.name"};
-			static inline const string_t kAreaBgColourNode      {"settings.widget<TextArea>.bgcolour"};
-			static inline const string_t kAreaFgColourNode      {"settings.widget<TextArea>.fgcolour"};
-			static inline const string_t kLogFile               {"settings.log.logfile"};
+			static const TString kDatabaseHostNode, kDatabaseUserNode, kDatabasePassNode, kDatabasePortNode;
 		};
 		
-		const string_t kDatabaseProtocol {"tcp://"};
-		const string_t kDatabasePort {"3306"};
-		const string_t kMysqlConnector {"MySQL"};
-		const string_t kMariadbConnector {"MariaDB"};
+		const TString g_dbProtocol("tcp://"),
+					  g_dbConnector("MySQL"), g_mdbConnector("MariaDB");
 		
-		const string_t kPanelConfigPath {"/home/alvin/CLionProjects/Dixter/Resources/settings.xml"};
-		const string_t kLangConfigPath  {"/home/alvin/CLionProjects/Dixter/Resources/languages.xml"};
-		const string_t kVoiceConfigPath {"/home/alvin/CLionProjects/Dixter/Resources/voices.xml"};
-	}
+		const TString g_indexTable("tables"), g_indexColumn("original_value");
+		
+		const TString g_guiConfigPath  ("/usr/local/share/dixter/Resources/settings.ini");
+		const TString g_langConfigPath ("/usr/local/share/dixter/Resources/languages.xml");
+		const TString g_voiceConfigPath("/usr/local/share/dixter/Resources/voices.xml");
+		
+		const TString NodeKey::kLangRoot("languages");
+		const TString NodeKey::kVoiceRoot("voices");
+		
+		const TString NodeKey::kVoiceNode("voices.voice");
+		const TString NodeKey::kVoiceNameNode("voices.voice.name");
+		const TString NodeKey::kVoiceValueNode("voices.voice.value");
+		const TString NodeKey::kLangNode("languages.language");
+		const TString NodeKey::kLangIdNode("languages.language.id");
+		const TString NodeKey::kLangNameNode("languages.language.name");
+		const TString NodeKey::kLangNameDisplayNode("languages.language.display_name");
+		const TString NodeKey::kLangAlphabetNode("languages.language.alphabet");
+		const TString NodeKey::kLangStructureNode("languages.language.structure");
+		
+		const TString NodeKey::kWinWidthNode("window_width");
+		const TString NodeKey::kWinHeightNode("window_height");
+		const TString NodeKey::kWinBgColourNode("window_bgcolour");
+		const TString NodeKey::kWinFgColourNode("window_fgcolour");
+		const TString NodeKey::kWinBtnColourNode("window_btncolour");
+		const TString NodeKey::kWinFontNameNode("window_font_name");
+		const TString NodeKey::kWinFontSizeNode("window_font_size");
+		const TString NodeKey::kAreaBgColourNode("textarea_bgcolour");
+		const TString NodeKey::kAreaFgColourNode("textarea_fgcolour");
+		const TString NodeKey::kAreaFontNameNode("textarea_font_name");
+		const TString NodeKey::kAreaFontSizeNode("textarea_font_size");
+		
+		const TString NodeKey::kDatabaseHostNode("db_hostname");
+		const TString NodeKey::kDatabaseUserNode("db_user");
+		const TString NodeKey::kDatabasePassNode("db_password");
+		const TString NodeKey::kDatabasePortNode("db_port");
+	} // anonymous namespace
 	
-	static const string_t kPlaceholderColour {"#9b9b9b"};
-	
-	enum class WidgetID
+	enum class EWidgetID
 	{
-		None,
+		None = -1,
 		Dictionary,
 		Translator,
 		Notebook,
-		Grid,
 		TextView,
-		ControlPanel,
+		Grid,
+		LangGrid,
+		VoiceGrid,
 		SearchControl,
 		ButtonLayout,
-		WordBox,
-		LANGBOX,
-		ButtonCopy,
-		ButtonClear,
-		Panel,
-		DictionaryPanel,
-		TranslatorPanel,
-		TranslatorLeft,
-		TranslatorCentre,
-		TranslatorRight,
-		TranslatorAreaWest,
-		TranslatorAreaEast,
-		ButtonPanel,
-		LangGrid,
-		ButtonSpeakWest,
-		ButtonTranslateWest,
-		LangboxWest,
-		LangboxEast,
-		ButtonFlip,
-		VoiceGrid,
-		VoiceBoxT,
-		ButtonSpeakEast,
-		ButtonTranslateEast,
-		VoiceLabel,
-		Preferences,
-		PrefToplevel
+		WordBox, LangBox, LangboxWest, LangboxEast,
+		ButtonCopy, ButtonClear,
+		ButtonSpeakWest, ButtonTranslateWest, ButtonFlip, ButtonSpeakEast, ButtonTranslateEast,
+		Panel, DictionaryPanel, TranslatorPanel, ControlPanel, ButtonPanel,
+		TranslatorLeft, TranslatorCentre, TranslatorRight,
+		TranslatorAreaWest, TranslatorAreaEast,
+		VoiceBoxT, VoiceLabel, Preferences
 	};
 	
-	enum MenuID
+	enum class EMenuID
 	{
 		IdMenuBar,
-		IdFile,
-		IdEdit,
-		IdView,
-		IdFileNew,
-		IdFileOpen,
-		IdFileQuit,
-		IdEditCopy,
-		IdEditPaste,
-		IdEditPreferences,
-		IdViewSort,
-		IdViewSortName,
-		IdViewSortType,
-		IdViewSortDate
+		IdFile, IdEdit, IdView,
+		IdFileNew, IdFileOpen, IdFileQuit,
+		IdEditCopy, IdEditPaste, IdEditPreferences,
+		IdViewSort, IdViewSortName, IdViewSortType, IdViewSortDate
 	};
-}
+} // namespace Dixter
