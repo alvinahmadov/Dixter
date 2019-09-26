@@ -12,13 +12,10 @@ set(TEST_INCLUDE_DIRS
     ${DIXTER_INCLUDE_DIR}/Gui
     )
 
+
 if(${GUI_TEST})
     add_subdirectory(Gui)
 elseif(${OTR_TEST})
-    if(${ENABLE_BENCHMARK})
-        add_definitions(-DBENCHMARK_TEST)
-    endif()
-    add_definitions(-DDICT_TESTING)
     add_subdirectory(OpenTranslate)
 elseif(${CVTR_TEST})
     add_subdirectory(CvTranslate)
