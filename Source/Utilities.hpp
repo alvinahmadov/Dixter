@@ -6,17 +6,12 @@
  *  License-Identifier: MIT License
  *  See README.md for more information.
  */
- 
+
 #pragma once
 
-#include <iostream>
 #include <algorithm>
-#include <limits>
 #include <sstream>
-#include <boost/format.hpp>
 #include <list>
-#include <cstring>
-#include <clocale>
 
 #ifdef HAVE_CXX17
 
@@ -34,138 +29,240 @@ namespace Dixter
 {
 	namespace Utilities
 	{
+		template<
+				typename TClass,
+				typename FFunctor
+		>
+		TClass& compareAssign(TClass* lhs, const TClass& rhs, FFunctor&& functor)
+		{
+			if (lhs != std::addressof(rhs))
+				functor();
+			
+			return *lhs;
+		}
+		
 		namespace Algorithms
 		{
-			template<class Container,
-			         typename Functor>
-			Functor& forEach(Container& container, Functor functor)
+			template<
+					typename TContainer,
+					typename FFunctor
+			>
+			inline FFunctor&
+			forEach(TContainer& container, FFunctor&& functor)
 			{
-				return std::for_each(container.begin(), container.end(), functor);
+				return std::for_each(std::begin(container), std::end(container), functor);
 			};
 			
-			template<class Container,
-			         typename Functor>
-			Functor& forEach(const Container& container, Functor functor)
+			template<
+					typename TContainer,
+					typename FFunctor
+			>
+			inline FFunctor&
+			forEach(const TContainer& container, FFunctor&& functor)
 			{
-				return std::for_each(container.begin(), container.end(), functor);
+				return std::for_each(std::begin(container), std::end(container), functor);
 			};
 			
-			template<class Container,
-			         typename Functor>
-			Functor& forEach(Container* container, Functor functor)
+			template<
+					typename TContainer,
+					typename FFunctor
+			>
+			inline FFunctor&
+			forEach(TContainer* container, FFunctor&& functor)
 			{
-				return std::for_each(container->begin(), container->end(), functor);
+				return std::for_each(std::begin(*container), std::end(*container), functor);
 			};
 			
-			template<typename Number,
-			         typename Functor>
-			void forEach(Number& start, const Number& end, Functor functor)
+			template<
+					typename TNumber,
+					typename FFunctor
+			>
+			inline void
+			forEach(TNumber& start, const TNumber& end, FFunctor&& functor)
 			{
 				for (start = 0; start < end; start++)
 					functor(start);
 			};
 			
-			template<class Container,
-			         typename IIter = typename Container::const_iterator,
-			         typename OIter = typename Container::iterator>
-			OIter copyAll(const Container& input, Container& output)
+			/// Full copy wrapper for std::copy
+			template<
+					typename TContainer,
+					typename TIterator = typename TContainer::iterator
+			>
+			inline TIterator
+			copy(const TContainer& input, TContainer& output)
 			{
-				if (input.size() != output.size())
-				{
-					return OIter();
-				}
-				OIter __result = std::copy(input.begin(), input.end(), output.begin());
-				return __result;
-			}
-			
-			template<typename Container,
-			         typename Functor,
-			         typename Iterator = typename Container::iterator>
-			void foreachCompound(Container& container1, Container& container2, Functor functor)
-			{
-				if (container1.size() != container2.size())
-					return;
-				Iterator __lFirst = container1.begin();
-				Iterator __rFirst = container2.begin();
-				Iterator __lLast = container1.end();
-				Iterator __rLast = container2.end();
-				for (; __lFirst != __lLast and __rFirst != __rLast; ++__rFirst, ++__lFirst)
-				{
-					functor(*__lFirst, *__rFirst);
-				}
-			}
-			
-			template<typename Container1,
-			         typename Container2,
-			         typename Functor,
-			         typename IIterator = typename Container1::const_iterator,
-			         typename OIterator = typename Container2::iterator>
-			void foreachCompound(Container1& container1, Container2& container2, Functor functor)
-			{
-				if (TSize(container1.size()) != TSize(container2.size()))
-					return;
-				IIterator __lFirst = container1.begin();
-				OIterator __rFirst = container2.begin();
-				IIterator __lLast = container1.end();
-				OIterator __rLast = container2.end();
-				for (; __lFirst != __lLast and __rFirst != __rLast; ++__rFirst, ++__lFirst)
-				{
-					functor(*__lFirst, *__rFirst);
-				}
-			}
-			
-			template<typename Container,
-			         typename Functor,
-			         typename Iterator = typename Container::iterator>
-			void iterateParallel(Container* container1, Container* container2, Functor functor)
-			{
+				if (not std::empty(output))
+					output.clear();
 				
-				Iterator __lFirst = container1->begin();
-				Iterator __rFirst = container2->begin();
-				Iterator __lLast = container1->begin();
-				Iterator __rLast = container2->begin();
-				for (; __lFirst != __lLast and __rFirst != __rLast; ++__rFirst, ++__lFirst)
+				return std::copy(std::cbegin(input), std::cend(input), std::begin(output));
+			}
+			
+			/// Full copy pointer template specialization
+			template<
+					typename TContainer,
+					typename TIterator = typename TContainer::iterator
+			>
+			inline TIterator
+			copy(const TContainer* input, TContainer* output)
+			{
+				return copy(*input, *output);
+			}
+			
+			/// Full move wrapper for std::move
+			template<
+					typename TContainer,
+					typename TIterator = typename TContainer::iterator
+			>
+			inline TIterator
+			move(const TContainer& input, TContainer& output)
+			{
+				if (not std::empty(output))
+					output.clear();
+				
+				return std::move(std::cbegin(input), std::cend(input), std::begin(output));
+			}
+			
+			/// Full move pointer template specialization
+			template<
+					typename TContainer,
+					typename TIterator = typename TContainer::iterator
+			>
+			inline TIterator
+			move(const TContainer* input, TContainer* output)
+			{
+				return move(*input, *output);
+			}
+			
+			template<typename TContainer>
+			inline bool __f_ofSameSize(TContainer& containerA, TContainer& containerB)
+			{
+				return static_cast<TSize>(std::size(containerA)) ==
+						static_cast<TSize>(std::size(containerB));
+			}
+			
+			template<
+					typename TContainerA,
+					typename TContainerB
+			>
+			inline bool __f_ofSameSize(TContainerA& containerA, TContainerB& containerB)
+			{
+				return static_cast<TSize>(std::size(containerA)) ==
+						static_cast<TSize>(std::size(containerB));
+			}
+			
+			template<
+					typename TContainer,
+					typename FFunctor,
+					typename TIterator = typename TContainer::iterator
+			>
+			void foreachCompound(TContainer& containerA, TContainer& containerB, FFunctor&& functor)
+			{
+				if(not __f_ofSameSize(containerA, containerB))
+					return;
+				
+				TIterator __lFirst = std::begin(containerA), __lLast = std::end(containerA);
+				TIterator __rFirst = std::begin(containerB), __rLast = std::end(containerB);
+				
+				for (; __lFirst != __lLast and __rFirst != __rLast;
+					   ++__rFirst, ++__lFirst)
+				{
+					functor(*__lFirst, *__rFirst);
+				}
+			}
+			
+			template<
+					typename TContainerA,
+					typename TContainerB,
+					typename FFunctor,
+					typename TInputIterator = typename TContainerA::const_iterator,
+					typename TOutputIterator = typename TContainerB::iterator
+			>
+			void foreachCompound(TContainerA& containerA, TContainerB& containerB, FFunctor&& functor)
+			{
+				if(not __f_ofSameSize(containerA, containerB))
+					return;
+				
+				TInputIterator  __lFirst = std::cbegin(containerA), __lLast = std::cend(containerA);
+				TOutputIterator __rFirst = std::begin(containerB),  __rLast = std::end(containerB);
+				
+				for (; __lFirst != __lLast and __rFirst != __rLast;
+					   ++__rFirst, ++__lFirst)
+				{
+					functor(*__lFirst, *__rFirst);
+				}
+			}
+			
+			template<
+					typename TContainer,
+					typename FFunctor,
+					typename TIterator = typename TContainer::iterator
+			>
+			void iterateParallel(TContainer& containerA, TContainer& containerB, FFunctor&& functor)
+			{
+				if(not __f_ofSameSize(containerA, containerB))
+					return;
+				
+				TIterator __lFirst = std::begin(containerA), __lLast = std::begin(containerA);
+				TIterator __rFirst = std::begin(containerB), __rLast = std::begin(containerB);
+				
+				for (; __lFirst != __lLast and __rFirst != __rLast;
+					   ++__rFirst, ++__lFirst)
 				{
 					functor(__lFirst, __rFirst);
 				}
 			}
 			
-			template<typename TContainer, typename IIterator>
-			typename std::iterator_traits<IIterator>::difference_type
-			count(IIterator first, IIterator last, const TContainer& container)
+			template<
+					typename TContainer,
+					typename FFunctor
+			>
+			inline void iterateParallel(TContainer* containerA, TContainer* containerB, FFunctor&& functor)
 			{
-				typename std::iterator_traits<IIterator>::difference_type __diff{};
+				iterateParallel(*containerA, *containerB, std::forward<FFunctor>(functor));
+			}
+			
+			template<
+					typename TContainer,
+					typename TIterator,
+					typename TDifference = typename std::iterator_traits<TIterator>::difference_type
+			>
+			TDifference
+			count(TIterator first, TIterator last, const TContainer& container)
+			{
+				TDifference __diff {};
+				
 				for (const auto& __v : container)
-				{
 					__diff += std::count(first, last, __v);
-				}
 				
 				return __diff;
 			}
+			
 		} // namespace Algorithms
 		
 		namespace Strings
 		{
-			// Utilities to work with string types
-			// TODO: Error for now
 			/**
-			 * @brief Create string representation of data in container separated by explodeBy
-			 * @tparam Container The type of container from which generated data representation
-			 * @tparam StringType The type of the string, unicode or not
-			 * @tparam CharType The type of the char by which data exploded
-			 * @param container Container holding data values
-			 * @param separator Character by which elements separated in representation
-			 * @return string representation
+			 * \brief Create string representation of data in container separated by explodeBy
+			 * \tparam TSeqContainer The type of sequence container from which generated data representation
+			 * \tparam TString The type of the string, unicode or not
+			 * \tparam TChar The type of the char by which data exploded
+			 * \param container Container holding data values
+			 * \param separator Character by which elements separated in representation
+			 * \return string representation
 			 * */
-			template<class Container,
-			         class StringType = typename Container::value_type,
-			         class CharType = typename StringType::value_type>
-			StringType join(const Container& container, CharType separator = CharType(','))
+			template<
+					typename TSeqContainer,
+					typename TString = typename TSeqContainer::value_type,
+					typename TChar = typename TString::value_type
+			>
+			TString
+			join(const TSeqContainer& container, TChar separator = TChar(','))
 			{
-				StringType __result { };
-				TSize __index { };
-				TSize __start { };
-				for (const StringType& __val : container)
+				TString __result {};
+				TSize __index {}, __start {};
+				
+				for (const TString& __val : container)
 				{
 					while (true)
 					{
@@ -181,25 +278,30 @@ namespace Dixter
 						}
 					}
 				}
+				
 				return __result;
 			}
 			
-			/** @brief Generate a container from string representation str of data separated by delimiter
-			  * @tparam Container The type of container from which generated data representation
-			  * @tparam StringType The type of the string, unicode or not
-			  * @tparam CharType The type of the char by which data exploded
-			  * @param str String which holds separate values
-			  * @param separator Character by which the data in string is sepearated
-			  * @return Newly generated container (list, vector, stack)
+			/** \brief Generate a container from string representation str of data separated by delimiter
+			  * \tparam TSeqContainer The type of container from which generated data representation
+			  * \tparam TString The type of the string, unicode or not
+			  * \tparam TChar The type of the char by which data exploded
+			  * \param str String which holds separate values
+			  * \param separator Character by which the data in string is sepearated
+			  * \return Newly generated container (list, vector, stack)
 			  */
-			template<class Container, class StringType,
-			         class CharType = typename StringType::value_type>
-			Container split(const StringType& str, CharType separator = CharType(','))
+			template<
+					typename TSeqContainer,
+					typename TString,
+					typename TChar = typename TString::value_type
+			>
+			TSeqContainer
+			split(const TString& str, TChar separator = TChar(','))
 			{
-				TSize __start { };
-				TSize __pos { };
-				Container __container = Container();
-				while (__pos != StringType::npos)
+				TSize __start {}, __pos {};
+				TSeqContainer __container {};
+				
+				while (__pos != TString::npos)
 				{
 					__pos = str.find(separator, __start);
 					__container.push_back(str.substr(__start, __pos - __start + 1));
@@ -209,101 +311,109 @@ namespace Dixter
 				return __container;
 			}
 			
-			template<class String,
-			         typename CharType = typename String::value_type>
-			void trim(String& str, const CharType charCode = ' ', bool symmetrical = true)
+			template<
+					typename TString,
+					typename TChar = typename TString::value_type
+			>
+			void trim(TString& str, const TChar charCode = ' ', bool symmetrical = true)
 			{
 				str = str.erase(str.find(charCode), 1);
+				
 				if (symmetrical)
 					str = str.erase(str.find(charCode, str.size() - 1), 1);
 			}
 			
-			template<typename ... Strings>
-			TString concat(Strings... args)
+			template<typename... TStringArgs>
+			TString
+			concat(TStringArgs&&... strings)
 			{
-				TString __result { };
-				std::initializer_list<TString> __argList { std::forward<Strings>(args)... };
+				TString __result {};
+				std::initializer_list<TString> __argList { std::forward<TStringArgs>(strings)... };
+				
 				for (const auto& value : __argList)
 					__result.append(value);
 				
 				return __result;
 			}
 			
-			template<typename ... Args, typename Char = typename TString::value_type>
-			TString buildPath(Char separator, const Args& ... args)
+			template<
+					typename... TArgs,
+					typename TChar = typename TString::value_type
+			>
+			TString
+			buildPath(TChar separator, const TArgs&... args)
 			{
-				TString __res { };
+				TString __res {};
 				std::initializer_list<TString> __strings { args... };
-				TSize __index = 0;
+				TSize __index(0);
 				
-				if (sizeof...(Args) > 1)
+				if (sizeof...(TArgs) > 1)
 				{
 					for (const auto& str : __strings)
 					{
 						__res.append(str);
 						if (++__index != __strings.size())
-						{
 							__res += separator;
-						}
 					}
-				} else
+				}
+				else
 				{
 					__res += separator;
 					__res += *__strings.end();
 				}
+				
 				return __res;
 			}
 			
 			template<
-					class TString,
+					typename TString,
 					typename... TArgs,
 					typename TChar = typename TString::value_type
 			>
-			void buildPath(TString& returnValue, TChar separator, const TArgs& ... args)
+			void buildPath(TString& returnValue, TChar separator, const TArgs&... args)
 			{
-				std::list<TString> __strings { args... };
+				std::initializer_list<TString> __strings { args... };
+				TSize __index(0);
 				
-				// if (sizeof...(TArgs) > 1)
-				// {
-					TSize __index = 0;
-					for (const auto& str : __strings)
-					{
-						returnValue.append(str);
-						if (++__index != __strings.size())
-						{
-							returnValue += separator;
-						}
-					}
-				// } else
-				// {
-				// 	returnValue.append(1, separator).append(__strings.back());
-				// }
+				for (const auto& str : __strings)
+				{
+					returnValue.append(str);
+					
+					if (++__index != __strings.size())
+						returnValue += separator;
+				}
 			}
 			
-			template<typename String, typename TChar = typename String::value_type>
-			void encloseWith(String& returnValue, TChar startChar, TChar endChar)
+			template<
+					typename TReturnString,
+					typename TChar = typename TReturnString::value_type
+			>
+			void encloseWith(TReturnString& returnValue, TChar startChar, TChar endChar)
 			{
 				returnValue.insert(0, 1, startChar);
 				returnValue.insert(returnValue.length(), 1, endChar);
 			}
 			
-			template<typename TIIterator>
-			TString toString(TIIterator first, TIIterator last, const TByte* sep = ", ", int width = -1)
+			template<typename TIterator>
+			TString
+			toString(TIterator first, TIterator last, const TByte* sep = ", ", int width = -1)
 			{
 				const TSize __distance = std::distance(first, last);
+				
 				if (__distance < 1)
 					return "[]";
 				
 				TSize __counter {};
-				std::ostringstream __oss{};
-				__oss << '[';
+				std::ostringstream __oss {};
 				
-				for(; first != last; ++first, ++__counter)
+				__oss << '[';
+				for (; first != last;
+					   ++first, ++__counter)
 				{
 					__oss << *first;
-					if (__distance != 1 && __counter != __distance - 1)
+					if (__distance != 1 and __counter != __distance - 1)
 						__oss << sep;
-					if (width > 0 && __counter%width == 0)
+					if (width > 0 and __counter % width == 0)
 						__oss << '\n';
 				}
 				__oss << ']';
@@ -312,152 +422,99 @@ namespace Dixter
 			}
 			
 			template<typename TIIterator>
-			TString toString(TIIterator first, TIIterator last, int width)
+			inline TString
+			toString(TIIterator first, TIIterator last, int width)
 			{
 				return std::move(toString(first, last, ", ", width));
 			}
 			
 			template<typename TSeqContainer>
-			inline TString toString(TSeqContainer container, const TByte* sep = ", ", int width = -1)
+			inline TString
+			toString(TSeqContainer container, const TByte* sep = ", ", int width = -1)
 			{
 				return toString(std::begin(container), std::end(container), sep, width);
 			}
 			
 			template<typename TSeqContainer>
-			inline TString toString(TSeqContainer container, Int32 width)
+			inline TString
+			toString(TSeqContainer container, Int32 width)
 			{
 				return std::move(toString(std::begin(container), std::end(container), width));
 			}
 			
-			TWString toWstring(const TString& str);
-			
-			int wstrToInt(const TWString& value);
+			template<
+					typename TNumber,
+					typename TString
+			>
+			TString 
+			toString(TNumber value)
+			{
+				#ifdef HAVE_CXX17
+				static_assert(std::is_arithmetic_v<TNumber>);
+				using TRValue = std::remove_reference_t<std::remove_const_t<TNumber>>;
+				auto __nonConstRvalue = static_cast<TRValue>(value);
+				
+				if constexpr (std::is_same_v<TString, TNumber>)
+					return __nonConstRvalue;
+				else
+					return std::to_string(__nonConstRvalue);
+				#elif defined(HAVE_CXX14) or defined(HAVE_CXX11)
+				static_assert(std::is_arithmetic<TNumber>::value);
+				typedef typename std::remove_reference<typename std::remove_const<TNumber>::type>::type non_const_rvalue_t;
+				const bool __isSame = std::is_same<TString, TNumber>::value;
+				if (__isSame)
+					return __nonConstRvalue;
+				else
+					return std::to_string(__nonConstRvalue);
+				#endif
+				
+				return TString();
+			}
 			
 			#ifdef HAVE_CXX17
 			
-			inline void removePrefix(TStringView& strView, TSize n)
+			inline void
+			removePrefix(TStringView& strView, TSize n)
 			{
 				strView.remove_prefix(n);
 			};
 			
-			inline void removeSuffix(TStringView& strView, TSize n)
+			inline void
+			removeSuffix(TStringView& strView, TSize n)
 			{
 				strView.remove_suffix(n);
 			};
 			
-			inline TStringView range(TStringView& stringView, TSize begin, TSize end)
+			inline TStringView
+			range(TStringView& stringView, TSize begin, TSize end)
 			{
-				auto len = std::min(end, stringView.length());
-				return TStringView(stringView.data() + begin, len);
-			}
-			
-			template<typename Functor>
-			inline TStringView rangefn(TStringView& stringView, TSize begin, TSize end, Functor f)
-			{
-				auto len = std::min(end, stringView.length());
-				auto rng = f(TStringView(stringView.data() + begin, len));
-				return rng;
-			}
-			
-			#endif
-			
-			//TODO: Fix for integral and string types
-			#ifdef USE_TO_STRING_CONVERSION
-			template<class Map,
-				typename KeyType    = typename Map::TKey,
-				typename MappedType = typename Map::TMapped>
-		TString toString(const Map& map,
-						  char pairDelim, char delim = ',')
-		{
-			TString __result;
-			bool keyIsArithmetic{};
-			bool MappedIsArithmetic{};
-			typedef typename TString::TSizeype TSizeype;
-			#if HAVE_CXX17
-			typedef std::remove_reference_t<std::remove_const_t<KeyType>>       non_const_key_t;
-			typedef std::remove_reference_t<std::remove_const_t<MappedType>>    non_const_mapped_t;
-			keyIsArithmetic    = std::is_arithmetic_v<non_const_key_t>;
-			MappedIsArithmetic = std::is_arithmetic_v<non_const_mapped_t>;
-			#elif HAVE_CXX14 || HAVE_CXX11
-			typedef std::remove_reference_t<std::remove_const_t<KeyType>>       non_const_key_t;
-			typedef std::remove_reference_t<std::remove_const_t<MappedType>>    non_const_mapped_t;
-			keyIsArithmetic    = std::is_arithmetic<non_const_key_t>::m_value;
-			MappedIsArithmetic = std::is_arithmetic<non_const_mapped_t>::m_value;
-			#elif defined(HAVE_LEGACY)
-			typedef typename ArithmeticType non_const_rvalue_type;
-			#endif
-
-			TSizeype __index {};
-			__result.push_back('[');
-			for (auto __pair : map)
-			{
-				if (keyIsArithmetic)
-				{
-					auto keyItem = std::to_string(__pair.first);
-					__result.push_back('{');
-					__result.append(keyItem).append(1, pairDelim);
-				} else
-				{
-					__result += __pair.first;
-					__result.append(1, pairDelim);
-				}
-				__result.push_back(' ');
+				auto __len = std::min(end, stringView.length());
 				
-				if (MappedIsArithmetic)
-				{
-					std::cout << "Arithmetic: ";
-					std::cout << __pair.second << std::endl;
-					auto mappedItem = to_string(__pair.second);
-//					auto mappedItem = std::to_string(__pair.second);
-//					__result += __pair.second;
-					__result.append(mappedItem);
-					__result.push_back('}');
-				} else
-				{
-					std::cout << "Not arithmetic: ";
-					std::cout << __pair.second << std::endl;
-					__result.append(to_string(__pair.second));
-//					__result += __pair.second;
-				}
+				return TStringView(stringView.data() + begin, __len);
+			}
+			
+			template<typename FFunctor>
+			inline TStringView
+			rangefn(TStringView& stringView, TSize begin, TSize end, FFunctor&& functor)
+			{
+				auto __len = std::min(end, stringView.length());
+				auto __range = functor(TStringView(stringView.data() + begin, __len));
 				
-				if ((++__index != map.size()) && map.size() > 1)
-					__result.append(1, delim).push_back(' ');
+				return __range;
 			}
-			__result.push_back(']');
-			return __result;
-		}
-			#endif
 			
-			template<typename String1, typename String2>
-			String1 convertString(const String2& string1)
+			#endif // HAVE_CXX17
+			
+			template<
+					typename TResultString,
+					typename TArgString
+			>
+			inline TResultString
+			convertString(const TArgString& argString)
 			{
-				return String1 { string1.data() };
+				return TResultString(argString.data());
 			}
 			
-			template<typename ArithmeticType>
-			TString to_string(ArithmeticType value)
-			{
-				#ifdef HAVE_CXX17
-				typedef std::remove_reference_t<std::remove_const_t<ArithmeticType>> non_const_rvalue_t;
-				constexpr bool __isSame = std::is_same_v<TString, ArithmeticType>;
-				#elif defined(HAVE_CXX14) or defined(HAVE_CXX11)
-				typedef typename std::remove_reference<typename std::remove_const<ArithmeticType>::type>::type non_const_rvalue_t;
-				constexpr bool __isSame = std::is_same<TString, ArithmeticType>::m_value;
-				#endif
-				auto nonConstRvalue = static_cast<non_const_rvalue_t>(value);
-				if (__isSame)
-				{
-					return nonConstRvalue;
-				} else
-				{
-					return std::to_string(nonConstRvalue);
-				}
-				return "";
-			}
-			
-			int uStringToInt(const TUString& value);
-			
-			TUString intToUstring(Int32 value);
 		} // namespace Strings
 	} // namespace Utilities
 } // namespace Dixter
