@@ -1,7 +1,10 @@
 set(${DIXTER_BASE}_SOURCE_FILES
+    ${DIXTER_SOURCE_DIR}/UnicodeString.cpp
     ${DIXTER_SOURCE_DIR}/Commons.cpp
-    ${DIXTER_SOURCE_DIR}/UnicodeStringWrapper.cpp
-    ${DIXTER_SOURCE_DIR}/Node.cpp
+    ${DIXTER_SOURCE_DIR}/Exception.cpp
+    ${DIXTER_SOURCE_DIR}/JoinThread.cpp
+    ${DIXTER_SOURCE_DIR}/NodeData.cpp
+    ${DIXTER_SOURCE_DIR}/NodeEntry.cpp
     ${DIXTER_SOURCE_DIR}/Configuration.cpp
     ${DIXTER_SOURCE_DIR}/SettingsController.cpp
     ${DIXTER_SOURCE_DIR}/Utilities.cpp
@@ -12,21 +15,18 @@ set(${DIXTER_BASE}_SOURCE_FILES
     )
 
 file(GLOB DB_SOURCE_FILES ${DIXTER_SOURCE_DIR}/database/*.cpp)
-set(${DIXTER_BASE}_SOURCE_FILES ${${DIXTER_BASE}_SOURCE_FILES} ${DB_SOURCE_FILES})
+list(APPEND ${${DIXTER_BASE}_SOURCE_FILES} ${DB_SOURCE_FILES})
 unset(DB_SOURCE_FILES)
 
 include(${DIXTER_CMAKE_DIR}/boost.cmake)
-
-find_package(Qt5Core REQUIRED)
-
 include(${DIXTER_CMAKE_DIR}/cppconnector.cmake)
 
+find_package(Qt5Core REQUIRED)
 find_package(Boost 1.65 COMPONENTS filesystem system timer )
 
 if(NOT ${mycppconn_FOUND})
     message(FATAL_ERROR "Library mysqlcppconn not found")
 endif()
-
 
 set(${DIXTER_BASE}_TARGET_INCLUDE_DIRS
     ${DIXTER_INCLUDE_DIR}
@@ -34,7 +34,6 @@ set(${DIXTER_BASE}_TARGET_INCLUDE_DIRS
     ${Boost_INCLUDE_DIRS}
     ${mycppconn_INCLUDE_DIRS}
     )
-
 
 set(${DIXTER_BASE}_TARGET_LIBRARIES
     Boost::filesystem
@@ -44,13 +43,6 @@ set(${DIXTER_BASE}_TARGET_LIBRARIES
     ${Unicode_LIBRARIES}
     ${mycppconn_LIBRARIES}
     )
-
-if(${OTR_TEST} OR ${BUILD_ALL})
-    if(NOT ${BUILD_SIMPLE})
-        file(GLOB NNET_SOURCE_FILES ${DIXTER_SOURCE_DIR}/NNet/*.cpp)
-        set(${DIXTER_BASE}_SOURCE_FILES ${${DIXTER_BASE}_SOURCE_FILES} ${NNET_SOURCE_FILES})
-    endif()
-endif()
 
 add_library(${DIXTER_BASE} SHARED ${${DIXTER_BASE}_SOURCE_FILES})
 target_include_directories(${DIXTER_BASE} PUBLIC ${${DIXTER_BASE}_TARGET_INCLUDE_DIRS})
