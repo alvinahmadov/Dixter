@@ -15,7 +15,7 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class TPanel;
+		class APanel;
 		
 		class TTranslatorPanel;
 		

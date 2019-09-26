@@ -31,18 +31,16 @@ namespace Dixter
 		namespace StringUtils   = Utilities::Strings;
 		namespace AlgoUtils     = Utilities::Algorithms;
 		
-		template<typename T>
-		using TVector = std::vector<T>;
-		
 		TDictionaryPanel::TDictionaryPanel(QWidget* parent, int width, int height, const QString& name)
-				: TPanel(parent, QSize(width, height), name),
+				: APanel(parent, QSize(width, height)),
 				  m_isLanguageSet(false),
 				  m_grids(new GridGroup),
 				  m_widgets(new WidgetGroup)
 		{
 			init();
-			setObjectName(name);
 			connectEvents();
+			name.isEmpty() ? setObjectName(g_dictionaryName)
+						   : setObjectName(name);
 		}
 		
 		TDictionaryPanel::~TDictionaryPanel()
@@ -56,7 +54,7 @@ namespace Dixter
 			m_widgets->forEach(&QWidget::setVisible, show);
 		}
 		
-		TPanel::TOptionBoxPtr
+		APanel::TOptionBoxPtr
 		TDictionaryPanel::getOptionBox(EWidgetID widgetID)
 		{
 			return dxMAKE_SHARED(TOptionBox, m_widgets->get<TOptionBox>(g_widgetGroup, widgetID));
@@ -106,7 +104,6 @@ namespace Dixter
 			// Populate main grid with items
 			__pMainGrid->addWidget(__controlGroup);
 			__pMainGrid->addLayout(__pWordBox);
-			__ctrlBox->setSizeConstraint(QLayout::SizeConstraint::SetNoConstraint);
 			
 			setValues();
 			setLayout(__pMainGrid);
@@ -117,12 +114,12 @@ namespace Dixter
 		
 		void TDictionaryPanel::setValues()
 		{
-			auto __langNameList = TVector<TUString>();
-			auto __langNameDisplayList = TVector<TUString>();
-			auto __langIdList = TVector<TUString>();
+			auto __langNameList = std::vector<TUString>();
+			auto __langNameDisplayList = std::vector<TUString>();
+			auto __langIdList = std::vector<TUString>();
 			try
 			{
-				getXmlManager()
+				getXmlManager({g_langConfigPath, g_voiceConfigPath})
 						->accessor()
 						->getValues(NodeKey::kLangNameNode, __langNameList, NodeKey::kLangRoot)
 						->getValues(NodeKey::kLangNameDisplayNode, __langNameDisplayList, NodeKey::kLangRoot)
@@ -133,9 +130,9 @@ namespace Dixter
 				printerr(e.what())
 			}
 			
-			auto __languages = TVector<TUString>(__langNameList);
+			auto __languages = std::vector<TUString>(__langNameList);
 			
-			AlgoUtils::foreachCompound<TVector<TUString>>(
+			AlgoUtils::foreachCompound<std::vector<TUString>>(
 					__languages, __langNameDisplayList,
 					[](TUString& langName, const TUString& langNameDisplay)
 					{
@@ -207,10 +204,7 @@ namespace Dixter
 		{
 			try
 			{
-				m_widgets->get<TSearchEntry>(
-								 g_widgetGroup,
-								 EWidgetID::SearchControl)
-						 ->search();
+				m_widgets->get<TSearchEntry>(g_widgetGroup,EWidgetID::SearchControl)->search();
 			}
 			catch (TException& e)
 			{

@@ -28,16 +28,17 @@ namespace Dixter
 	namespace Gui
 	{
 		TTranslatorPanel::TTranslatorPanel(QWidget* parent, int width, int height, const QString& name)
-				: TPanel(parent, QSize(width, height), name),
-		#ifdef USE_SPEECHD
-				m_narrator {new VSynth::SpeechDispatcher("dix", "Dixter_conn", "Dixter_user", SPDConnectionMode::SPD_MODE_SINGLE)},
-		#endif
+				: APanel(parent, QSize(width, height)),
 				  m_grids(new GridGroup),
 				  m_widgets(new WidgetGroup)
+		#ifdef USE_SPEECHD
+				 ,m_narrator(new VSynth::SpeechDispatcher("dix", "Dixter_conn", "Dixter_user", SPDConnectionMode::SPD_MODE_SINGLE))
+		#endif
 		{
 			init();
 			connectEvents();
-			setObjectName(name);
+			name.isEmpty() ? setObjectName(g_translatorName)
+						   : setObjectName(name);
 		}
 		
 		TTranslatorPanel::~TTranslatorPanel()
@@ -54,7 +55,7 @@ namespace Dixter
 			m_widgets->forEach(&QWidget::setVisible, show);
 		}
 		
-		TPanel::TOptionBoxPtr
+		APanel::TOptionBoxPtr
 		TTranslatorPanel::getOptionBox(EWidgetID id)
 		{
 			return dxMAKE_SHARED(TOptionBox, m_widgets->get<TOptionBox>(g_controlGroup, id));
@@ -239,8 +240,6 @@ namespace Dixter
 				m_narrator->say(SPD_TEXT, __content);
 				#endif
 			}
-			
-			// frame->PushStatusText("Talking...");
 		}
 		
 		void TTranslatorPanel::onTranslateWest()

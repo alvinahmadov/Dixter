@@ -18,6 +18,7 @@ namespace Dixter
 	{
 		class TManager;
 	}
+	
 	namespace OpenTranslate
 	{
 		class TDictionary;
@@ -55,11 +56,9 @@ namespace Dixter
 			
 			QMutex* m_mutex;
 			
-			TDictionaryPtr
-			m_dictionary;
+			TDictionaryPtr m_dictionary;
 			
-			TDatabaseManagerPtr
-			m_dbManager;
+			TDatabaseManagerPtr m_dbManager;
 		};
 	} // namespace Gui
 } // namespace Dixter

@@ -18,7 +18,7 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class TPanel;
+		class APanel;
 		
 		class TNotebook : public QTabWidget
 		{
@@ -30,7 +30,7 @@ namespace Dixter
 			
 			void addPage(QWidget* page, const QString& title);
 			
-			TPanel*
+			APanel*
 			getPage(int pageNumber);
 			
 			int getPageNumber(QWidget* page) const;

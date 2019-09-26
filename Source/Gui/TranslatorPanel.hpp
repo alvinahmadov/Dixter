@@ -29,7 +29,7 @@ namespace Dixter
 	{
 		class TTextEdit;
 		
-		class TTranslatorPanel : public TPanel
+		class TTranslatorPanel : public APanel
 		{
 		Q_OBJECT
 			
@@ -42,11 +42,11 @@ namespace Dixter
 		public:
 			TTranslatorPanel(QWidget* parent,
 			                 int width = 200, int height = 200,
-			                 const QString& name = QString("Translater"));
+			                 const QString& name = QString());
 			
 			~TTranslatorPanel() override;
 			
-			void show(bool show);
+			void show(bool show = true);
 			
 			TOptionBoxPtr
 			getOptionBox(EWidgetID id);
@@ -58,15 +58,13 @@ namespace Dixter
 			getCurrentLanguage();
 		
 		protected:
-			
-			void init();
+			void init() override;
 			
 			void connectEvents() override;
 			
 			void setValues();
 		
 		protected slots:
-			
 			void onBufferChange();
 			
 			void onFlip();
@@ -88,13 +86,13 @@ namespace Dixter
 			void onVoiceChange();
 			
 		private:
-			#ifdef USE_SPEECHD
-			vsynth::SpeechDispatcher *m_narrator;
-			#endif
-			
 			GridGroup* m_grids;
 			
 			WidgetGroup* m_widgets;
+			
+			#ifdef USE_SPEECHD
+			vsynth::SpeechDispatcher *m_narrator;
+			#endif
 		};
 	}
 }

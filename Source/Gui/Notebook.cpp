@@ -37,14 +37,14 @@ namespace Dixter
 		void TNotebook::connectEvents()
 		{ }
 		
-		TPanel*
+		APanel*
 		TNotebook::getPage(int pageNum)
 		{
 			int __index {};
 			for (const auto* __child : children())
 			{
 				if (__index == pageNum)
-					return const_cast<TPanel*>(static_cast<const TPanel*>(__child));
+					return const_cast<APanel*>(static_cast<const APanel*>(__child));
 				++__index;
 			}
 			return nullptr;

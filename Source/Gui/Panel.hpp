@@ -16,19 +16,19 @@ namespace Dixter
 	{
 		class TOptionBox;
 		
-		class TPanel : public QWidget
+		class APanel : public QWidget
 		{
 		Q_OBJECT
-		public:
-			using TOptionBoxPtr = std::shared_ptr<TOptionBox>;
-		public:
-			TPanel(QWidget* parent, const QSize& size = QSize(200, 200),
-				   const QString& name = "Panel");
-			
-			virtual ~TPanel() = default;
-		
 		protected:
-			virtual void connectEvents();
+			using TOptionBoxPtr = std::shared_ptr<TOptionBox>;
+		protected:
+			APanel(QWidget* parent, const QSize& size = QSize(200, 200));
+			
+			virtual ~APanel() = default;
+		
+			virtual void init() = 0;
+			
+			virtual void connectEvents() = 0;
 		};
 	}
 }

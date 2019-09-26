@@ -8,7 +8,6 @@
  */
 
 #include <QMutex>
-#include <QMutexLocker>
 
 #include "Configuration.hpp"
 #include "Constants.hpp"

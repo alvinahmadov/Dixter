@@ -26,7 +26,7 @@ namespace Dixter
 	
 	namespace Gui
 	{
-		class TDictionaryPanel : public TPanel
+		class TDictionaryPanel : public APanel
 		{
 		Q_OBJECT
 		private:
@@ -35,7 +35,7 @@ namespace Dixter
 		
 		public:
 			explicit TDictionaryPanel(QWidget* parent, int width = -1, int height = -1,
-									  const QString& name = QString("Dictionary"));
+									  const QString& name = QString());
 			
 			virtual ~TDictionaryPanel() override;
 			
@@ -47,8 +47,7 @@ namespace Dixter
 			QWidget* getWidget(EWidgetID id);
 		
 		protected:
-			
-			void init();
+			void init() override;
 			
 			void connectEvents() override;
 			
@@ -59,8 +58,8 @@ namespace Dixter
 			void onClearButton(void);
 			
 			void onLanguageChange(void);
-		protected slots:
 			
+		protected slots:
 			void onSearch() noexcept;
 		
 		private:

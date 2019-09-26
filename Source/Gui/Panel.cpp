@@ -15,15 +15,10 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		TPanel::TPanel(QWidget* parent, const QSize& size, const QString& name)
+		APanel::APanel(QWidget* parent, const QSize& size)
 				: QWidget(parent)
 		{
-			connectEvents();
 			setFixedSize(size);
-			setObjectName(name);
 		}
-		
-		void TPanel::connectEvents()
-		{ }
 	}
 }
