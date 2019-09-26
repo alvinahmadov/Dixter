@@ -6,6 +6,7 @@
  *  License-Identifier: MIT License
  *  See README.md for more information.
  */
+#include "setup.h"
 #include "UnicodeString.hpp"
 #include <unicode/unistr.h>
 #if __has_include(<QString>)
@@ -137,8 +138,7 @@ namespace Dixter
 	TUnicodeString&
 	TUnicodeString::operator<<(int v)
 	{
-		icu::Formattable __format(v);
-		TBase::append(__format.getString());
+		this->append(std::to_string(v));
 		return *this;
 	}
 	

@@ -9,7 +9,6 @@
 #pragma once
 
 #include <unicode/unistr.h>
-#include <unicode/format.h>
 #include <string>
 #include <iostream>
 #include "setup.h"
