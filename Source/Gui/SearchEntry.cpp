@@ -15,6 +15,7 @@
 #include "Exception.hpp"
 #include "OpenTranslate/Dictionary.hpp"
 #include "Database/Manager.hpp"
+#include "Gui/TextView.hpp"
 #include "Gui/SearchEntry.hpp"
 
 namespace Dixter
@@ -65,8 +66,40 @@ namespace Dixter
 			return m_isPlaceholderSet;
 		}
 		
-		void TSearchEntry::search()
+		void populate(const OpenTranslate::TDictionary::TSearchResult& fetchedData,
+					  TTextView* textView)
 		{
+			// Amsterdam  5
+			// gammelordføreren 16
+			textView->clearAll();
+			
+			if (not textView->isEnabled())
+				textView->setEnabled(true);
+			
+			for (const auto&[__key, __valueVector] : fetchedData)
+			{
+				int __columnIndex = -1;
+				
+				textView->insertColumn(++__columnIndex);
+				textView->setColumnText(__columnIndex, __key);
+				textView->setRowCount(__valueVector.size());
+				
+				if (__valueVector.size() == 1)
+					textView->setRowText(0, __columnIndex, __valueVector.back());
+				else
+				{
+					for (const auto& __value : __valueVector)
+					{
+						int __rowIndex { 0 };
+						textView->setRowText(++__rowIndex, __columnIndex, __value);
+					}
+				}
+			}
+		}
+		
+		void TSearchEntry::search(TTextView* textView)
+		{
+			dxTIMER_START
 			const auto __text = text();
 			
 			if (__text.isEmpty())
@@ -79,14 +112,17 @@ namespace Dixter
 			}
 			
 			QMutexLocker __ml(m_mutex);
-			const TString __paradigm("paradigm");
-			const auto& __fetchData = m_dictionary->search(
-					__text.toStdString(),
-					__paradigm, true);
-			for (const auto&[__key, __valueVector] : __fetchData)
-				printl_log("Key: " << __key <<
-								   " ->  " << Utilities::Strings::toString(__valueVector))
-			printeol
+			
+			const auto& __fetchedData =
+					m_dictionary->lookFor(__text.toStdString(), "paradigm");
+			
+			if (not __fetchedData.size())
+			{
+				printl_log("No such a word.");
+				return;
+			}
+			
+			populate(__fetchedData, textView);
 		}
 	} // namespace Gui
 } // namespace Dixter

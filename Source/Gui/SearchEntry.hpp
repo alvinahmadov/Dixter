@@ -26,6 +26,8 @@ namespace Dixter
 	
 	namespace Gui
 	{
+		class TTextView;
+		
 		/**
 		 * \brief SearchEntry is a class that responsible for
 		 * searching a word in the database
@@ -44,7 +46,7 @@ namespace Dixter
 			
 			bool isPlaceholderSet() const;
 			
-			void search();
+			void search(TTextView* textView);
 		
 		protected:
 			virtual void init();
