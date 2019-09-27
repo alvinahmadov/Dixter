@@ -7,14 +7,17 @@
  *  See README.md for more information.
  */
 
+#include "TextView.hpp"
+#include "Macros.hpp"
+#include "Configuration.hpp"
+#include "Types.hpp"
 #include "Utilities.hpp"
-#include "TextList.hpp"
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		TTextList::TTextList(QWidget* parent, int rows, int columns)
+		TTextView::TTextView(QWidget* parent, int rows, int columns)
 				: QTableWidget(rows, columns, parent),
 				  m_rowCount { 0 },
 				  m_rows {}
@@ -22,63 +25,54 @@ namespace Dixter
 			connectEvents();
 		}
 		
-		TTextList::~TTextList()
+		TTextView::~TTextView()
 		{ }
 		
-		void TTextList::insertColumns(const QStringList& columns, const QString&)
+		void TTextView::insertColumns(const QStringList& columns, const QString&)
 		{
-			// TSize __index = 0;
 			setHorizontalHeaderLabels(columns);
-			// for (const auto& item : columns)
-			// {
-			// 	if (except.compare(item))
-			// 	{
-			// 		setHorizontalHeaderItem(__index, new QTableWidgetItem(item));
-			// 	}
-			// 	++__index;
-			// }
 		}
 		
-		const UInt32&
-		TTextList::insertRowValues(Int64 index, const std::vector<QString>& values)
+		void TTextView::setColumnText(int columnIndex, const TString& text)
 		{
-			insertRow(index);
-			int colidx {};
-			
-			for (const auto& value : values)
-			{
-				setItem(index, colidx++, new QTableWidgetItem(value));
-			}
-			return ++m_rowCount;
+			auto __item = new TViewItem(QString::fromStdString(text));
+			setHorizontalHeaderItem(columnIndex, __item);
 		}
 		
-		void TTextList::removeRow(const Int64& rowIndex)
+		void TTextView::setRowText(int rowIndex, int columnIndex, const TString& text)
+		{
+			auto __item = new TViewItem(QString::fromStdString(text));
+			setItem(rowIndex, columnIndex, __item);
+		}
+		
+		void TTextView::removeRow(const Int64& rowIndex)
 		{
 			
 			remove(rowIndex);
 			--m_rowCount;
 		}
 		
-		bool TTextList::searchRow(const QString&, Int64&, const Int64&)
+		bool TTextView::searchRow(const QString&, Int64&, const Int64&)
 		{
 			// position = FindItem(start, text, true);
 			// return position != -1;
 			return false;
 		}
 		
-		void TTextList::clearRows()
+		void TTextView::clearAll()
 		{
-			// DeleteAllItems();
-			// for (auto& __cont : m_rows)
-			// {
-			// 	SAFE_RELEASE(__cont.item);
-			// 	__cont.m_index = -1;
-			// }
-			m_rowCount = 0;
+			clearContents();
+			clear();
+			
+			for (int __index = 0; __index < rowCount(); ++__index)
+				removeRow(__index);
+			
+			setRowCount(0);
+			setColumnCount(0);
 		}
 		
 		Int64
-		TTextList::getSelectedRowIndex()
+		TTextView::getSelectedRowIndex()
 		{
 			// Int64 __index { -1 };
 			// if (GetSelectedItemCount() == 1)
@@ -97,39 +91,36 @@ namespace Dixter
 		}
 		
 		const UInt32&
-		TTextList::getRowCount() const
+		TTextView::getRowCount() const
 		{
 			return m_rowCount;
 		}
 		
 		QTableWidgetItem*
-		TTextList::first() const
+		TTextView::first() const
 		{
 			return m_rows.front();
 		}
 		
 		QTableWidgetItem*
-		TTextList::last() const
+		TTextView::last() const
 		{
 			return m_rows.back();
 		}
 		
-		void TTextList::connectEvents()
-		{
-			//BIND_EVENT(signal_cursor_changed, TextList::OnCursorChanged)
-		}
+		void TTextView::connectEvents()
+		{ }
 		
-		void TTextList::onCursorChanged()
-		{
-		}
+		void TTextView::onCursorChanged()
+		{ }
 		
-		void TTextList::insert(Int64)
+		void TTextView::insert(Int64)
 		{
 			auto __item = new QTableWidgetItem();
 			m_rows.push_back(__item);
 		}
 		
-		void TTextList::remove(Int64)
+		void TTextView::remove(Int64)
 		{
 			// for (auto __container : m_rows)
 			// {

@@ -9,11 +9,8 @@
 #pragma once
 
 #include <QTableWidget>
-#include <QDebug>
 
-#include "Configuration.hpp"
 #include "Types.hpp"
-#include "Macros.hpp"
 
 class QTableWidgetItem;
 
@@ -27,26 +24,28 @@ namespace Dixter
 			Int64 index;
 		};
 		
-		class TTextList : public QTableWidget
+		class TTextView : public QTableWidget
 		{
 		Q_OBJECT
 		public:
 			using RowMap = std::map<int, TUString>;
+			using TViewItem = QTableWidgetItem;
 		public:
-			TTextList(QWidget* parent = nullptr, int rows = 0, int columns = 0);
+			TTextView(QWidget* parent = nullptr, int rows = 0, int columns = 0);
 			
-			~TTextList() override;
+			~TTextView() override;
 			
 			void insertColumns(const QStringList& columns, const QString& except = QString());
 			
-			const UInt32&
-			insertRowValues(Int64 index, const std::vector<QString>& values);
+			void setColumnText(int columnIndex, const TString& text);
+			
+			void setRowText(int rowIndex, int columnIndex, const TString& text);
 			
 			void removeRow(const Int64& rowIndex);
 			
 			bool searchRow(const QString& text, Int64& position, const Int64& start = -1);
 			
-			void clearRows();
+			void clearAll();
 			
 			Int64 getSelectedRowIndex();
 			
