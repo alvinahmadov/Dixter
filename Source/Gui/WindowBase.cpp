@@ -71,17 +71,18 @@ namespace Dixter
 			if (m_hasMenus)
 			{
 				auto __menuBar = new QMenuBar(this);
-				auto __menuFile = new QMenu(tr("File"), __menuBar);
-				auto __menuEdit = new QMenu(tr("Edit"), __menuBar);
-				auto __menuView = new QMenu(tr("View"), __menuBar);
+				auto __menuFile = new QMenu(tr("File"));
+				auto __menuEdit = new QMenu(tr("Edit"));
+				auto __menuView = new QMenu(tr("View"));
+				
 				//File menu
-				__menuFile->addMenu(tr("&New"));
-				__menuFile->addMenu(tr("&Open"));
+				__menuFile->addMenu(new QMenu(tr("&New")));
+				__menuFile->addMenu(new QMenu(tr("&Open")));
+				auto __quitAction =
+						__menuFile->addMenu(new QMenu(tr("&Quit")));
 				
-				auto __quitAction = new QAction(tr("&Quit"));
-				__menuFile->addAction(__quitAction);
-				
-				connect(__quitAction, SIGNAL(triggered()), this, SLOT(close()));
+				connect(__quitAction, SIGNAL(triggered()),
+						this, SLOT(close()));
 				
 				//Edit menu
 				__menuEdit->addMenu(tr("&Preferences"));

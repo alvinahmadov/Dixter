@@ -7,7 +7,6 @@
  *  See README.md for more information.
  */
 
-#include "Commons.hpp"
 #include "Constants.hpp"
 #include "Panel.hpp"
 

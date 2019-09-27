@@ -13,7 +13,6 @@
 #include <QMenu>
 #include <QEvent>
 #include <QString>
-#include <QDebug>
 #include <QMenuBar>
 
 #include "Group.hpp"
@@ -29,15 +28,15 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		///DixterWindow Implementation
+		// TWindow Implementation
 		TWindow::TWindow(const QString& title, int width, int height, bool visible)
-				: TBase(title, width, height, visible, true, false),
+				: TBase(title, width, height, visible, false, false),
 				  m_widgets(new TGroup<QWidget, EWidgetID>()),
 				  m_dictionaryPanel(),
 				  m_translatorPanel()
 		{
 			init();
-			showAll(visible);
+			showAll(visible, visible);
 			connectEvents();
 		}
 		
@@ -49,6 +48,7 @@ namespace Dixter
 		void TWindow::showAll(bool show, bool showChildren)
 		{
 			setVisible(show);
+			
 			if (showChildren)
 				m_widgets->forEach(g_widgetGroup, &QWidget::setVisible, showChildren);
 			
@@ -74,17 +74,18 @@ namespace Dixter
 		void TWindow::init()
 		{
 			auto __confMan = getIniManager({ g_guiConfigPath })->accessor();
-			auto __bgColour = __confMan->getValue(NodeKey::kWinBgColourNode).asCustom();
+			auto __backgroundColour = __confMan->getValue(NodeKey::kWinBgColourNode).asCustom();
 			auto __fontName = __confMan->getValue(NodeKey::kWinFontNameNode).asCustom();
-			int __fontSize = __confMan->getValue(NodeKey::kWinFontSizeNode);
-			__bgColour.prepend('#');
-			setPalette(QPalette(__bgColour));
+			int  __fontSize = __confMan->getValue(NodeKey::kWinFontSizeNode);
+			
+			__backgroundColour.prepend('#');
+			setPalette(QPalette(__backgroundColour));
 			setFont(QFont(__fontName, __fontSize));
 			
-			auto __ntbook = m_widgets->add<TNotebook>(g_widgetGroup, new TNotebook(this), EWidgetID::Notebook);
-			setCentralWidget(__ntbook);
-			initTranslator();
+			setCentralWidget(m_widgets->add<TNotebook>(g_widgetGroup, new TNotebook(this),
+													   EWidgetID::Notebook));
 			initDictionary();
+			initTranslator();
 		}
 		
 		void TWindow::connectEvents()

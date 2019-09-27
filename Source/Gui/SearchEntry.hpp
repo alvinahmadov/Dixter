@@ -46,7 +46,8 @@ namespace Dixter
 			
 			bool isPlaceholderSet() const;
 			
-			void search(TTextView* textView);
+			void search(const TString& database, const TString& keyColumn,
+						TTextView* textView);
 		
 		protected:
 			virtual void init();

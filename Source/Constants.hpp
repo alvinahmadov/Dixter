@@ -98,7 +98,7 @@ namespace Dixter
 		ButtonLayout,
 		WordBox, LangBox, LangboxWest, LangboxEast,
 		ButtonCopy, ButtonClear,
-		ButtonSpeakWest, ButtonTranslateWest, ButtonFlip, ButtonSpeakEast, ButtonTranslateEast,
+		ButtonSpeakWest, ButtonTranslateWest, ButtonFlip, ButtonSpeakEast, ButtonTranslateEast, SearchButton,
 		Panel, DictionaryPanel, TranslatorPanel, ControlPanel, ButtonPanel,
 		TranslatorLeft, TranslatorCentre, TranslatorRight,
 		TranslatorAreaWest, TranslatorAreaEast,

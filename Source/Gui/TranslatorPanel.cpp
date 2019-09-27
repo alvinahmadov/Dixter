@@ -23,7 +23,7 @@
 
 namespace Dixter
 {
-	namespace AlgoUtils = Utilities::Algorithms;
+	namespace NAlgoUtils = Utilities::Algorithms;
 	
 	namespace Gui
 	{
@@ -63,155 +63,157 @@ namespace Dixter
 		
 		void TTranslatorPanel::setValues()
 		{
-			auto __langNameList = std::vector<TUString>();
-			auto __langNameDisplayList = std::vector<TUString>();
-			auto __langIdList = std::vector<TUString>();
-			auto __voiceList = std::vector<TUString>();
+			auto __languageNames = std::vector<TUString>();
+			auto __languageDisplayNames = std::vector<TUString>();
+			auto __languageIds = std::vector<TUString>();
+			auto __voiceNames = std::vector<TUString>();
 			
 			try
 			{
 				TConfigurationManager::getManager(EConfiguration::XML)
 						->accessor()
-						->getValues(NodeKey::kLangNameNode, __langNameList, NodeKey::kLangRoot)
-						->getValues(NodeKey::kLangNameDisplayNode, __langNameDisplayList, NodeKey::kLangRoot)
-						->getValues(NodeKey::kLangIdNode, __langIdList, NodeKey::kLangRoot)
-						->getValues(NodeKey::kVoiceNameNode, __voiceList, NodeKey::kVoiceRoot);
-			}
-			catch (std::exception& e)
-			{
-				printerr(e.what())
-			}
+						->getValues(NodeKey::kLangNameNode, __languageNames, NodeKey::kLangRoot)
+						->getValues(NodeKey::kLangNameDisplayNode, __languageDisplayNames, NodeKey::kLangRoot)
+						->getValues(NodeKey::kLangIdNode, __languageIds, NodeKey::kLangRoot)
+						->getValues(NodeKey::kVoiceNameNode, __voiceNames, NodeKey::kVoiceRoot);
+			} catch (std::exception& e)
+			{ printerr(e.what()); }
 			
-			auto languages = std::vector<TUString>(__langNameList);
-			auto voices = std::vector<TUString>(__voiceList);
+			NAlgoUtils::foreachCompound(__languageNames, __languageDisplayNames,
+										[](TUString& languageName, const TUString& languageDisplayName)
+										{ languageName.append(u" / ").append(languageDisplayName); });
 			
-			AlgoUtils::foreachCompound<std::vector<TUString>>(
-					languages, __langNameDisplayList,
-					[](TUString& langName, const TUString& langNameDisplay)
-					{
-						langName.append(u" / ").append(langNameDisplay);
-					});
-			
-			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest)->setValues(languages);
-			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxEast)->setValues(languages);
-			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::VoiceBoxT)->setValues(voices);
+			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest)->setValues(__languageNames);
+			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxEast)->setValues(__languageNames);
+			m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::VoiceBoxT)->setValues(__voiceNames);
 		}
 		
 		void TTranslatorPanel::init()
 		{
 			// init widgets
 			const QSize __buttonSize = QSize(150, 50);
-			auto __pvoiceBox = m_widgets->add<TOptionBox>(
-					g_widgetGroup,
-					new TOptionBox(nullptr, tr("Select voice...")), EWidgetID::VoiceBoxT);
-			auto __pAreaWest = m_widgets->add<TTextEdit>(
-					g_widgetGroup,
-					new TTextEdit(this, tr("Translation")), EWidgetID::TranslatorAreaWest);
-			auto __pAreaEast = m_widgets->add<TTextEdit>(g_widgetGroup,
-					new TTextEdit(this, tr("Translation"), true), EWidgetID::TranslatorAreaEast);
-			auto __pLangBoxL = m_widgets->add<TOptionBox>(g_widgetGroup,
-					new TOptionBox(tr("Select language...")), EWidgetID::LangboxWest);
-			auto __pLangBoxR = m_widgets->add<TOptionBox>(g_widgetGroup,
-					new TOptionBox(tr("Select language...")), EWidgetID::LangboxEast);
+			auto __voiceBox = m_widgets
+					->add<TOptionBox>(g_widgetGroup,
+									  new TOptionBox(nullptr, tr("Select voice...")),
+									  EWidgetID::VoiceBoxT);
+			auto __texteditWest = m_widgets
+					->add<TTextEdit>(g_widgetGroup,
+									 new TTextEdit(this, tr("Translation")),
+									 EWidgetID::TranslatorAreaWest);
+			auto __texteditEast = m_widgets
+					->add<TTextEdit>(g_widgetGroup,
+									 new TTextEdit(this, tr("Translation"), true),
+									 EWidgetID::TranslatorAreaEast);
+			auto __languageBoxWest = m_widgets
+					->add<TOptionBox>(g_widgetGroup,
+									  new TOptionBox(tr("Select language...")),
+									  EWidgetID::LangboxWest);
+			auto __languageBoxEast = m_widgets
+					->add<TOptionBox>(g_widgetGroup,
+									  new TOptionBox(tr("Select language...")),
+									  EWidgetID::LangboxEast);
 			
 			auto __widgetLayoutWest = new QVBoxLayout();
 			auto __widgetLayoutEast = new QVBoxLayout();
 			auto __widgetGroupWest = new QGroupBox();
 			auto __widgetGroupEast = new QGroupBox();
-			auto __buttonLayoutL = new QHBoxLayout();
-			auto __buttonLayoutR = new QHBoxLayout();
+			auto __buttonLayoutWest = new QHBoxLayout();
+			auto __buttonLayoutEast = new QHBoxLayout();
 			
 			//Buttons
-			auto __btnSpeakWest = m_widgets->add<TButton>(g_controlGroup,
-					new TButton(QIcon(":Resources/icons/speak.png")),
-					EWidgetID::ButtonSpeakWest);
-			auto __btnTranslateWest = m_widgets->add<TButton>(g_controlGroup,
-					new TButton(QIcon(":Resources/icons/translate.png")),
-					EWidgetID::ButtonTranslateWest);
-			auto __btnSpeakEast = m_widgets->add<TButton>(g_controlGroup,
-					new TButton(QIcon(":Resources/icons/speak.png")),
-					EWidgetID::ButtonSpeakEast);
-			auto __btnTranslateEast = m_widgets->add<TButton>(g_controlGroup,
-					new TButton(QIcon(":Resources/icons/translate.png")),
-					EWidgetID::ButtonTranslateEast);
+			auto __speakButtonWest = m_widgets
+					->add<TButton>(g_controlGroup,
+								   new TButton(QIcon(":Resources/icons/speak.png")),
+								   EWidgetID::ButtonSpeakWest);
+			auto __translateButtonWest = m_widgets
+					->add<TButton>(g_controlGroup,
+								   new TButton(QIcon(":Resources/icons/translate.png")),
+								   EWidgetID::ButtonTranslateWest);
+			auto __speakButtonEast = m_widgets
+					->add<TButton>(g_controlGroup,
+								   new TButton(QIcon(":Resources/icons/speak.png")),
+								   EWidgetID::ButtonSpeakEast);
+			auto __translateButtonEast = m_widgets
+					->add<TButton>(g_controlGroup,
+								   new TButton(QIcon(":Resources/icons/translate.png")),
+								   EWidgetID::ButtonTranslateEast);
 			
-			__btnSpeakWest->setFixedSize(__buttonSize);
-			__btnSpeakEast->setFixedSize(__buttonSize);
-			__btnTranslateWest->setFixedSize(__buttonSize);
-			__btnTranslateEast->setFixedSize(__buttonSize);
+			__speakButtonWest->setFixedSize(__buttonSize);
+			__speakButtonEast->setFixedSize(__buttonSize);
+			__translateButtonWest->setFixedSize(__buttonSize);
+			__translateButtonEast->setFixedSize(__buttonSize);
 			
 			// auto btnGroup = new QButtonGroup()
-			__buttonLayoutL->addWidget(__btnSpeakWest);
-			__buttonLayoutL->addWidget(__btnTranslateWest);
-			__buttonLayoutR->addWidget(__btnSpeakEast);
-			__buttonLayoutR->addWidget(__btnTranslateEast);
+			__buttonLayoutWest->addWidget(__speakButtonWest);
+			__buttonLayoutWest->addWidget(__translateButtonWest);
+			__buttonLayoutEast->addWidget(__speakButtonEast);
+			__buttonLayoutEast->addWidget(__translateButtonEast);
 			
 			// Set left box
-			auto __optBoxL = new QHBoxLayout();
-			__optBoxL->addWidget(new TLabel(tr("From"), __pLangBoxL));
-			__optBoxL->addWidget(__pLangBoxL);
+			auto __optionBoxWest = new QHBoxLayout();
+			__optionBoxWest->addWidget(new TLabel(tr("From"), __languageBoxWest));
+			__optionBoxWest->addWidget(__languageBoxWest);
 			
-			__widgetLayoutWest->addLayout(__optBoxL);
-			__widgetLayoutWest->addWidget(__pAreaWest);
-			__widgetLayoutWest->addLayout(__buttonLayoutL);
+			__widgetLayoutWest->addLayout(__optionBoxWest);
+			__widgetLayoutWest->addWidget(__texteditWest);
+			__widgetLayoutWest->addLayout(__buttonLayoutWest);
 			__widgetGroupWest->setLayout(__widgetLayoutWest);
 			
 			// Set central box
-			auto __widgetLayoutCenter = new QVBoxLayout();
-			auto __flipBtn = m_widgets->add<TButton>(
-					g_controlGroup,
-					new TButton(QIcon(":Resources/icons/flip.png")),
-					EWidgetID::ButtonFlip
-					);
-			__flipBtn->setFixedSize(__buttonSize);
+			auto __widgetLayoutCenter = new QVBoxLayout;
+			auto __flipButton = m_widgets
+					->add<TButton>(g_controlGroup,
+								   new TButton(QIcon(":Resources/icons/flip.png")),
+								   EWidgetID::ButtonFlip);
+			
+			__flipButton->setFixedSize(__buttonSize);
 			__widgetLayoutCenter->addSpacing(44);
-			__widgetLayoutCenter->addWidget(__pvoiceBox, 0, Qt::AlignmentFlag::AlignTop);
-			__widgetLayoutCenter->addWidget(__flipBtn, 0, Qt::AlignmentFlag::AlignBottom);
+			__widgetLayoutCenter->addWidget(__voiceBox, 0, Qt::AlignmentFlag::AlignTop);
+			__widgetLayoutCenter->addWidget(__flipButton, 0, Qt::AlignmentFlag::AlignBottom);
 			__widgetLayoutCenter->addSpacing(15);
 			
 			// Set right box
-			auto __optBoxR = new QHBoxLayout();
-			__optBoxR->addWidget(new TLabel(tr("To"), __pLangBoxR));
-			__optBoxR->addWidget(__pLangBoxR);
+			auto __optionBoxEast = new QHBoxLayout();
+			__optionBoxEast->addWidget(new TLabel(tr("To"), __languageBoxEast));
+			__optionBoxEast->addWidget(__languageBoxEast);
 			
-			__widgetLayoutEast->addLayout(__optBoxR);
-			__widgetLayoutEast->addWidget(__pAreaEast);
-			__widgetLayoutEast->addLayout(__buttonLayoutR);
+			__widgetLayoutEast->addLayout(__optionBoxEast);
+			__widgetLayoutEast->addWidget(__texteditEast);
+			__widgetLayoutEast->addLayout(__buttonLayoutEast);
 			__widgetGroupEast->setLayout(__widgetLayoutEast);
 			
 			// Main grid
-			auto __pMainGrid = m_grids->add<QHBoxLayout>(
-					g_layoutGroup, new QHBoxLayout(this),
-					EWidgetID::Grid);
-			__pMainGrid->addWidget(__widgetGroupWest);
-			__pMainGrid->addLayout(__widgetLayoutCenter);
-			__pMainGrid->addWidget(__widgetGroupEast);
+			auto __mainGrid = m_grids->add<QHBoxLayout>(g_layoutGroup, new QHBoxLayout(this),
+														EWidgetID::Grid);
+			__mainGrid->addWidget(__widgetGroupWest);
+			__mainGrid->addLayout(__widgetLayoutCenter);
+			__mainGrid->addWidget(__widgetGroupEast);
 			
 			setValues();
-			setLayout(__pMainGrid);
+			setLayout(__mainGrid);
 		}
 		
 		TStringPair
 		TTranslatorPanel::getCurrentLanguage()
 		{
-			TString __langId {};
-			TString __langName {};
+			TString __languageId, __languageName;
+			
 			try
 			{
-				auto __pBox = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest);
-				if (__pBox->isPlaceholderSet())
+				auto __languageBoxWest = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest);
+				if (__languageBoxWest->isPlaceholderSet())
 					return {};
 				
-				__langName = __pBox->currentText().toStdString();
-				__langId = TConfigurationManager::getManager(EConfiguration::XML)
+				__languageName = __languageBoxWest->currentText().toStdString();
+				__languageId = getXmlManager({ g_langConfigPath })
 						->accessor()
-						->getValue(NodeKey::kLangNameNode, __langName, NodeKey::kLangRoot).asUTF8();
+						->getValue(NodeKey::kLangNameNode, __languageName, NodeKey::kLangRoot).asUTF8();
 			}
 			catch (TException& e)
 			{
 				printerr(e.what())
 			}
-			return std::make_pair(__langId, __langName);
+			return std::make_pair(__languageId, __languageName);
 		}
 		
 		void TTranslatorPanel::onBufferChange()
@@ -219,13 +221,13 @@ namespace Dixter
 		
 		void TTranslatorPanel::onFlip()
 		{
-			auto __areaWest = m_widgets->get<TTextEdit>(g_widgetGroup, EWidgetID::TranslatorAreaWest);
-			auto __areaEast = m_widgets->get<TTextEdit>(g_widgetGroup, EWidgetID::TranslatorAreaEast);
-			auto __optBoxWest = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest);
-			auto __optBoxEast = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxEast);
+			auto __texteditWest = m_widgets->get<TTextEdit>(g_widgetGroup, EWidgetID::TranslatorAreaWest);
+			auto __languageBoxWest = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxWest);
+			auto __texteditEast = m_widgets->get<TTextEdit>(g_widgetGroup, EWidgetID::TranslatorAreaEast);
+			auto __languageBoxEast = m_widgets->get<TOptionBox>(g_widgetGroup, EWidgetID::LangboxEast);
 			
-			__optBoxWest->swapCurrent(__optBoxEast);
-			__areaWest->swapContent(__areaEast);
+			__languageBoxWest->swapCurrent(__languageBoxEast);
+			__texteditWest->swapContent(__texteditEast);
 		}
 		
 		void TTranslatorPanel::onSpeakWest()
@@ -301,21 +303,15 @@ namespace Dixter
 		
 		void TTranslatorPanel::connectEvents()
 		{
-			connect(
-					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonFlip),
+			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonFlip),
 					SIGNAL(clicked()), SLOT(onFlip()));
-			connect(
-					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakWest),
+			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakWest),
 					SIGNAL(clicked()), SLOT(onSpeakWest()));
-			connect(
-					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateWest),
+			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateWest),
 					SIGNAL(clicked()), SLOT(onTranslateWest()));
-			
-			connect(
-					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakEast),
+			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonSpeakEast),
 					SIGNAL(clicked()), SLOT(onSpeakEast()));
-			connect(
-					m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateEast),
+			connect(m_widgets->get<TButton>(g_controlGroup, EWidgetID::ButtonTranslateEast),
 					SIGNAL(clicked()), SLOT(onTranslateEast()));
 		}
 		

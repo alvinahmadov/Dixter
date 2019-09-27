@@ -7,27 +7,61 @@
  *  See README.md for more information.
  */
 
-#include <QMutex>
-
-#include "Configuration.hpp"
-#include "Constants.hpp"
 #include "Macros.hpp"
+#include "Constants.hpp"
 #include "Exception.hpp"
+#include "Configuration.hpp"
 #include "OpenTranslate/Dictionary.hpp"
 #include "Database/Manager.hpp"
 #include "Gui/TextView.hpp"
 #include "Gui/SearchEntry.hpp"
 
+using TSearchResult = Dixter::OpenTranslate::TDictionary::TSearchResult;
+
 namespace Dixter
 {
 	namespace Gui
 	{
+		void populateTextView(const TSearchResult& fetchedData, TTextView* textView,
+							  std::set<int> columnsToHide)
+		{
+			dxTIMER_START
+			textView->clearAll();
+			
+			if (not textView->isSortingEnabled())
+				textView->setSortingEnabled(true);
+			
+			for (const auto& __data : fetchedData)
+			{
+				int __colIdx = 0;
+				const auto& __key = __data.first;
+				const auto& __values = __data.second;
+				
+				const int __valuesLen = static_cast<int>(__values.size());
+				
+				textView->insertColumn(__colIdx);
+				textView->setColumnText(__colIdx, __key);
+				textView->setRowCount(__values.size());
+				
+				if (__valuesLen == 1)
+					textView->setRowText(0, __colIdx, __values.front());
+				else
+					for (int __i = 0; __i < __valuesLen; ++__i)
+						textView->setRowText(__i, __colIdx, __values.at(__i));
+				++__colIdx;
+			}
+			
+			for (int __hideIndex : columnsToHide)
+				textView->hideColumn(__hideIndex);
+			
+			printfm("Read %i data.", textView->rowCount())
+		}
+		
 		TSearchEntry::TSearchEntry(QWidget* parent, const QString& placeholder,
 								   const QSize& size, int margin)
 				: QLineEdit(parent),
 				  m_isPlaceholderSet(),
 				  m_placeholder(placeholder),
-				  m_mutex(new QMutex),
 				  m_dbManager(nullptr)
 		{
 			init();
@@ -36,10 +70,9 @@ namespace Dixter
 			if (size.width() > 0 and size.height() > 0)
 				setMinimumSize(size);
 		}
+		
 		TSearchEntry::~TSearchEntry() noexcept
-		{
-			delete m_mutex;
-		}
+		{ }
 		
 		void TSearchEntry::init()
 		{
@@ -52,7 +85,6 @@ namespace Dixter
 								__confManIni->getValue(NodeKey::kDatabaseUserNode).asUTF8(),
 								__confManIni->getValue(NodeKey::kDatabasePassNode).asUTF8()));
 				
-				m_dbManager->selectDatabase("dixterdb_NO");
 				m_dictionary = dxMAKE_SHARED(OpenTranslate::TDictionary, m_dbManager);
 			}
 			catch (TSQLException& e)
@@ -66,44 +98,18 @@ namespace Dixter
 			return m_isPlaceholderSet;
 		}
 		
-		void populate(const OpenTranslate::TDictionary::TSearchResult& fetchedData,
-					  TTextView* textView)
+		void TSearchEntry::search(const TString& database, const TString& keyColumn,
+								  TTextView* textView)
 		{
-			// Amsterdam  5
-			// gammelordføreren 16
-			textView->clearAll();
+			auto __text = text().toStdString();
 			
-			if (not textView->isEnabled())
-				textView->setEnabled(true);
+			m_dbManager->selectDatabase(database);
 			
-			for (const auto&[__key, __valueVector] : fetchedData)
+			if (__text.empty())
 			{
-				int __columnIndex = -1;
-				
-				textView->insertColumn(++__columnIndex);
-				textView->setColumnText(__columnIndex, __key);
-				textView->setRowCount(__valueVector.size());
-				
-				if (__valueVector.size() == 1)
-					textView->setRowText(0, __columnIndex, __valueVector.back());
-				else
-				{
-					for (const auto& __value : __valueVector)
-					{
-						int __rowIndex { 0 };
-						textView->setRowText(++__rowIndex, __columnIndex, __value);
-					}
-				}
-			}
-		}
-		
-		void TSearchEntry::search(TTextView* textView)
-		{
-			dxTIMER_START
-			const auto __text = text();
-			
-			if (__text.isEmpty())
+				textView->clearAll();
 				return;
+			}
 			
 			if (not m_dbManager)
 			{
@@ -111,18 +117,16 @@ namespace Dixter
 				return;
 			}
 			
-			QMutexLocker __ml(m_mutex);
-			
-			const auto& __fetchedData =
-					m_dictionary->lookFor(__text.toStdString(), "paradigm");
+			auto& __fetchedData = m_dictionary->lookFor(__text, keyColumn, true);
 			
 			if (not __fetchedData.size())
 			{
+				textView->clearAll();
 				printl_log("No such a word.");
 				return;
 			}
 			
-			populate(__fetchedData, textView);
+			populateTextView(__fetchedData, textView, { 0, 1 });
 		}
 	} // namespace Gui
 } // namespace Dixter

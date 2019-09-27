@@ -270,7 +270,7 @@ namespace Dixter
 		~StopWatch() noexcept
 		{
 			if (m_showOnDelete)
-				printf("\nOverall run time %.3lf ms.\n", elapsed(true));
+				printf("\nOverall run time %.3lf s.\n", elapsed(true));
 		}
 		
 		inline Real32 elapsed(bool showOnDelete = false);
@@ -396,12 +396,19 @@ namespace Dixter
 		return getInstance()->m_size;
 	}
 	
-	inline double StopWatch::elapsed(bool showOnDelete)
+	template<
+	        typename TRatio,
+			typename TReturn = Real32
+	>
+	struct TRatioDivider
 	{
-		auto t = SystemClock::now() - m_time;
-		constexpr double mt = 0.000000001;
+		constexpr static TReturn value = static_cast<TReturn>(TRatio::num)/static_cast<TReturn>(TRatio::den);
+	};
+	
+	inline Real32 StopWatch::elapsed(bool showOnDelete)
+	{
 		m_showOnDelete = showOnDelete;
-		return t.count() * mt;
+		return (SystemClock::now() - m_time).count() * TRatioDivider<std::nano>::value;
 	}
 	
 	template<typename... Args>
@@ -443,8 +450,8 @@ namespace Dixter
 
 
 #ifdef PERFORMANCE_TEST
-#   define dxTIMER_START StopWatch t;
-#   define dxTIMER_STOP  printf("\nOverall run time %.3lf ms.\n", t.elapsed());
+#   define dxTIMER_START StopWatch __stopWatch;
+#   define dxTIMER_STOP  printf("\nOverall run time %.3lf s.\n", __stopWatch.elapsed());
 #else
 #   define dxTIMER_START
 #   define TIMER_STOP
