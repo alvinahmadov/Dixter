@@ -17,7 +17,7 @@ namespace Dixter
 {
 	static std::set<TString> g_confPath { g_langConfigPath, g_voiceConfigPath, g_guiConfigPath };
 	
-	SettingsController::SettingsController(const TString& configRoot) noexcept
+	TSettingsController::TSettingsController(const TString& configRoot) noexcept
 			: m_root(configRoot),
 			  m_type(EConfiguration::None)
 	{
@@ -31,14 +31,14 @@ namespace Dixter
 		}
 	}
 	
-	void SettingsController::read(const TString& key, TUString& value)
+	void TSettingsController::read(const TString& key, TUString& value)
 	{
 		value = getManager(m_type, g_confPath)
 				->accessor()
 				->getValue(key, m_root);
 	}
 	
-	void SettingsController::write(const TString& key, const TUString& value)
+	void TSettingsController::write(const TString& key, const TUString& value)
 	{
 		getManager(m_type, g_confPath)
 				->mutator()

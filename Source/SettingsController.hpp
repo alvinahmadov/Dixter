@@ -14,12 +14,12 @@ namespace Dixter
 {
 	enum class EConfiguration;
 	
-	class SettingsController : public NonCopyable
+	class TSettingsController : public TNonCopyable
 	{
 	public:
-		explicit SettingsController(const TString& configRoot) noexcept;
+		explicit TSettingsController(const TString& configRoot) noexcept;
 		
-		~SettingsController() = default;
+		~TSettingsController() = default;
 		
 		void read(const TString& key, TUString& value);
 		
