@@ -42,7 +42,7 @@ namespace Dixter
             : TException()                                              \
             {                                                           \
                m_message = TString(message);   		                	\
-               VarArgMessageFormat<Args...>::                           \
+               TVarArgMessageFormat<Args...>::                           \
                        format(m_message,                                \
                        		std::forward<Args>(args)...);               \
             };                                                          \
