@@ -25,7 +25,7 @@ namespace Dixter
 	 * It can store objects of classes which have common base class.
 	 * */
 	template<class T, typename ID = UInt32>
-	class TGroup final : public NonCopyable
+	class TGroup final : public TNonCopyable
 	{
 	public:
 		using TObject               = T;
