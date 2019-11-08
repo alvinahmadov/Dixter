@@ -78,13 +78,11 @@ namespace Dixter
 		JSON
 	};
 	
-	class TConfigurationManager;
-	
 	/**
 	 * @brief Class for reading and storing settings from ini file
 	 * */
 	class TConfigurationINI final : public IConfiguration,
-									public NonCopyable
+									public TMoveOnly
 	{
 	public:
 		explicit TConfigurationINI(const TString& file) noexcept;
@@ -117,7 +115,7 @@ namespace Dixter
 	 * \brief Class for reading and storing settings from xml file
 	 * */
 	class TConfigurationXML final : public IConfiguration,
-									public NonCopyable
+									public TMoveOnly
 	{
 	public:
 		/**
@@ -169,10 +167,12 @@ namespace Dixter
 		mutable std::mutex m_mutex;
 	};
 	
-	class TConfigurationJSON : public IConfiguration
+	class TConfigurationJSON : public IConfiguration,
+							   public TMoveOnly
 	{
 	public:
 		using PropertyTree = boost::property_tree::basic_ptree<TString, TString>;
+		
 	public:
 		explicit TConfigurationJSON(const TString& file) noexcept ;
 		
@@ -202,8 +202,10 @@ namespace Dixter
 		std::unique_ptr<PropertyTree> m_propertyTree;
 	};
 	
-	class TConfigurationFactory : public NonCopyable
+	class TConfigurationFactory : public TMoveOnly
 	{
+	private:
+		using IConfigurationPtr = std::shared_ptr<IConfiguration>;
 	public:
 		explicit TConfigurationFactory(const TString& configPath, EConfiguration type);
 		
@@ -215,7 +217,7 @@ namespace Dixter
 		
 		void keys(std::list<TString>&) const;
 		
-		const std::shared_ptr<IConfiguration>&
+		IConfigurationPtr
 		getConfiguration();
 		
 		EConfiguration 
@@ -223,7 +225,8 @@ namespace Dixter
 	
 	private:
 		EConfiguration m_type;
-		std::shared_ptr<IConfiguration> m_configuration;
+		
+		IConfigurationPtr m_configuration;
 	};
 	
 	/**
@@ -233,14 +236,8 @@ namespace Dixter
 	 * \namespace Dixter
 	 * \brief Singleton class that manages configurations
 	 * */
-	class TConfigurationManager : public NonCopyable
+	class TConfigurationManager : public TNonCopyable
 	{
-	public:
-		using TSelf 			= TConfigurationManager;
-		using TInstancePtr 		= std::shared_ptr<TSelf>;
-		using TConstIterator	= IConfiguration::ConfigurationProperty::const_iterator;
-		
-	private:
 		/**
 		 * \author Alvin Ahmadov
 		 * \class ConfigurationManager::Accessor
@@ -248,7 +245,7 @@ namespace Dixter
 		 *
 		 * Provides easy access interfaces to data. Data is immutable.
 		 * */
-		class TAccessor : public NonCopyable
+		class TAccessor : public TNonCopyable
 		{
 		public:
 			/**
@@ -284,13 +281,13 @@ namespace Dixter
 			 * \brief Get all values of node with specified name.
 			 * \tparam Container Container to which save data.
 			 * */
-			const TAccessor* getValues(const TString& key, std::vector<TUString>& values,
-									   const TString& root = TString()) const;
-			
+			const TAccessor*
+			getValues(const TString& key, std::vector<TUString>& values,
+					  const TString& root = TString()) const;
+		
 		private:
-			static IConfiguration*
-			get(TConfigurationManager* manager, const TString& key,
-				const TString& root = TString());
+			std::shared_ptr<IConfiguration>
+			get(const TString& key, const TString& root = TString()) const;
 		
 		private:
 			TConfigurationManager* m_manager;
@@ -303,7 +300,7 @@ namespace Dixter
 		 *
 		 * Provides easy access interfaces to data. Data is mutable.
 		 * */
-		class TMutator : public NonCopyable
+		class TMutator : public TNonCopyable
 		{
 		public:
 			/**
@@ -321,37 +318,28 @@ namespace Dixter
 		 * \returns Found value.
 		 * \throws NotFoundException.
 		 * */
-			const TMutator* setValue(const TString& key, const TUString& value,
-									 const TString& root = "");
+			const TMutator*
+			setValue(const TString& key, const TUString& value,
+					 const TString& root = "");
+		
+		private:
+			std::shared_ptr<IConfiguration>
+			get(const TString& key, const TString& root = "");
+		
+		private:
+			TConfigurationManager*  m_manager;
 			
-		private:
-			IConfiguration* get(const TString& key, const TString& root = "");
-		private:
-			TConfigurationManager* m_manager;
 			mutable std::mutex m_mutex;
 		};
-	
-	private:
-		void read(EConfiguration type, const TString& path);
 		
-		void write(EConfiguration type, const TString& path);
-		
-		void checkKey(const TConstIterator key, TString errorMsg = "") const;
-		
-		friend class std::shared_ptr<TSelf>;
-		
-		/**
-		 * \class ConfigurationManager
-		 * \brief ctor. Loads configuration for every configuration file.
-		 * \param type Type of configuration to initialise.
-		 * \param paths List of paths to configuration files.
-		 * */
-		TConfigurationManager(EConfiguration type, const std::set<TString>& paths);
-		TConfigurationManager(const TSelf&) = delete;
-		TSelf& operator=(const TSelf&) = delete;
-	
 	public:
-		virtual ~TConfigurationManager() noexcept;
+		using TSelf 			= TConfigurationManager;
+		using TInstancePtr 		= std::shared_ptr<TSelf>;
+		using TAccessorPtr 		= std::unique_ptr<TAccessor>;
+		using TMutatorPtr 		= std::unique_ptr<TMutator>;
+		using TConstIterator	= IConfiguration::ConfigurationProperty::const_iterator;
+		
+		virtual ~TConfigurationManager() noexcept = default;
 		
 		/**
 		 * \class ConfigurationManager
@@ -367,16 +355,18 @@ namespace Dixter
 		static TInstancePtr&
 		getManager(EConfiguration type, std::set<TString> paths = std::set<TString>());
 		
-		const TAccessor* accessor() const;
+		const TAccessorPtr&
+		accessor() const;
 		
-		TMutator* mutator();
+		const TMutatorPtr&
+		mutator();
 		
 		/**
 		 * \class ConfigurationManager
 		 * \brief Gets the type of current instance.
 		 * \returns Instance's type.
 		 * */
-		EConfiguration 
+		EConfiguration
 		getType() const;
 		
 		/**
@@ -384,40 +374,58 @@ namespace Dixter
 		 * \brief Updates loaded configuration values.
 		 * \returns True if values updated.
 		 * */
-		bool update();
+		// bool update();
 		
+	private:
 		/**
 		 * \class ConfigurationManager
-		 * \brief Releases instance to update application's
-		 * configuration. Used after \c getManager().
-		 * \returns True if instance is deleted.
+		 * \brief ctor. Loads configuration for every configuration file.
+		 * \param type Type of configuration to initialise.
+		 * \param paths List of paths to configuration files.
 		 * */
-		static bool release();
+		TConfigurationManager(EConfiguration type, const std::set<TString>& paths);
+		
+		void read(EConfiguration type, const TString& path);
+		
+		void write(EConfiguration type, const TString& path);
+		
+		void checkKey(const TConstIterator key, TString errorMsg = "") const;
 	
 	private:
 		static TInstancePtr m_instance;
+		
+		EConfiguration m_type;
+		
 		std::set<TString> m_paths;
-		std::unique_ptr<TConfigurationFactory> m_factory;
+		
 		IConfiguration::ConfigurationProperty m_properties;
-		TAccessor* m_accessor;
-		TMutator* m_mutator;
+		
+		std::unique_ptr<TAccessor> m_accessor;
+		
+		std::unique_ptr<TMutator> m_mutator;
 	};
 	
-	inline TConfigurationManager::TInstancePtr&&
+	inline TConfigurationManager::TInstancePtr
 	getManager(EConfiguration type, const std::set<TString>& path)
 	{
-		return std::move(TConfigurationManager::getManager(type, path));
+		return TConfigurationManager::getManager(type, path);
 	}
 	
-	inline TConfigurationManager::TInstancePtr&&
+	inline TConfigurationManager::TInstancePtr
 	getIniManager(const std::set<TString>& path)
 	{
-		return std::move(TConfigurationManager::getManager(EConfiguration::INI, path));
+		return TConfigurationManager::getManager(EConfiguration::INI, path);
 	}
 	
-	inline TConfigurationManager::TInstancePtr&&
+	inline TConfigurationManager::TInstancePtr
 	getXmlManager(const std::set<TString>& path = {})
 	{
-		return std::move(TConfigurationManager::getManager(EConfiguration::XML, path));
+		return TConfigurationManager::getManager(EConfiguration::XML, path);
+	}
+	
+	inline TConfigurationManager::TInstancePtr
+	getJsonManager(const std::set<TString>& path = {})
+	{
+		return TConfigurationManager::getManager(EConfiguration::JSON, path);
 	}
 } // namespace Dixter

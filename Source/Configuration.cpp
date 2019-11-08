@@ -17,15 +17,9 @@
 #include "NodeEntry.hpp"
 #include "Constants.hpp"
 
-using namespace std;
-
 namespace Dixter
 {
-	namespace StringUtils = Utilities::Strings;
-	namespace AlgoUtils = Utilities::Algorithms;
-	template<typename T>
-	using TList = std::list<T>;
-	
+	namespace NStringUtils = Utilities::Strings;
 	#ifdef HAVE_CXX17
 	template<typename T>
 	using scoped_lock = std::scoped_lock<T>;
@@ -143,7 +137,7 @@ namespace Dixter
 		m_entries->setEntry(key, value);
 	}
 	
-	void TConfigurationINI::keys(list<TString>& keyList) const
+	void TConfigurationINI::keys(std::list<TString>& keyList) const
 	{
 		for (auto& __treeKey : *m_propertyTree)
 			keyList.push_back(__treeKey.first);
@@ -188,7 +182,7 @@ namespace Dixter
 	
 	void TConfigurationXML::load()
 	{
-		lock_guard<mutex> __lg(m_mutex);
+		std::lock_guard<std::mutex> __lg(m_mutex);
 		
 		TString __parent;
 		m_rootNode = m_propertyTree->front().first;
@@ -203,11 +197,11 @@ namespace Dixter
 			if (not child)
 			{
 				__nodeName.clear();
-				StringUtils::buildPath(__nodeName, '.', __rootNodeName, __parent);
-				StringUtils::buildPath(__nodeName, '.', xmlAttributeNameBuilder(attributeName, attributeVal), node);
+				NStringUtils::buildPath(__nodeName, '.', __rootNodeName, __parent);
+				NStringUtils::buildPath(__nodeName, '.', xmlAttributeNameBuilder(attributeName, attributeVal), node);
 			}
 			else
-				StringUtils::buildPath(__nodeName, '.', node);
+				NStringUtils::buildPath(__nodeName, '.', node);
 			
 			return __nodeName;
 		};
@@ -230,7 +224,7 @@ namespace Dixter
 		m_entries->setEntry(key, value);
 	}
 	
-	void TConfigurationXML::keys(list<TString>& keyList) const
+	void TConfigurationXML::keys(std::list<TString>& keyList) const
 	{
 		keyList.push_back(m_rootNode);
 	}
@@ -331,17 +325,11 @@ namespace Dixter
 	
 	void TConfigurationFactory::load()
 	{
-		if (not m_configuration)
-			throw TIllegalArgumentException("%s:%d Configuration is not initialised.", __FILE__, __LINE__);
-		
 		m_configuration->load();
 	}
 	
 	void TConfigurationFactory::save()
 	{
-		if (not m_configuration)
-			throw TIllegalArgumentException("%s:%d Configuration is not initialised.");
-		
 		m_configuration->save();
 	}
 	
@@ -350,7 +338,7 @@ namespace Dixter
 		m_configuration->keys(keyList);
 	}
 	
-	const std::shared_ptr<IConfiguration>&
+	TConfigurationFactory::IConfigurationPtr
 	TConfigurationFactory::getConfiguration()
 	{
 		return m_configuration;
@@ -362,6 +350,72 @@ namespace Dixter
 		return m_type;
 	}
 	
+	// ConfigurationManager::TAccessor implementation
+	TConfigurationManager::
+	TAccessor::TAccessor(TConfigurationManager* manager) noexcept
+			: m_manager(manager)
+	{ }
+	
+	TUString
+	TConfigurationManager::
+	TAccessor::getValue(const TString& key, const TString& root) const
+	{
+		return this->get(key, root)->get(key);
+	}
+	
+	TUString
+	TConfigurationManager::
+	TAccessor::getValue(const TString& key, const TUString& byValue,
+						const TString& root) const
+	{
+		return this->get(key, root)->get(key, byValue);
+	}
+	
+	const TConfigurationManager::TAccessor*
+	TConfigurationManager::
+	TAccessor::getValues(const TString& key, std::vector<TUString>& values, const TString& root) const
+	{
+		this->get(key, root)->get(key, values);
+		return this;
+	}
+	
+	std::shared_ptr<IConfiguration>
+	TConfigurationManager::
+	TAccessor::get(const TString& key, const TString& root) const
+	{
+		auto __iter = m_manager->m_properties.find(root.empty() ? key : root);
+		snprintfm(__msg, "Key \"%s\" not found", key.data());
+		m_manager->checkKey(__iter, __msg.get());
+		
+		return __iter->second;
+	}
+	
+	///ConfigurationManager::TMutator implementation
+	TConfigurationManager::
+	TMutator::TMutator(TConfigurationManager* manager) noexcept
+			: m_manager(manager)
+	{ }
+	
+	const TConfigurationManager::TMutator*
+	TConfigurationManager::
+	TMutator::setValue(const TString& key, const TUString& value, const TString& root)
+	{
+		scoped_lock<std::mutex> lockGuard(m_mutex);
+		this->get(key, root)->set(key, value);
+		return this;
+	}
+	
+	std::shared_ptr<IConfiguration>
+	TConfigurationManager::
+	TMutator::get(const TString& key, const TString& root)
+	{
+		auto __iter = m_manager->m_properties.find(root.empty() ? key : root);
+		snprintfm(__msg, "Key \"%s\" not found", key.data());
+		m_manager->checkKey(__iter, __msg.get());
+		
+		return __iter->second;
+	}
+	
 	///ConfigurationManager implementation
 	TConfigurationManager::TInstancePtr&
 	TConfigurationManager::getManager(EConfiguration type, std::set<TString> paths)
@@ -370,26 +424,45 @@ namespace Dixter
 		return m_instance;
 	}
 	
-	const TConfigurationManager::TAccessor*
+	const TConfigurationManager::TAccessorPtr&
 	TConfigurationManager::accessor() const
 	{
 		return m_accessor;
 	}
 	
-	TConfigurationManager::TMutator*
+	const TConfigurationManager::TMutatorPtr&
 	TConfigurationManager::mutator()
 	{
 		return m_mutator;
 	}
 	
+	EConfiguration
+	TConfigurationManager::getType() const
+	{
+		return m_type;
+	}
+	
+	TConfigurationManager::TConfigurationManager(EConfiguration type,
+												 const std::set<TString>& paths)
+			: m_paths(paths),
+			  m_properties(),
+			  m_accessor(new TAccessor(this)),
+			  m_mutator( new TMutator(this))
+	{
+		for (const auto& path : paths)
+			this->read(type, path);
+	}
+	
 	void TConfigurationManager::read(EConfiguration type, const TString& path)
 	{
-		m_factory.reset(new TConfigurationFactory(path, type));
-		TList<TString> __keyList;
-		m_factory->load();
-		m_factory->keys(__keyList);
+		auto __factory = dxMAKE_UNIQUE(TConfigurationFactory, path, type);
+		
+		std::list<TString> __keyList;
+		__factory->load();
+		m_type = type;
+		__factory->keys(__keyList);
 		for (auto& __key : __keyList)
-			m_properties.emplace(__key, m_factory->getConfiguration());
+			m_properties.emplace(__key, __factory->getConfiguration());
 	}
 	
 	void TConfigurationManager::write(EConfiguration type, const TString& path)
@@ -419,135 +492,24 @@ namespace Dixter
 			throw TNotFoundException(errorMsg);
 	}
 	
-	TConfigurationManager::TConfigurationManager(EConfiguration type,
-												 const std::set<TString>& paths)
-			: m_paths(paths),
-			  m_factory(nullptr),
-			  m_properties(),
-			  m_accessor(new TAccessor(this)),
-			  m_mutator(new TMutator(this))
-	{
-		for (const auto& path : paths)
-			this->read(type, path);
-	}
-	
-	TString EConfTypeToString(EConfiguration econf)
-	{
-		switch (econf)
-		{
-			case EConfiguration::XML :
-				return "XML Conf.";
-			case EConfiguration::INI :
-				return "INI Conf.";
-			case EConfiguration::JSON :
-				return "JSON Conf";
-			default:
-				return "None";
-		}
-	}
-	
-	TConfigurationManager::~TConfigurationManager() noexcept
-	{
-		delete m_accessor;
-		delete m_mutator;
-	}
-	
-	TConfigurationManager::
-	TAccessor::TAccessor(TConfigurationManager* manager) noexcept
-			: m_manager(manager)
-	{ }
-	
-	TUString
-	TConfigurationManager::
-	TAccessor::getValue(const TString& key, const TString& root) const
-	{
-		return this->get(m_manager, key, root)->get(key);
-	}
-	
-	TUString
-	TConfigurationManager::
-	TAccessor::getValue(const TString& key, const TUString& byValue,
-						const TString& root) const
-	{
-		return get(m_manager, key, root)->get(key, byValue);
-	}
-	
-	const TConfigurationManager::TAccessor*
-	TConfigurationManager::
-	TAccessor::getValues(const TString& key, vector<TUString>& values, const TString& root) const
-	{
-		get(m_manager, key, root)->get(key, values);
-		return this;
-	}
-	
-	IConfiguration*
-	TConfigurationManager::
-	TAccessor::get(TConfigurationManager* manager, const TString& key, const TString& root)
-	{
-		auto __iter = manager->m_properties.find(root.empty() ? key : root);
-		snprintfm(__msg, "Key \"%s\" not found", key.data());
-		manager->checkKey(__iter, __msg);
-		delete[] __msg;
-		
-		return __iter->second.get();
-	}
-	
-	TConfigurationManager::
-	TMutator::TMutator(TConfigurationManager* manager) noexcept
-			: m_manager(manager)
-	{ }
-	
-	const TConfigurationManager::TMutator*
-	TConfigurationManager::
-	TMutator::setValue(const TString& key, const TUString& value, const TString& root)
-	{
-		scoped_lock<mutex> lockGuard(m_mutex);
-		this->get(key, root)->set(key, value);
-		return this;
-	}
-	
-	IConfiguration*
-	TConfigurationManager::
-	TMutator::get(const TString& key, const TString& root)
-	{
-		auto __iter = m_manager->m_properties.find(root.empty() ? key : root);
-		snprintfm(__msg, "Key \"%s\" not found", key.data());
-		m_manager->checkKey(__iter, __msg);
-		delete[] __msg;
-		
-		return __iter->second.get();
-	}
-	
 	TConfigurationManager::TInstancePtr
 			TConfigurationManager::TConfigurationManager::m_instance {};
 	
-	bool TConfigurationManager::update()
-	{
-		bool success(false);
-		try
-		{
-			auto __type = m_factory->getType();
-			auto __paths = m_paths;
-			m_instance.reset(new TConfigurationManager(__type, __paths));
-			success = true;
-		} catch (TException& e)
-		{
-			printerr(e.getMessage())
-		}
-		if (success)
-			println("Updated")
-		return success;
-	}
-	
-	EConfiguration
-	TConfigurationManager::getType() const
-	{
-		return m_factory->getType();
-	}
-	
-	bool TConfigurationManager::release()
-	{
-		m_instance.reset();
-		return m_instance == nullptr;
-	}
+	// bool TConfigurationManager::update()
+	// {
+	// 	bool success(false);
+	// 	try
+	// 	{
+	// 		auto __type = m_factory->getType();
+	// 		auto __paths = m_paths;
+	// 		m_instance.reset(new TConfigurationManager(__type, __paths));
+	// 		success = true;
+	// 	} catch (TException& e)
+	// 	{
+	// 		printerr(e.getMessage())
+	// 	}
+	// 	if (success)
+	// 		println("Updated")
+	// 	return success;
+	// }
 }
