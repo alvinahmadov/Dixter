@@ -31,7 +31,7 @@ namespace Dixter
 		
 		class TValue;
 		
-		class TTable : public CopyConstructible
+		class TTable : public TCopyConstructible
 		{
 		public:
 			TTable(const TString& tableName, const std::list<TValue*>& valueList) noexcept;
