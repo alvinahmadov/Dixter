@@ -191,10 +191,10 @@ namespace Dixter
 		
 		void TOptionBox::init()
 		{
-			auto __confMan = getIniManager({ g_guiConfigPath})->accessor();
-			auto __bgColour = __confMan->getValue(NodeKey::kWinBgColourNode).asCustom();
-			auto __fontName = __confMan->getValue(NodeKey::kWinFontNameNode).asCustom();
-			int __fontSize = __confMan->getValue(NodeKey::kWinFontSizeNode);
+			auto __confMan = getIniManager({ g_guiConfigPath});
+			auto __bgColour = __confMan->accessor()->getValue(NodeKey::kWinBgColourNode).asCustom();
+			auto __fontName = __confMan->accessor()->getValue(NodeKey::kWinFontNameNode).asCustom();
+			int __fontSize = __confMan->accessor()->getValue(NodeKey::kWinFontSizeNode);
 			__bgColour.prepend('#');
 			setPalette(QPalette(__bgColour));
 			setFont(QFont(__fontName, __fontSize));

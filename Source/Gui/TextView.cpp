@@ -39,12 +39,9 @@ namespace Dixter
 		
 		void TTextView::setRowText(int rowIndex, int columnIndex, const TString& text)
 		{
-			if (isSortingEnabled())
-				setSortingEnabled(false);
 			auto __item = new TViewItem(QString::fromStdString(text));
 			__item->setTextAlignment(1);
 			setItem(rowIndex, columnIndex, __item);
-			setColumnWidth(columnIndex, text.length() * 20);
 		}
 		
 		void TTextView::clearAll()

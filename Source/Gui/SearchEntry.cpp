@@ -7,7 +7,10 @@
  *  See README.md for more information.
  */
 
+#include <regex>
+
 #include "Macros.hpp"
+#include "JoinThread.hpp"
 #include "Constants.hpp"
 #include "Exception.hpp"
 #include "Configuration.hpp"
@@ -16,45 +19,39 @@
 #include "Gui/TextView.hpp"
 #include "Gui/SearchEntry.hpp"
 
-using TSearchResult = Dixter::OpenTranslate::TDictionary::TSearchResult;
+using TSearchResult 	= Dixter::OpenTranslate::TDictionary::TSearchResult;
+using FHideCondition 	= std::function<bool(const Dixter::TString&)>;
+using FRenameCondition 	= std::function<void(Dixter::TString&)>;
 
 namespace Dixter
 {
 	namespace Gui
 	{
 		void populateTextView(const TSearchResult& fetchedData, TTextView* textView,
-							  std::set<int> columnsToHide)
+							  FHideCondition& hideIf, FRenameCondition& renameIfMatches)
 		{
-			dxTIMER_START
 			textView->clearAll();
-			
-			if (not textView->isSortingEnabled())
-				textView->setSortingEnabled(true);
-			
 			for (const auto& __data : fetchedData)
 			{
-				int __colIdx = 0;
-				const auto& __key = __data.first;
-				const auto& __values = __data.second;
+				if (hideIf(__data.first))
+					continue;
 				
+				auto __key = __data.first;
+				const auto& __values = __data.second;
 				const int __valuesLen = static_cast<int>(__values.size());
 				
-				textView->insertColumn(__colIdx);
-				textView->setColumnText(__colIdx, __key);
+				renameIfMatches(__key);
+				textView->insertColumn(0);
+				textView->setColumnText(0, __key);
 				textView->setRowCount(__values.size());
 				
 				if (__valuesLen == 1)
-					textView->setRowText(0, __colIdx, __values.front());
-				else
+					textView->setRowText(0, 0, __values.front());
+				else {
 					for (int __i = 0; __i < __valuesLen; ++__i)
-						textView->setRowText(__i, __colIdx, __values.at(__i));
-				++__colIdx;
+						textView->setRowText(__i, 0, __values.at(__i));
+				}
 			}
-			
-			for (int __hideIndex : columnsToHide)
-				textView->hideColumn(__hideIndex);
-			
-			printfm("Read %i data.", textView->rowCount())
 		}
 		
 		TSearchEntry::TSearchEntry(QWidget* parent, const QString& placeholder,
@@ -78,12 +75,12 @@ namespace Dixter
 		{
 			try
 			{
-				auto __confManIni = getIniManager({ g_guiConfigPath })->accessor();
+				auto __confManIni = getIniManager({ g_guiConfigPath });
 				m_dbManager.reset(
 						new Database::TManager(
-								__confManIni->getValue(NodeKey::kDatabaseHostNode).asUTF8(),
-								__confManIni->getValue(NodeKey::kDatabaseUserNode).asUTF8(),
-								__confManIni->getValue(NodeKey::kDatabasePassNode).asUTF8()));
+								__confManIni->accessor()->getValue(NodeKey::kDatabaseHostNode).asUTF8(),
+								__confManIni->accessor()->getValue(NodeKey::kDatabaseUserNode).asUTF8(),
+								__confManIni->accessor()->getValue(NodeKey::kDatabasePassNode).asUTF8()));
 				
 				m_dictionary = dxMAKE_SHARED(OpenTranslate::TDictionary, m_dbManager);
 			}
@@ -103,8 +100,6 @@ namespace Dixter
 		{
 			auto __text = text().toStdString();
 			
-			m_dbManager->selectDatabase(database);
-			
 			if (__text.empty())
 			{
 				textView->clearAll();
@@ -117,7 +112,9 @@ namespace Dixter
 				return;
 			}
 			
-			auto& __fetchedData = m_dictionary->lookFor(__text, keyColumn, true);
+			m_dbManager->selectDatabase(database);
+
+			const auto& __fetchedData = m_dictionary->lookFor(__text, keyColumn, true);
 			
 			if (not __fetchedData.size())
 			{
@@ -125,8 +122,19 @@ namespace Dixter
 				printl_log("No such a word.");
 				return;
 			}
+			FHideCondition __hideIf =
+					[](const TString& column) { return (column == "id" or column == "word"); };
 			
-			populateTextView(__fetchedData, textView, { 0, 1 });
+			FRenameCondition __renameIfMatches =
+					[] (TString& column)
+			{
+				std::smatch __match;
+				std::regex __categoryRegex("category_\\d*", std::regex::icase);
+				if (std::regex_search(column, __match, __categoryRegex))
+					column = std::regex_replace(column, __categoryRegex, "Category");
+			};
+			
+			populateTextView(__fetchedData, textView, __hideIf, __renameIfMatches);
 		}
 	} // namespace Gui
 } // namespace Dixter

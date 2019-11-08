@@ -61,10 +61,10 @@ namespace Dixter
 		
 		void TTextEdit::init()
 		{
-			auto __confMan = getIniManager({ g_guiConfigPath})->accessor();
-			auto __bgColour = __confMan->getValue(NodeKey::kAreaBgColourNode).asCustom();
-			auto __fontName = __confMan->getValue(NodeKey::kAreaFontNameNode).asCustom();
-			int __fontSize = __confMan->getValue(NodeKey::kAreaFontSizeNode);
+			auto __confMan = getIniManager({ g_guiConfigPath});
+			auto __bgColour = __confMan->accessor()->getValue(NodeKey::kAreaBgColourNode).asCustom();
+			auto __fontName = __confMan->accessor()->getValue(NodeKey::kAreaFontNameNode).asCustom();
+			int __fontSize = __confMan->accessor()->getValue(NodeKey::kAreaFontSizeNode);
 			__bgColour.prepend('#');
 			QPalette __palette(__bgColour);
 			setPalette(__palette);

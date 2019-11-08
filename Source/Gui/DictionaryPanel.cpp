@@ -109,7 +109,7 @@ namespace Dixter
 			// Populate main grid with items
 			__mainGrid->addWidget(__controlGroup);
 			__mainGrid->addWidget(__textView);
-			__textView->setAlternatingRowColors(true);
+			// __textView->setAlternatingRowColors(true);
 			__textView->setSortingEnabled(false);
 			
 			setValues();
