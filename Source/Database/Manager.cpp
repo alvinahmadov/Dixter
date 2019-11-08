@@ -130,7 +130,7 @@ namespace Dixter
 			std::vector<TString> __columns {};
 			
 			TLockGuard __lockGuard(m_mutex);
-			auto __result = m_statement->executeQuery(__query);
+			auto __result = this->execute(__query);
 			
 			while (__result->next())
 				__columns.push_back(__result->getString(1));

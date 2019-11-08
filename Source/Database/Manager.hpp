@@ -38,7 +38,7 @@ namespace Dixter
 		
 		class TQueryBuilder;
 		
-		class TManager : public NonCopyable
+		class TManager : public TNonCopyable
 		{
 		public:
 			using TResultSetPtr = std::shared_ptr<sql::ResultSet>;
