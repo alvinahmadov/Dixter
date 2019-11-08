@@ -43,67 +43,67 @@ namespace Dixter
 			switch (m_type)
 			{
 				case EDataType::kBit:
-					return xSTR(BIT);
+					return dxSTR(BIT);
 				case EDataType::kTinyInt:
-					return xSTR(TINYINT);
+					return dxSTR(TINYINT);
 				case EDataType::kSmallInt:
-					return xSTR(SMALLINT);
+					return dxSTR(SMALLINT);
 				case EDataType::kMediumInt:
-					return xSTR(MEDIUMINT);
+					return dxSTR(MEDIUMINT);
 				case EDataType::kInteger:
-					return xSTR(INTEGER);
+					return dxSTR(INTEGER);
 				case EDataType::kBigInt:
-					return xSTR(BIGINT);
+					return dxSTR(BIGINT);
 				case EDataType::kReal:
-					return xSTR(REAL);
+					return dxSTR(REAL);
 				case EDataType::kNumeric:
-					return xSTR(NUMERIC);
+					return dxSTR(NUMERIC);
 				case EDataType::kChar:
-					return xSTR(CHAR);
+					return dxSTR(CHAR);
 				case EDataType::kBinary:
-					return xSTR(BINARY);
+					return dxSTR(BINARY);
 				case EDataType::kVarChar:
-					return xSTR(VARCHAR);
+					return dxSTR(VARCHAR);
 				case EDataType::kVarBinary:
-					return xSTR(VARBINARY);
+					return dxSTR(VARBINARY);
 				case EDataType::kLongVarChar:
-					return xSTR(LONGVARCHAR);
+					return dxSTR(LONGVARCHAR);
 				case EDataType::kLongVarBinary:
-					return xSTR(LONGVARBINARY);
+					return dxSTR(LONGVARBINARY);
 				case EDataType::kTimeStamp:
-					return xSTR(TIMESTAMP);
+					return dxSTR(TIMESTAMP);
 				case EDataType::kDate:
-					return xSTR(DATE);
+					return dxSTR(DATE);
 				case EDataType::kTime:
-					return xSTR(TIME);
+					return dxSTR(TIME);
 				case EDataType::kYear:
-					return xSTR(YEAR);
+					return dxSTR(YEAR);
 				case EDataType::kDecimal:
-					return xSTR(DECIMAL);
+					return dxSTR(DECIMAL);
 				case EDataType::kDouble:
-					return xSTR(DOUBLE);
+					return dxSTR(DOUBLE);
 				case EDataType::kGeometry:
-					return xSTR(GEOMETRY);
+					return dxSTR(GEOMETRY);
 				case EDataType::kEnum:
-					return xSTR(ENUM);
+					return dxSTR(ENUM);
 				case EDataType::kSet:
-					return xSTR(SET);
+					return dxSTR(SET);
 				case EDataType::kSqlNull:
-					return xSTR(SQLNULL);
+					return dxSTR(SQLNULL);
 				case EDataType::kJson:
-					return xSTR(JSON);
+					return dxSTR(JSON);
 				case EDataType::kTinyText:
-					return xSTR(TINYTEXT);
+					return dxSTR(TINYTEXT);
 				case EDataType::kText:
-					return xSTR(TEXT);
+					return dxSTR(TEXT);
 				case EDataType::kMediumText:
-					return xSTR(MEDIUMTEXT);
+					return dxSTR(MEDIUMTEXT);
 				case EDataType::kLongText:
-					return xSTR(LONGTEXT);
+					return dxSTR(LONGTEXT);
 				case EDataType::kInt:
-					return xSTR(INT);
+					return dxSTR(INT);
 				case EDataType::kBool:
-					return xSTR(BOOL);
+					return dxSTR(BOOL);
 				default:
 					throw TNotFoundException("%s:%d Unknown type.\n", __FILE__, __LINE__);
 			}
