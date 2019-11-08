@@ -13,18 +13,18 @@
 namespace Dixter
 {
 	template<typename T>
-	const TSize ClassInfo<T>::ClassNameConvertor::m_charTableSize = 10;
+	const TSize TClassInfo<T>::TClassNameConvertor::m_charTableSize = 10;
 	
 	template<typename T>
 	std::list<const TByte*>
-			ClassInfo<T>::ClassNameConvertor::m_charTable
+			TClassInfo<T>::TClassNameConvertor::m_charTable
 			{
 					"N3", "NSt7"
 			};
 	
 	template<typename T>
 	std::map<TString, TString>
-			ClassInfo<T>::ClassNameConvertor::m_names
+			TClassInfo<T>::TClassNameConvertor::m_names
 			{
 					{"NSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", "string"},
 					{"St17basic_string_viewIcSt11char_traitsIcEE",           "TStringView"},
@@ -38,14 +38,14 @@ namespace Dixter
 	
 	template<typename T>
 	TString
-	ClassInfo<T>::ClassNameConvertor::getName(const TString& rawName)
+	TClassInfo<T>::TClassNameConvertor::getName(const TString& rawName)
 	{
 		return getName(rawName.c_str());
 	}
 	
 	template<typename T>
 	TString
-	ClassInfo<T>::ClassNameConvertor::getName(const TByte* rawName)
+	TClassInfo<T>::TClassNameConvertor::getName(const TByte* rawName)
 	{
 		auto __iter = m_names.find(rawName);
 		if (__iter != m_names.end())
@@ -55,7 +55,7 @@ namespace Dixter
 	
 	template<typename T>
 	TString
-	ClassInfo<T>::ClassNameConvertor::parseName(const TByte* raw)
+	TClassInfo<T>::TClassNameConvertor::parseName(const TByte* raw)
 	{
 		TSize __size {0};
 		TString res {};

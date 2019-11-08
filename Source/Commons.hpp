@@ -30,140 +30,6 @@
 
 namespace Dixter
 {
-	namespace Internal
-	{
-		#ifdef HAVE_CXX17
-		using any = std::any;
-		
-		template<typename ValueType>
-		inline ValueType* any_cast(any* op) noexcept
-		{
-			return ::std::any_cast<ValueType>(op);
-		}
-		
-		template<typename ValueType>
-		inline ValueType any_cast(any& op)
-		{
-			return ::std::any_cast<ValueType>(op);
-		}
-		
-		template<typename ValueType>
-		inline ValueType any_cast(const any& op)
-		{
-			return ::std::any_cast<ValueType>(op);
-		}
-		
-		#else
-		using any = ::boost::any;
-		
-		template<typename ValueType>
-		ValueType* any_cast(any* op) noexcept
-		{
-			return ::boost::any_cast<ValueType>(op);
-		}
-		
-		template<typename ValueType>
-		ValueType any_cast(any& op)
-		{
-			return ::boost::any_cast<ValueType>(op);
-		}
-		
-		template<typename ValueType>
-		ValueType any_cast(const any& op)
-		{
-			return ::boost::any_cast<ValueType>(op);
-		}
-		
-		#endif
-	} // namespace Internal
-	
-	using any_t = Internal::any;
-	
-	/**
-	 * \author Alvin Ahmadov <alvin.dev.ahmadov%gmail.com>
-	 * \namespace Dixter
-	 * \ingroup base
-	 * \brief Implements default constructible concept.
-	 *
-	 * Derived classes will have a default ctor. Implements C++ version-dependent
-	 * default construction.
-	 * */
-	struct DefaultConstructible
-	{
-	protected:
-		DefaultConstructible() = default;
-	};
-	
-	/**
-	 * \author Alvin Ahmadov <alvin.dev.ahmadov@gmail.com>
-	 * \namespace Dixter
-	 * \ingroup base
-	 * \class Copyable
-	 * \brief Sets default copying concept.
-	 *
-	 * Derived classes by default can be copied. Implements C++ version-dependent
-	 * copying.
-	 * */
-	struct CopyConstructible
-	{
-	protected:
-		CopyConstructible() noexcept = default;
-		
-		virtual ~CopyConstructible() noexcept = default;
-		
-		CopyConstructible(const CopyConstructible&) noexcept = default;
-		
-		CopyConstructible& operator=(const CopyConstructible&) noexcept = default;
-	};
-	
-	/**
-	 * \author Alvin Ahmadov <alvin.dev.ahmadov%gmail.com>
-	 * \namespace Dixter
-	 * \ingroup base
-	 * \class Movable
-	 * \brief Implements move and assignable concept.
-	 *
-	 * Derived classes will have a default move ctor. Implements C++ version-dependent
-	 * default move ctor.
-	 * */
-	struct Movable
-	{
-	protected:
-		constexpr Movable() noexcept = default;
-		
-		virtual ~Movable() noexcept = default;
-		
-		Movable(Movable&&) noexcept = default;
-		
-		Movable& operator=(Movable&&) noexcept = default;
-	};
-	
-	/**
-	 * \author Alvin Ahmadov <alvin.dev.ahmadov@gmail.com>
-	 * \namespace Dixter
-	 * \ingroup base
-	 * \class NonCopyable
-	 * \brief Prohibits object to be copied.
-	 *
-	 * Derived classes can't be copied. Implements C++ version-dependent
-	 * copying restriction.
-	 * */
-	struct NonCopyable
-	{
-	protected:
-		NonCopyable() = default;
-		
-		virtual ~NonCopyable() = default;
-		
-		NonCopyable(NonCopyable&& other) = default;
-		
-		NonCopyable& operator=(NonCopyable&& other) = default;
-		
-		NonCopyable(const NonCopyable&) = delete;
-		
-		NonCopyable& operator=(const NonCopyable&) = delete;
-	};
-	
 	/**
 	 * \author Alvin Ahmadov
 	 * \namespace Dixter
@@ -183,18 +49,129 @@ namespace Dixter
 		 * Compares two elements of type T. Returns -1 if \c otherComparable
 		 * is greater than \c this, 0 if objects equal, 1 otherwise.
 		 * */
-		virtual int compareTo(const T& otherComparable) noexcept = 0;
+		virtual int compareTo(const T& comparable) noexcept = 0;
 	};
 	
-	template<class T>
-	class ClassInfo : public IComparable<ClassInfo<T>>
+	// Concepts
+	/**
+	 * \author Alvin Ahmadov <alvin.dev.ahmadov%gmail.com>
+	 * \namespace Dixter
+	 * \ingroup base
+	 * \brief Implements default constructible concept.
+	 *
+	 * Derived classes will have a default ctor. Implements C++ version-dependent
+	 * default construction.
+	 * */
+	struct TDefaultConstructible
+	{
+	protected:
+		TDefaultConstructible() noexcept = default;
+		
+		~TDefaultConstructible() noexcept = default;
+	};
+	
+	/**
+	 * \author Alvin Ahmadov <alvin.dev.ahmadov@gmail.com>
+	 * \namespace Dixter
+	 * \ingroup base
+	 * \class Copyable
+	 * \brief Sets default copying concept.
+	 *
+	 * Derived classes by default can be copied. Implements C++ version-dependent
+	 * copying.
+	 * */
+	struct TCopyConstructible
+	{
+	private:
+		using TSelf = TCopyConstructible;
+		
+	protected:
+		TCopyConstructible() noexcept = default;
+		
+		virtual ~TCopyConstructible() noexcept = default;
+		
+		TCopyConstructible(const TCopyConstructible&) noexcept = default;
+		
+		TCopyConstructible& operator=(const TCopyConstructible&) noexcept = default;
+	};
+	
+	/**
+	 * \author Alvin Ahmadov <alvin.dev.ahmadov@gmail.com>
+	 * \namespace Dixter
+	 * \ingroup base
+	 * \class NonCopyable
+	 * \brief Prohibits object to be copied.
+	 *
+	 * Derived classes can't be copied. Implements C++ version-dependent
+	 * copying restriction.
+	 * */
+	struct TNonCopyable : public TDefaultConstructible
+	{
+	private:
+		using TSelf = TNonCopyable;
+		
+	protected:
+		TNonCopyable() noexcept = default;
+		
+		virtual ~TNonCopyable() noexcept = default;
+		
+		TNonCopyable(TSelf&& other) noexcept = default;
+		
+		TSelf& operator=(TSelf&& other) noexcept = default;
+		
+		TNonCopyable(const TSelf&) = delete;
+		
+		TSelf& operator=(const TSelf&) = delete;
+	};
+	
+	/**
+	 * \author Alvin Ahmadov <alvin.dev.ahmadov%gmail.com>
+	 * \namespace Dixter
+	 * \ingroup base
+	 * \class Movable
+	 * \brief Implements move and assignable concept.
+	 *
+	 * Derived classes will have a default move ctor. Implements C++ version-dependent
+	 * default move ctor.
+	 * */
+	struct TMovable
+	{
+	private:
+		using TSelf = TMovable;
+		
+	protected:
+		constexpr TMovable() noexcept = default;
+		
+		virtual ~TMovable() noexcept = default;
+		
+		TMovable(TSelf&&) noexcept = default;
+		
+		TSelf& operator=(TSelf&&) noexcept = default;
+	};
+	
+	struct TMoveOnly : public TNonCopyable
+	{
+	private:
+		using TSelf = TMoveOnly;
+		
+	protected:
+		constexpr TMoveOnly() noexcept = default;
+		
+		virtual ~TMoveOnly() noexcept = default;
+		
+		TMoveOnly(TSelf&&) noexcept = default;
+		
+		TSelf& operator=(TSelf&&) noexcept = default;
+	};
+	
+	template<class TUnderlying>
+	class TClassInfo : public IComparable<TClassInfo<TUnderlying>>,
+					   public TMoveOnly
 	{
 	public:
-		using TClass    = T;
-		using TClassRef = T&;
-		using TClassPtr = T*;
+		using TSelf = TClassInfo<TUnderlying>;
 		
-		virtual ~ClassInfo() noexcept = default;
+		virtual ~TClassInfo() noexcept = default;
 		
 		static TString getName();
 		
@@ -208,15 +185,17 @@ namespace Dixter
 		/**
 		 * \link ComparableInterface::compareTo() \endlink
 		 * */
-		int compareTo(const ClassInfo<T>& other) noexcept override;
+		int compareTo(const TSelf& other) noexcept override;
 		
 		static constexpr
 		const TSize& getSize();
 	
 	private:
-		ClassInfo();
+		TClassInfo() noexcept;
+		TClassInfo(TSelf&&) noexcept = default;
+		TSelf& operator=(TSelf&&) noexcept = default;
 		
-		static std::unique_ptr<ClassInfo>& getInstance();
+		static std::unique_ptr<TSelf>& getInstance();
 		
 		/**
 		 * \author Alvin Ahmadov
@@ -224,7 +203,7 @@ namespace Dixter
 		 * \class ClassNameConvertor
 		 * \brief Represents C++ and user-defined types as string.
 		 * */
-		class ClassNameConvertor
+		class TClassNameConvertor
 		{
 		public:
 			/**
@@ -256,18 +235,18 @@ namespace Dixter
 		
 		TByteArray m_className;
 		
-		static std::unique_ptr<ClassInfo> m_classInstance;
+		static std::unique_ptr<TSelf> m_classInstance;
 	};
 	
-	class StopWatch final
+	class TStopWatch final
 	{
-		using SystemClock = std::chrono::system_clock;
+		using TClock = std::chrono::system_clock;
 	public:
-		StopWatch() noexcept
-				: m_time(SystemClock::now())
+		TStopWatch() noexcept
+				: m_time(TClock::now())
 		{ }
 		
-		~StopWatch() noexcept
+		~TStopWatch() noexcept
 		{
 			if (m_showOnDelete)
 				printf("\nOverall run time %.3lf s.\n", elapsed(true));
@@ -278,8 +257,57 @@ namespace Dixter
 	private:
 		bool m_showOnDelete = true;
 		
-		SystemClock::time_point m_time;
+		TClock::time_point m_time;
 	};
+	
+	namespace NInternal
+	{
+		#ifdef HAVE_CXX17
+		using TAny = std::any;
+		
+		template<typename TValue>
+		inline TValue* anyCast(TAny* op) noexcept
+		{
+			return ::std::any_cast<TValue>(op);
+		}
+		
+		template<typename TValue>
+		inline TValue anyCast(TAny& op)
+		{
+			return ::std::any_cast<TValue>(op);
+		}
+		
+		template<typename TValue>
+		inline TValue anyCast(const TAny& op)
+		{
+			return ::std::any_cast<TValue>(op);
+		}
+		
+		#else
+		using TAny = ::boost::any;
+		
+		template<typename TValue>
+		TValue* anyCast(TAny* op) noexcept
+		{
+			return ::boost::any_cast<TValue>(op);
+		}
+		
+		template<typename TValue>
+		TValue anyCast(TAny& op)
+		{
+			return ::boost::any_cast<TValue>(op);
+		}
+		
+		template<typename TValue>
+		TValue anyCast(const TAny& op)
+		{
+			return ::boost::any_cast<TValue>(op);
+		}
+		
+		#endif
+	} // namespace Internal
+	
+	using TAny = NInternal::TAny;
 	
 	/**
 	 * \author Alvin Ahmadov
@@ -289,19 +317,23 @@ namespace Dixter
 	 *
 	 * \tparam Args Argument types to be passed to formatter.
 	 * */
-	template<typename... Args>
-	class VarArgMessageFormat
+	template<typename... TArgs>
+	class TVarArgMessageFormat
 	{
-		using Format = boost::basic_format<TString::value_type>;
+		using TSelf 	= TVarArgMessageFormat;
+		using TFormat 	= boost::basic_format<TString::value_type>;
 		
 		/**
 		 * \brief Check if \c arg's is of type T.
 		 * \tparam T Type to check.
 		 * \returns True if \c T is \c arg's type.
 		 * */
-		template<typename T>
+		template<typename TUnderlying>
 		static constexpr
-		bool checkTypeIdentity(const any_t& arg);
+		bool checkTypeIdentity(const TAny& arg)
+		{
+			return typeid(TUnderlying) == arg.type();
+		}
 		
 		/**
 		 * \brief Casts argument to its original type and appends to string.
@@ -309,8 +341,12 @@ namespace Dixter
 		 * \param fmt boost::format pointer.
 		 * \param arg Object of type any to be cast and appended.
 		 * */
-		template<typename T>
-		static void append(Format* fmt, const any_t& arg);
+		template<typename TUnderlying>
+		static void append(TFormat* fmt, const TAny& arg)
+		{
+			if (TSelf::checkTypeIdentity<TUnderlying>(arg))
+				( *fmt ) % NInternal::anyCast<TUnderlying>(arg);
+		}
 	
 	public:
 		
@@ -319,49 +355,50 @@ namespace Dixter
 		 * \param message String to which add arguments.
 		 * \param args Arguments to be appended to \c message.
 		 * */
-		static void format(TString& message, Args&& ... args);
+		static void format(TString& message, TArgs&&... args);
 	};
 	
-	/// ClassInfo<> implementation
+	// TClassInfo<> implementation
 	template<class T>
-	std::unique_ptr<ClassInfo<T>> ClassInfo<T>::m_classInstance = nullptr;
+	std::unique_ptr<TClassInfo<T>>
+	TClassInfo<T>::m_classInstance = nullptr;
 	
 	template<class T> TSize
-			ClassInfo<T>::m_size {};
+			TClassInfo<T>::m_size {};
 	
-	template<class T>
-	ClassInfo<T>::ClassInfo()
-			: m_className(typeid(T).name())
+	template<typename TUnderlying>
+	TClassInfo<TUnderlying>::TClassInfo() noexcept
+			: m_className(typeid(TUnderlying).name())
 	{
 		#ifdef HAVE_CXX17
-		if constexpr (not std::is_null_pointer<TClass>::value)
+		if constexpr (not std::is_null_pointer<TUnderlying>::value)
 		#else
 		if (not std::is_null_pointer<T>::m_value)
-			#endif
-			m_size = sizeof(TClass);
+		#endif
+			m_size = sizeof(TUnderlying);
 		else
 			m_size = 0;
 	}
 	
-	template<class T>
-	inline std::unique_ptr<ClassInfo<T>>&
-	ClassInfo<T>::getInstance()
+	template<typename TUnderlying>
+	inline std::unique_ptr<TClassInfo<TUnderlying>>&
+	TClassInfo<TUnderlying>::getInstance()
 	{
 		if (not m_classInstance)
-			m_classInstance = std::unique_ptr<ClassInfo>(new ClassInfo);
+			m_classInstance.reset(new TSelf);
 		
 		return m_classInstance;
 	}
 	
 	template<class T>
-	inline TString ClassInfo<T>::getName()
+	inline TString TClassInfo<T>::getName()
 	{
-		return ClassNameConvertor::getName(getRawName());
+		return TClassNameConvertor::getName(getRawName());
 	}
 	
 	template<class T>
 	inline constexpr const char*
-	ClassInfo<T>::getRawName()
+	TClassInfo<T>::getRawName()
 	{
 		return getInstance()->m_className;
 	}
@@ -369,7 +406,7 @@ namespace Dixter
 	template<class T>
 	template<class Other>
 	inline constexpr bool
-	ClassInfo<T>::compare()
+	TClassInfo<T>::compare()
 	{
 		#ifdef HAVE_CXX17
 		return std::is_same_v<T, Other>;
@@ -380,7 +417,7 @@ namespace Dixter
 	
 	template<class T>
 	inline Int32
-	ClassInfo<T>::compareTo(const ClassInfo<T>& other) noexcept
+	TClassInfo<T>::compareTo(const TClassInfo<T>& other) noexcept
 	{
 		return ( getSize() == other.getSize()
 		         ? 0
@@ -390,8 +427,8 @@ namespace Dixter
 	}
 	
 	template<class T>
-	inline constexpr
-	const TSize& ClassInfo<T>::getSize()
+	inline constexpr const TSize&
+	TClassInfo<T>::getSize()
 	{
 		return getInstance()->m_size;
 	}
@@ -405,53 +442,39 @@ namespace Dixter
 		constexpr static TReturn value = static_cast<TReturn>(TRatio::num)/static_cast<TReturn>(TRatio::den);
 	};
 	
-	inline Real32 StopWatch::elapsed(bool showOnDelete)
+	inline Real32 TStopWatch::elapsed(bool showOnDelete)
 	{
 		m_showOnDelete = showOnDelete;
-		return (SystemClock::now() - m_time).count() * TRatioDivider<std::nano>::value;
+		return (TClock::now() - m_time).count() * TRatioDivider<std::nano>::value;
 	}
 	
-	template<typename... Args>
-	inline void VarArgMessageFormat<Args...>::format(TString& message, Args&& ... args)
+	template<typename... TArgs>
+	inline void TVarArgMessageFormat<TArgs...>::
+	format(TString& message, TArgs&& ... args)
 	{
-		auto __pFmt = new Format(message);
-		std::initializer_list<any_t> __argumentsAny { std::forward<Args>(args)..., sizeof...(Args) };
+		auto __pFmt = std::unique_ptr<TFormat>(new TFormat(message));
+		std::initializer_list<TAny> __argumentsAny { std::forward<TArgs>(args)..., sizeof...(TArgs) };
 		
 		for (auto& __anyArg : __argumentsAny)
 		{
-			append<TString>(__pFmt, __anyArg);
-			append<TUString>(__pFmt, __anyArg);
-			append<const char*>(__pFmt, __anyArg);
-			append<int>(__pFmt, __anyArg);
-			append<double>(__pFmt, __anyArg);
-			append<unsigned int>(__pFmt, __anyArg);
+			TSelf::append<TString>(__pFmt.get(), __anyArg);
+			TSelf::append<TUString>(__pFmt.get(), __anyArg);
+			TSelf::append<const
+				   TByte*>(__pFmt.get(), __anyArg);
+			TSelf::append<Int32>(__pFmt.get(), __anyArg);
+			TSelf::append<Real32>(__pFmt.get(), __anyArg);
+			TSelf::append<UInt32>(__pFmt.get(), __anyArg);
 		}
 		message.clear();
 		message = __pFmt->str();
-		delete __pFmt;
-	}
-	
-	template<typename... Args>
-	template<typename T>
-	inline constexpr
-	bool VarArgMessageFormat<Args...>::checkTypeIdentity(const any_t& anyArg)
-	{
-		return typeid(T) == anyArg.type();
-	}
-	
-	template<typename... Args>
-	template<typename T>
-	inline void VarArgMessageFormat<Args...>::append(Format* fmt, const any_t& arg)
-	{
-		if (checkTypeIdentity<T>(arg))
-			( *fmt ) % Internal::any_cast<T>(arg);
 	}
 } // namespace Dixter
 
 
 #ifdef PERFORMANCE_TEST
-#   define dxTIMER_START StopWatch __stopWatch;
+#   define dxTIMER_START TStopWatch __stopWatch;
 #   define dxTIMER_STOP  printf("\nOverall run time %.3lf s.\n", __stopWatch.elapsed());
+#	define dxTIMER_STOPL printf("\n%s(): Finished for %.3lf s.\n", __FUNCTION__, __stopWatch.elapsed());
 #else
 #   define dxTIMER_START
 #   define TIMER_STOP
