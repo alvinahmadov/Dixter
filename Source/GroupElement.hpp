@@ -74,7 +74,7 @@ namespace Dixter
 	};
 	template<class Element, typename ID = UInt32>
 	class TGroupElement : public IComparable<TGroupElement<Element, ID>>,
-						  public NonCopyable
+						  public TNonCopyable
 	{
 	public:
 		using TDescription = typename TElementProperty<ID>::TDescription;
