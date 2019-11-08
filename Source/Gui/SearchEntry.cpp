@@ -20,7 +20,7 @@
 #include "Gui/SearchEntry.hpp"
 
 using TSearchResult 	= Dixter::OpenTranslate::TDictionary::TSearchResult;
-using FHideCondition 	= std::function<bool(const Dixter::TString&)>;
+using FHideCondition 	= std::function<bool(Dixter::TStringView)>;
 using FRenameCondition 	= std::function<void(Dixter::TString&)>;
 
 namespace Dixter
@@ -33,12 +33,12 @@ namespace Dixter
 			textView->clearAll();
 			for (const auto& __data : fetchedData)
 			{
-				if (hideIf(__data.first))
-					continue;
-				
 				auto __key = __data.first;
 				const auto& __values = __data.second;
 				const int __valuesLen = static_cast<int>(__values.size());
+				
+				if (hideIf(__key))
+					continue;
 				
 				renameIfMatches(__key);
 				textView->insertColumn(0);
@@ -123,7 +123,7 @@ namespace Dixter
 				return;
 			}
 			FHideCondition __hideIf =
-					[](const TString& column) { return (column == "id" or column == "word"); };
+					[](TStringView column) { return (column == "id" or column == "word"); };
 			
 			FRenameCondition __renameIfMatches =
 					[] (TString& column)
