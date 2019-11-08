@@ -41,6 +41,11 @@ namespace Dixter
 	}
 	
 	// TNodeData Implementation
+	TNodeData::TNodeData() noexcept
+			: m_nodes(),
+			  m_attributes()
+	{ }
+	
 	void TNodeData::insertData(const TString& nodeName, const TUString& nodeValue,
 							   const TString& parent,
 							   const TString& attributeName, const TUString& attributeValue)

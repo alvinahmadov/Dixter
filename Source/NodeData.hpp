@@ -9,7 +9,7 @@
 #pragma once
 
 #include <memory>
-#include <list>
+#include <deque>
 #include "Types.hpp"
 
 namespace Dixter
@@ -73,13 +73,13 @@ namespace Dixter
 	class TNodeData final
 	{
 	public:
-		using TNodeList         = std::list<std::shared_ptr<TNode>>;
-		using TAttributeList    = std::list<std::shared_ptr<TAttribute>>;
+		using TNodeList         = std::deque<std::shared_ptr<TNode>>;
+		using TAttributeList    = std::deque<std::shared_ptr<TAttribute>>;
 	public:
 		/**
 		 * Default constructor
 		 **/
-		TNodeData() noexcept = default;
+		TNodeData() noexcept;
 		
 		~TNodeData() noexcept = default;
 		
