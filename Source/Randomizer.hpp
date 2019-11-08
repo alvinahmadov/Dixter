@@ -20,7 +20,7 @@ namespace Dixter
 				typename TEngine = std::default_random_engine,
 				typename TResult = typename TDistribution::result_type
 		>
-		class TRandomGenerator final : public NonCopyable
+		class TRandomGenerator final : public TNonCopyable
 		{
 		public:
 			explicit TRandomGenerator(TResult lowerBound, TResult upperBound)
