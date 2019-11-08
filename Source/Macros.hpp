@@ -27,11 +27,10 @@
 #define dxHIDDEN                dxVISIBILITY("hidden")
 #define dxMAYBE_UNUSED          [[maybe_unused]]
 #define dxNORETURN              [[noreturn]]
-#define dxINTERNAL_NOEXPORT    dxVISIBILITY("hidden")
 
-#ifndef xSTR
-#	define xSTR(str) #str
-#endif //xSTR
+#ifndef dxSTR
+#	define dxSTR(str) #str
+#endif //dxSTR
 
 #ifndef override
 #	define override override
@@ -57,9 +56,11 @@
 #endif
 
 #ifdef HAVE_CXX17
-#define dxMAYBE_UNUSED [[maybe_unused]]
+#define dxMAYBE_UNUSED 	[[maybe_unused]]
+#define dxNORETURN 		[[noreturn]]
 #else
 #define dxMAYBE_UNUSED
+#define dxNORETURN
 #endif
 
 #ifndef dxUNUSED
@@ -100,8 +101,8 @@
                         detail)         std::cerr<<detail<<" "<<error_msg<<std::endl;
 #define printerr(msg)                    printerr_detail(msg, dxEXCEPTION_DETAIL)
 #define snprintfm(msg, format, ...)                                                             \
-                                        TByte* msg = new TByte[255];                            \
-                                        snprintf(msg, 255, format, __VA_ARGS__);                \
+                                        std::unique_ptr<TByte[]> msg(new TByte[255]);           \
+                                        snprintf(msg.get(), 255, format, __VA_ARGS__);          \
 
 
 #endif
