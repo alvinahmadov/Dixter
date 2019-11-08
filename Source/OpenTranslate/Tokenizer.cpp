@@ -30,8 +30,8 @@ namespace Dixter
 				-1  //EOF
 		};
 		
-		namespace AlgoUtils   = Utilities::Algorithms;
-		namespace StringUtils = Utilities::Strings;
+		namespace NAlgoUtils   = Utilities::Algorithms;
+		namespace NStringUtils = Utilities::Strings;
 		
 		#ifdef HAVE_CXX17
 		
@@ -91,16 +91,27 @@ namespace Dixter
 		{ }
 		
 		TToken::TToken(const TToken& o) noexcept
-				: CopyConstructible(o),
+				: TCopyConstructible(o),
 				  m_chunks(o.m_chunks)
 		{ }
 		
-		bool TToken::push(TToken::TConstValue chunk, const TToken::TTokenInfo& info)
+		bool TToken::push(TToken::TConstValue chunk, TToken::TTokenInfo&& info)
 		{
 			if (not chunk.empty())
 			{
 				m_chunks.push_back(chunk);
-				m_info = info;
+				m_info = std::move(info);
+				return true;
+			}
+			return false;
+		}
+		
+		bool TToken::push(TToken::TValue&& chunk, TToken::TTokenInfo&& info)
+		{
+			if (not chunk.empty())
+			{
+				m_chunks.push_back(std::move(chunk));
+				m_info = std::move(info);
 				return true;
 			}
 			return false;
@@ -146,9 +157,9 @@ namespace Dixter
 			return m_info;
 		}
 		
-		void TToken::setInfo(const TToken::TTokenInfo& info)
+		void TToken::setInfo(TToken::TTokenInfo&& info)
 		{
-			m_info = info;
+			m_info = std::move(info);
 		}
 		
 		// Tokenizer implementation
@@ -179,13 +190,13 @@ namespace Dixter
 			__info.punctuations.try_emplace(
 					std::count(sentence.cbegin(), sentence.cend(), s_separator),
 					s_separator);
-			__info.isComplex = AlgoUtils::count<std::initializer_list<TByte>>
+			__info.isComplex = NAlgoUtils::count<std::initializer_list<TByte>>
 					(sentence.cbegin(), sentence.cend(), { ',', ':', '\"' }) > 0;
 			
 			this->readToken(sentence, __wordCount + 1, g_whiteSpace, __chunks);
 			
 			for (const auto& __chunk : __chunks)
-				m_token->push(__chunk, __info);
+				m_token->push(__chunk, std::move(__info));
 		}
 		
 		const TToken::TTokenValueHolder&
@@ -241,7 +252,7 @@ namespace Dixter
 		inline TTokenizer::TValue&
 		TTokenizer::cleanExcluded(TTokenizer::TValue& token, TSize begin, TSize end)
 		{
-			auto __range = StringUtils::range(token, begin, end);
+			auto __range = NStringUtils::range(token, begin, end);
 			return cleanJunk(__range, nonAllowedChars);
 		}
 		

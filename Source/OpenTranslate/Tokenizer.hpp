@@ -26,12 +26,16 @@ namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		class TToken : public CopyConstructible
+		class TToken : public TCopyConstructible
 		{
 		public:
-			struct TTokenInfo final : public CopyConstructible
+			struct TTokenInfo final : public TMoveOnly
 			{
 				TTokenInfo() = default;
+				
+				TTokenInfo(TTokenInfo&& ti) noexcept = default;
+				
+				TTokenInfo& operator=(TTokenInfo&& ti) noexcept = default;
 				
 				TString toString() const;
 				
@@ -59,7 +63,9 @@ namespace Dixter
 			
 			~TToken() noexcept = default;
 			
-			bool push(TConstValue chunk, const TTokenInfo& info);
+			bool push(TConstValue chunk, TTokenInfo&& info);
+			
+			bool push(TValue&& chunk, TTokenInfo&& info);
 			
 			bool isEmpty() const;
 			
@@ -74,7 +80,7 @@ namespace Dixter
 			
 			TTokenInfo& getInfo();
 			
-			void setInfo(const TTokenInfo& info);
+			void setInfo(TTokenInfo&& info);
 			
 			inline auto begin()
 			{
