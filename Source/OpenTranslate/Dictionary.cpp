@@ -21,18 +21,32 @@ namespace Dixter
 	namespace OpenTranslate
 	{
 		TDictionary::TDictionary(TDatabaseManagerPtr manager) noexcept
-				: m_databaseManager(manager)
+				: m_resultMap(),
+				  m_databaseManager(manager)
 		{ }
 		
-		const TDictionary::TSearchResult&
-		TDictionary::search(TWord word, const TString& column, bool fullsearch) noexcept
+		TDictionary::TDictionary(TDictionary&& self) noexcept
+				: m_resultMap(std::move(self.m_resultMap)),
+				  m_databaseManager(std::move(self.m_databaseManager))
+		{ }
+		
+		TDictionary&
+		TDictionary::operator=(TDictionary&& self) noexcept
 		{
-			auto __clause = fullsearch ? column + " LIKE \"" + word.data() + "%\""
-									   : column + "=\"" + word.data() + "\"";
-			
+			return Utilities::
+			compareAssign(this, self, [&]() {
+				m_databaseManager = std::move(self.m_databaseManager);
+			});
+		}
+		
+		const TDictionary::TSearchResult&
+		TDictionary::lookFor(TWord word, const TString& keyColumn, bool fullsearch) noexcept
+		{
 			if (not m_resultMap.empty())
 				m_resultMap.clear();
 			
+			auto __clause = fullsearch ? keyColumn + " LIKE \"" + word.data() + "%\""
+									   : keyColumn + "=\"" + word.data() + "\"";
 			try
 			{
 				const TByte __key = std::toupper(word[0]);
@@ -42,15 +56,15 @@ namespace Dixter
 			{
 				printerr(e.what())
 			}
+			
 			return m_resultMap;
 		}
 		
 		void
-		TDictionary::doSearch(TByte key, TDatabaseManager::TClause&& clause)
+		TDictionary::doSearch(TByte key, TDatabaseManager::TClause clause)
 		{
 			try
 			{
-				std::lock_guard<std::mutex> __lg(m_mutex);
 				auto __resultSetPtr = m_databaseManager->selectColumn(g_indexTable, g_indexColumn);
 				while (__resultSetPtr->next())
 				{
@@ -62,35 +76,31 @@ namespace Dixter
 					}
 				}
 			}
-			catch (sql::SQLException& e)
-			{
-				printerr(e.what())
-			}
+			catch (sql::SQLException& e) { printerr(e.what()) }
 		}
 		
-		void TDictionary::fetch(const TString& table, TDatabaseManager::TClause& clause)
+		void TDictionary::fetch(const TString& table, TDatabaseManager::TClause clause)
 		{
+			std::lock_guard<std::mutex> __lg(m_mutex);
 			auto __cols = m_databaseManager->getColumns(table);
 			auto __resultSetPtr = m_databaseManager->selectColumnsWhere(table, __cols, clause);
 			
 			while (__resultSetPtr->next())
 			{
-				for (TSize i { 0UL }; i < __cols.size(); ++i)
+				for (TSize __i { 0UL }; __i < __cols.size(); ++__i)
 				{
-					auto __colValue = __resultSetPtr->getString(i + 1);
+					auto&& __colValue = __resultSetPtr->getString(__i + 1);
 					
 					if (not __colValue.length())
 						break;
 					
-					if (auto __pos = m_resultMap.find(__cols.at(i));
-							__pos != m_resultMap.end())
+					if (auto __pos = m_resultMap.find(__cols.at(__i)); __pos != m_resultMap.end())
 						__pos->second.push_back(__colValue);
 					else
-						m_resultMap.emplace_hint(
-								m_resultMap.cend(),
-								__cols.at(i), std::vector<TString> { __colValue });
+						m_resultMap.emplace(__cols.at(__i), TSearchResult::mapped_type{ __colValue });
 				}
 			}
 		}
+		
 	} // namespace OpenTranslate
 } // namespace Dixter

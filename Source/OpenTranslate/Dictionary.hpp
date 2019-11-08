@@ -9,9 +9,10 @@
 #pragma once
 
 #include <mutex>
+#include <deque>
 
-#include "Database/Manager.hpp"
 #include "setup.h"
+#include "Database/Manager.hpp"
 
 namespace Dixter
 {
@@ -39,12 +40,10 @@ namespace Dixter
 			return __oss.str();
 		}
 		
-		class TDictionary
+		class TDictionary : public TMovable
 		{
 			using TDatabaseManager      = Database::TManager;
 			using TDatabaseManagerPtr   = std::shared_ptr<TDatabaseManager>;
-			using TStringVector         = std::vector<TString>;
-			using TSearchResult         = std::unordered_multimap<TString, TStringVector>;
 			#ifdef HAVE_CXX17
 			using TWord = TStringView;
 			#else
@@ -52,23 +51,26 @@ namespace Dixter
 			#endif
 		
 		public:
+			using TSearchResult = std::unordered_multimap<TString, std::vector<TString>>;
+		
+		public:
 			explicit TDictionary(TDatabaseManagerPtr manager) noexcept;
+			
+			TDictionary(TDictionary&& self) noexcept;
+			
+			TDictionary& operator=(TDictionary&& rv) noexcept;
 			
 			~TDictionary() noexcept = default;
 			
 			const TSearchResult&
-			search(TWord word, const TString& column, bool fullsearch = false) noexcept;
+			lookFor(TWord word, const TString& keyColumn, bool fullsearch = false) noexcept;
 		
 		protected:
-			void doSearch(TByte key, TDatabaseManager::TClause&& clause);
+			void doSearch(TByte key, TDatabaseManager::TClause clause);
 			
-			void fetch(const TString& table, TDatabaseManager::TClause& clause);
+			void fetch(const TString& table, TDatabaseManager::TClause clause);
 		
 		private:
-			TString m_table;
-			
-			TString m_column;
-			
 			TSearchResult m_resultMap;
 			
 			TDatabaseManagerPtr m_databaseManager;
