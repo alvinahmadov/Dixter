@@ -24,6 +24,7 @@
 #endif
 
 #include "Types.hpp"
+#include "Macros.hpp"
 
 namespace Dixter
 {
@@ -39,6 +40,29 @@ namespace Dixter
 				functor();
 			
 			return *lhs;
+		}
+		
+		template<
+				typename TClass,
+				typename FFunctor
+		>
+		TClass& compareMoveAssign(TClass* lhs, TClass&& rhs, FFunctor&& functor)
+		{
+			if (lhs != std::addressof(rhs))
+				functor();
+			
+			return *lhs;
+		}
+		
+		template<
+				typename TSmartPointer,
+				typename... TArgs
+		>
+		inline void
+		reset(TSmartPointer& smartPointer, TArgs&&... args)
+		{
+			using TElement = typename TSmartPointer::element_type;
+			smartPointer.reset(new TElement(std::forward<TArgs>(args)...));
 		}
 		
 		namespace Algorithms
@@ -135,7 +159,7 @@ namespace Dixter
 			}
 			
 			template<typename TContainer>
-			inline bool __f_ofSameSize(TContainer& containerA, TContainer& containerB)
+			dxHIDDEN inline bool __f_ofSameSize(TContainer& containerA, TContainer& containerB)
 			{
 				return static_cast<TSize>(std::size(containerA)) ==
 						static_cast<TSize>(std::size(containerB));
@@ -145,7 +169,7 @@ namespace Dixter
 					typename TContainerA,
 					typename TContainerB
 			>
-			inline bool __f_ofSameSize(TContainerA& containerA, TContainerB& containerB)
+			dxHIDDEN inline bool __f_ofSameSize(TContainerA& containerA, TContainerB& containerB)
 			{
 				return static_cast<TSize>(std::size(containerA)) ==
 						static_cast<TSize>(std::size(containerB));
@@ -498,12 +522,42 @@ namespace Dixter
 			rangefn(TStringView& stringView, TSize begin, TSize end, FFunctor&& functor)
 			{
 				auto __len = std::min(end, stringView.length());
-				auto __range = functor(TStringView(stringView.data() + begin, __len));
+				auto __range = TStringView(stringView.data() + begin, __len);
+				__range = functor(__range);
 				
 				return __range;
 			}
 			
 			#endif // HAVE_CXX17
+			
+			inline void
+			removePrefix(TString& string, TSize n)
+			{
+				string.erase(0, n);
+			};
+			
+			inline void
+			removeSuffix(TString& string, TSize n)
+			{
+				string.erase(string.length() - n, n);
+			};
+			
+			inline TString
+			range(TString& string, TSize begin, TSize end)
+			{
+				auto __len = std::min(end, string.length());
+				return TString(string.data() + begin, __len);
+			}
+			
+			template<typename FFunctor>
+			inline TString
+			rangefn(TString& string, TSize begin, TSize end, FFunctor&& functor)
+			{
+				auto __len = std::min(end, string.length());
+				auto __range = TString(string.data() + begin, __len);
+				__range = functor(__range);
+				return __range;
+			}
 			
 			template<
 					typename TResultString,
