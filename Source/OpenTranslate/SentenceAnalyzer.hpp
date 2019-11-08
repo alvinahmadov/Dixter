@@ -23,7 +23,7 @@ namespace Dixter
 			using TSentence = const TString&;
 			#endif
 		private:
-			class TTextData final : public NonCopyable
+			class TTextData final : public TNonCopyable
 			{
 			public:
 				TTextData(TSentence sentence);
