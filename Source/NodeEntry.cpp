@@ -13,6 +13,8 @@
 #include "NodeEntry.hpp"
 #include "Exception.hpp"
 
+using TDefaultLockGuard = std::lock_guard<std::mutex>;
+
 namespace Dixter
 {
 	// TNodeEntry implementation
@@ -27,7 +29,7 @@ namespace Dixter
 	
 	bool TNodeEntry::insertEntry(TNodeData* nodeEntry)
 	{
-		std::lock_guard<std::mutex> l(m_mutex);
+		TDefaultLockGuard l(m_mutex);
 		if (m_nodeEntries.find(m_index) == m_nodeEntries.end())
 		{
 			m_nodeEntries.insert({ m_index, std::shared_ptr<TNodeData>(nodeEntry) });
@@ -39,7 +41,7 @@ namespace Dixter
 	
 	bool TNodeEntry::setEntry(const TString& key, const TUString& value)
 	{
-		std::lock_guard<std::mutex> l(m_mutex);
+		TDefaultLockGuard l(m_mutex);
 		bool __found { checkKey(key) };
 		if (__found)
 		{
@@ -57,7 +59,7 @@ namespace Dixter
 	
 	bool TNodeEntry::setEntry(TSize index, const TUString& value)
 	{
-		std::lock_guard<std::mutex> l(m_mutex);
+		TDefaultLockGuard l(m_mutex);
 		if (checkIndex(index))
 		{
 			auto iter = m_nodeEntries.find(index);
@@ -83,7 +85,7 @@ namespace Dixter
 	std::shared_ptr<const TNode>
 	TNodeEntry::findEntry(const TString& key) const
 	{
-		std::lock_guard<std::mutex> l(m_mutex);
+		TDefaultLockGuard l(m_mutex);
 		std::shared_ptr<TNode> __data {};
 		for (const auto& __valuePair : m_nodeEntries)
 			for (std::shared_ptr<TNode>& __node : __valuePair.second->getNodes())
@@ -101,7 +103,7 @@ namespace Dixter
 	std::shared_ptr<const TNode>
 	TNodeEntry::findEntry(const TUString& value) const
 	{
-		std::lock_guard<std::mutex> __lg(m_mutex);
+		TDefaultLockGuard __lg(m_mutex);
 		std::shared_ptr<TNode> __data;
 		for (const auto& __valuePair : m_nodeEntries)
 		{
@@ -120,7 +122,7 @@ namespace Dixter
 	std::shared_ptr<const TNodeData>
 	TNodeEntry::findEntryData(Int32 index) const
 	{
-		std::lock_guard<std::mutex> __lg(m_mutex);
+		TDefaultLockGuard __lg(m_mutex);
 		std::shared_ptr<const TNodeData> __data;
 		if (index > 0)
 		{

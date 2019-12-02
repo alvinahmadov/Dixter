@@ -105,13 +105,9 @@ namespace Dixter
 		{
 			TSize idx {};
 			
-			for (std::pair<TKey, TMapped>& g : *m_group)
-			{
+			for (auto&[__key, __mapped] : *m_group)
 				if (idx++ == index)
-				{
-					return g.second;
-				}
-			}
+					return __mapped;
 		}
 		
 		/**
