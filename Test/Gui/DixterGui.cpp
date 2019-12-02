@@ -15,9 +15,9 @@ int main(int argc, char **argv)
 	int width(1200), height(600);
 	try
 	{
-		auto __confMan = getIniManager({g_guiConfigPath})->accessor();
-		width = __confMan->getValue("window_width");
-		height = __confMan->getValue("window_height");
+		auto __confManIni = getIniManager({g_guiConfigPath});
+		width = __confManIni->accessor()->getValue("window_width");
+		height = __confManIni->accessor()->getValue("window_height");
 	} catch (TException& e)
 	{
 		printerr(e.getMessage())

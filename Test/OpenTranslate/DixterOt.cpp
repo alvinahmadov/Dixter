@@ -1,6 +1,7 @@
 #include <sstream>
 
 #include "Macros.hpp"
+#include "Exception.hpp"
 #include "Utilities.hpp"
 
 inline std::ostream&
@@ -51,10 +52,10 @@ cuhost void otr_tokenizer_test();
 
 #elif defined(NNET_TEST)
 
-#include "ANNet/Neuron.h"
+#include "ANNet/TNeuron.h"
 #include "ANNet/ActivationFunctions"
 
-using namespace dix::nnet;
+using namespace dix::NNet;
 
 void nnet_test(int inputDim);
 
@@ -235,12 +236,12 @@ void nnet_test(int inputDim)
 {
 	using namespace dix;
 	
-	dxMAKE_UNIQUE(vector<double>, inputs);
-	Dixter::nnet::generateRandomData(inputDim, inputs);
+	inputs = dxMAKE_UNIQUE(vector<double>);
+	Dixter::NNet::generateRandomData(inputDim, inputs);
 	
 	IActivation* activation = new HyperTangensActivation();
 	
-	auto neuron = new Neuron(inputDim, activation);
+	auto neuron = new TNeuron(inputDim, activation);
 	neuron->setInputs(*inputs);
 	neuron->process();
 
