@@ -58,11 +58,6 @@ namespace Dixter
 	{
 	}
 	
-	const char* UnicodeStringWrapper::c_str() const
-	{
-		return asUTF8().c_str();
-	}
-	
 	std::string UnicodeStringWrapper::asUTF8() const
 	{
 		std::string sc { };
@@ -72,7 +67,8 @@ namespace Dixter
 	
 	QString UnicodeStringWrapper::asCustom() const
 	{
-		auto customString = QString::fromStdU16String(getBuffer());
+		auto buffer = asUTF8();
+		auto customString = QString::fromStdString(buffer);
 		return customString;
 	}
 	

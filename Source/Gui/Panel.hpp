@@ -8,27 +8,27 @@
  */
 #pragma once
 
-#include "Constants.hpp"
-
 #include <QWidget>
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		class Panel : public QWidget
+		class TOptionBox;
+		
+		class APanel : public QWidget
 		{
 		Q_OBJECT
-		public:
-			explicit Panel(QWidget* parent, const QSize& size = QSize(200, 200),
-			               const QString& name = "Panel");
-			
-			~Panel() dxDECL_OVERRIDE;
-			
-			// virtual QWidget* getWidget(WidgetID id) = 0;
-		
 		protected:
-			virtual void connectEvents();
+			using TOptionBoxPtr = std::shared_ptr<TOptionBox>;
+		protected:
+			APanel(QWidget* parent, const QSize& size = QSize(200, 200));
+			
+			virtual ~APanel() = default;
+		
+			virtual void init() = 0;
+			
+			virtual void connectEvents() = 0;
 		};
 	}
 }

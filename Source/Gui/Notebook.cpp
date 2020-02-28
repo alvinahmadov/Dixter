@@ -16,47 +16,41 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		Notebook::Notebook(QWidget* parent, const QString& name)
+		TNotebook::TNotebook(QWidget* parent, const QString& name)
 				: QTabWidget(parent)
 		{
 			setObjectName(name);
 			connectEvents();
 		}
 		
-		Notebook::~Notebook()
-		{ }
-		
-		void Notebook::addPage(QWidget* page, const QString& title)
+		void TNotebook::addPage(QWidget* page, const QString& title)
 		{
 			addTab(page, title);
 		}
 		
-		void Notebook::resizeEvent(QResizeEvent *resizeEvent)
+		void TNotebook::resizeEvent(QResizeEvent* resizeEvent)
 		{
 			for (int index = 0; index < count(); ++index)
-			{
 				widget(index)->setFixedWidth(resizeEvent->size().width());
-			}
 		}
 		
-		void Notebook::connectEvents()
-		{
-		}
-		
-		Panel* Notebook::getPage(int pageNum)
-		{
-			int index { };
-			for (const auto* child : children())
-			{
-				if (index == pageNum)
-				{
-					return const_cast<Panel*>(static_cast<const Panel*>(child));
-				}
-				++index;
-			}
-		}
-		
-		int Notebook::getPageNumber(QWidget*) const
+		void TNotebook::connectEvents()
 		{ }
-	}
-}
+		
+		APanel*
+		TNotebook::getPage(int pageNum)
+		{
+			int __index {};
+			for (const auto* __child : children())
+			{
+				if (__index == pageNum)
+					return const_cast<APanel*>(static_cast<const APanel*>(__child));
+				++__index;
+			}
+			return nullptr;
+		}
+		
+		int TNotebook::getPageNumber(QWidget*) const
+		{ }
+	} // namespace Gui
+} // namespace Dixter

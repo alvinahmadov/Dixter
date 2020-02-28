@@ -6,188 +6,159 @@
  *  License-Identifier: MIT License
  *  See README.md for more information.
  */
- 
+
 #pragma once
 
-
-#include <list>
-#include <boost/log/core.hpp>
-#include <boost/log/common.hpp>
-#include <StringView.hpp>
-
+#include <set>
 #include "Commons.hpp"
 
+#ifdef HAVE_CXX17
+
+#include <optional>
+
+#else
+
+#include <boost/optional.hpp>
+
+#endif
 
 namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		class TokenData;
-		
-		class Tokenizer;
-		
-		struct TokenInfo;
-		
-		std::ostream& operator<<(std::ostream& out, const std::vector<TokenData*>* pTokens);
-		
-		std::ostream& operator<<(std::ostream& out, const TokenInfo& info);
-		
-		std::ostream& operator<<(std::ostream& out, const Tokenizer* tokenizer);
-		
-		string_view_t range(const string_view_t& stringView, size_t begin, size_t end);
-		
-		enum class TokenMode
+		class TToken : public TCopyConstructible
 		{
-			kNone,
-			kComplex,
-			kMultiLine,
-			kSimple
-		};
-		
-		string_t tokenModeToString(TokenMode mode);
-		
-		struct TokenInfo : public CopyConstructible
-		{
-			ui32 wordCount = 0;
-			ui32 lines = 0;
-			ui32 punctuationChars = 0;
-			std::vector<i32> punctPositions;
-		};
-		
-		template<typename T>
-		struct Token
-		{
-			using pointer_t = T*;
-			using ref_t = T&;
-			
-			Token()
-					: tokens { new std::list<pointer_t>() },
-					  tokenInfo { }
-			{ }
-			
-			~Token()
+		public:
+			struct TTokenInfo final : public TMoveOnly
 			{
-				SAFE_RELEASE(tokens)
-			}
-			
-			std::list<pointer_t>* tokens;
-			
-			TokenInfo tokenInfo;
-		};
+				TTokenInfo() = default;
+				
+				TTokenInfo(TTokenInfo&& ti) noexcept = default;
+				
+				TTokenInfo& operator=(TTokenInfo&& ti) noexcept = default;
+				
+				TString toString() const;
+				
+				bool isComplex;
+				UInt32 wordCount;
+				UInt32 punctuationChars;
+				std::vector<Int32> punctPositions;
+				std::unordered_map<Int32, TByte> punctuations;
+			};
 		
-		class TokenData
-		{
 		public:
-			using value_type = string_view_t;
-			using token_type = Token<value_type>::pointer_t;
+			#ifdef HAVE_CXX17
+			using TValue            = TStringView;
+			using TConstValue       = TValue;
+			#else
+			using TValue            = TString;
+			using TConstValue       = const TValue&;
+			#endif
+			using TTokenValueHolder = std::vector<TValue>;
 		
 		public:
-			TokenData();
+			TToken() noexcept;
 			
-			TokenData(value_type* part);
+			explicit TToken(const TToken& o) noexcept;
 			
-			~TokenData();
+			~TToken() noexcept = default;
 			
-			bool push(const value_type& chunk, const TokenInfo& info);
+			bool push(TConstValue chunk, TTokenInfo&& info);
+			
+			bool push(TValue&& chunk, TTokenInfo&& info);
 			
 			bool isEmpty() const;
 			
-			size_t size() const;
+			TSize size() const;
 			
-			const std::list<token_type>* getChunks() const;
+			const TTokenValueHolder&
+			getChunks() const;
 			
-			std::list<token_type>* getChunks();
+			TConstValue getChunk(TSize index) const;
 			
-			const value_type& getChunk(size_t index) const;
+			const TTokenInfo& getInfo() const;
 			
-			value_type& getChunk(size_t index);
+			TTokenInfo& getInfo();
 			
-			const value_type* getPart() const;
+			void setInfo(TTokenInfo&& info);
 			
-			value_type* getPart();
+			inline auto begin()
+			{
+				return m_chunks.begin();
+			}
 			
-			const TokenInfo& getInfo() const;
+			inline auto end()
+			{
+				return m_chunks.end();
+			}
 			
-			TokenInfo& getInfo();
+			inline const auto cbegin() const
+			{
+				return m_chunks.cbegin();
+			}
 			
-			void setInfo(const TokenInfo& info);
+			inline const auto cend() const
+			{
+				return m_chunks.cend();
+			}
 		
-		protected:
-			TokenMode m_mode;
-			
-			value_type* m_token;
-			
-			Token<value_type>* m_chunks;
+		private:
+			TTokenValueHolder m_chunks;
+			TTokenInfo m_info;
 		};
+		
+		std::ostream& operator<<(std::ostream& out, const TToken::TTokenInfo& info);
 		
 		/** @class Tokenizer
 		 * @brief Tokenizer is a class which
 		 * */
-		class Tokenizer
+		class TTokenizer
 		{
-			friend std::ostream& operator<<(std::ostream& out, const Tokenizer* tokenizer);
-		
+			using TValue             = TToken::TValue;
+			using TValueVector       = std::vector<TValue*>&;
+			using TConstValue        = TToken::TConstValue;
+			using TTokenValueHolder  = TToken::TTokenValueHolder;
 		public:
-			Tokenizer();
+			TTokenizer(TConstValue sentence = "") noexcept;
 			
-			~Tokenizer();
+			~TTokenizer() noexcept;
 			
 			/** @brief
 			 *
 			 * */
-			void tokenize(const string_t& sentence);
+			void tokenize(TConstValue sentence);
 			
-			/** @brief A sentence is multiline when it has more than one complex or/and simple parts and
-			 * each separated by terminating dots
-			 * */
-			bool isMultiline(const string_view_t* token, ui32& lineCount);
+			const TTokenValueHolder&
+			getTokens() const;
 			
-			/** @brief Test and count a complex parts of sentence.
-			 * A complex part is when one sentence is separated by different meanings
-			 * @returns A number of complex parts
-			 * */
-			bool isComplex(const string_view_t* token, ui32& complexCount);
+			static UInt32 countWords(TConstValue token);
 			
-			static ui32 countWords(const string_view_t* token);
-			
-			const std::vector<TokenData*>* getTokenData() const;
+			TString toString() const;
 		
 		protected:
-			/** @addtogroup mutating
-			 *  @brief Divide a multiline token to small parts
-			 *  @param tokens A token to analyse. After operation token
-			 * */
-			bool tokenizeLines(const string_view_t* tokens);
+			static void readToken(TConstValue token, const Int64& maxCount,
+			                      TByte sep, TTokenValueHolder& chunks);
 			
-			bool tokenizeComplex(const string_view_t* token);
+			static TValue& cleanExcluded(TValue& token, TSize begin, TSize end);
 			
-			bool tokenizeWords(const string_view_t* token);
-			
-			void readToken(const string_view_t* token,
-			               char delim, const i64& maxCount,
-			               std::vector<string_view_t*>& tokens);
-			
-			static string_view_t& trimExcluded(string_view_t& token);
-			
-			static string_view_t& trimExcluded(string_view_t&& token);
-			
-			static string_view_t& trim(string_view_t& token, const int* charList = nullptr);
+			static TValue& cleanJunk(TValue& token, const int* charList = nullptr);
 			
 			/** @brief Test for containing an char element in token
 			 * @param token A token to be tested
 			 * @param point A char point to count for
 			 * @returns Number of char points in the token
 			 * */
-			static ui32 contains(const string_view_t* token, std::function<bool(string_view_t::reference)>&& predicate);
+			static UInt32 contains(TConstValue token,
+			                       std::function<bool(TValue::const_reference)>&& predicate);
 			
-			static bool empty(string_view_t::const_pointer value);
+			static bool empty(TValue::const_iterator value);
+		
+		public:
+			static const TByte s_delimiter;
+			static const TByte s_separator;
 		
 		private:
-			TokenMode m_mode;
-			
-			string_view_t* m_token;
-			
-			std::vector<TokenData*>* m_tokenData;
+			TToken* m_token;
 		};
-	}
-}
+	} // namespace OpenTranslate
+} // namespace Dixter

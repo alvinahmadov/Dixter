@@ -1,209 +1,249 @@
-
+/**
+ *  Copyright (C) 2015-2019
+ *  Author Alvin Ahmadov <alvin.dev.ahmadov@gmail.com>
+ *
+ *  This file is part of Dixter Project
+ *  License-Identifier: MIT License
+ *  See README.md for more information.
+ */
+ 
+#include "Constants.hpp"
 #include "QueryBuilder.hpp"
 #include "Utilities.hpp"
+#include "Value.hpp"
 
 namespace Dixter
 {
 	namespace Database
 	{
-		QueryBuilder::QueryBuilder()
-				: m_query {}
-		{}
+		namespace AlgoUtils	= Utilities::Algorithms;
+		using TLockGuard	= std::lock_guard<std::mutex>;
+		using TQueryStream	= std::ostringstream;
 		
-		QueryBuilder::~QueryBuilder()
-		{}
+		TQueryBuilder::TQueryBuilder() noexcept
+				: m_query()
+		{ }
 		
-		const string_t&
-		QueryBuilder::describeQuery(const string_t& tableName)
+		TQueryBuilder::TQuery
+		TQueryBuilder::describeQuery(const TString& tableName)
 		{
-			m_query.clear();
-			m_query = "DESCRIBE " + tableName;
-			return m_query;
-		}
-		
-		const string_t&
-		QueryBuilder::dropQuery(const string_t& tableName)
-		{
-			//if (!m_query.empty())
-			m_query.clear();
-			m_query = "DROP TABLE IF EXISTS " + tableName;
-			return m_query;
-		}
-		
-		const string_t&
-		QueryBuilder::createQuery(const string_t& tableName, const std::list<Value*>& dbValueList, size_t& parametersNum)
-		{
-			string_t primaryKey {};
-			m_query.clear();
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream {};
 			
-			m_query += "CREATE TABLE " + tableName + " (";
-			for (const auto& value : dbValueList)
+			__queryStream << "DESCRIBE " << tableName;
+			
+			return this->resetQuery(__queryStream);
+		}
+		
+		TQueryBuilder::TQuery
+		TQueryBuilder::dropQuery(const TString& tableName)
+		{
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream {};
+			
+			__queryStream << "DROP TABLE IF EXISTS " << tableName;
+			
+			return this->resetQuery(__queryStream);
+		}
+		
+		TQueryBuilder::TQuery
+		TQueryBuilder::createQuery(const TString& tableName,
+								   const std::list<TValue*>& dbValueList,
+								   TSize& parametersNum)
+		{
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream {};
+			
+			__queryStream << "CREATE TABLE " << tableName << " (";
+			
+			for (const auto& __value : dbValueList)
 			{
-				bool autoInc {value->isAutoIncrement()};
-				bool null {value->isNull()};
-				bool primary {value->isPrimaryKey()};
-				m_query += " " + value->getValueName() + " " + value->getTypeString();
-				if (value->getSize() != 0)
-					m_query += " (" + std::to_string(value->getSize()) + ") ";
-				if (autoInc)
-					m_query += " AUTO_INCREMENT";
-				if (null)
-					m_query += " NULL";
+				bool __isAutoIncr(__value->isAutoIncrement());
+				bool __isNull(__value->isNull());
+				bool __isPrimaryKey { __value->isPrimaryKey() };
+				
+				__queryStream << " " << __value->getValueName() << " " << __value->getTypeString();
+				
+				if (__value->getSize() != 0)
+					__queryStream << " (" << std::to_string(__value->getSize()) << ") ";
+				
+				if (__isAutoIncr)
+					__queryStream << " AUTO_INCREMENT";
+				
+				if (__isNull)
+					__queryStream << " NULL";
 				else
-					m_query += " NOT NULL";
-				if (primary)
-					primaryKey += ", PRIMARY KEY (" + value->getValueName() + ")";
-				++parametersNum;
-				if (parametersNum != dbValueList.size())
-					m_query.push_back(',');
+					__queryStream << " NOT NULL";
+				
+				if (__isPrimaryKey)
+					__queryStream << ", PRIMARY KEY (" << __value->getValueName() << ")";
+				
+				if (++parametersNum != dbValueList.size())
+					__queryStream << ',';
 			}
-			m_query += primaryKey + ')';
-			return m_query;
-		}
-		
-		const string_t&
-		QueryBuilder::insertQuery(const string_t& tableName, const size_t& parametersNum)
-		{
-			string_t params {};
-			size_t index {};
-			m_query.clear();
-			m_query += "INSERT INTO " + tableName + " VALUES (";
-			Utilities::Algorithms::forEach(index, parametersNum, [ & ](size_t&)
-			{
-				params += '?';
-				if (index != parametersNum - 1)
-					params += ", ";
-			});
-			m_query += params + ')';
-			return m_query;
-		}
-		
-		const string_t&
-		QueryBuilder::selectQuery(const std::vector<string_t>& tables, const std::vector<string_t>& columns,
-		                          ui32 indexColumn, ui32 leftTableIndex)
-		{
-			m_query.clear();
-			m_query += "SELECT ";
+			__queryStream << ')';
 			
-			for (ui32 index = 0; index < columns.size(); index++)
+			return this->resetQuery(__queryStream);
+		}
+		
+		TQueryBuilder::TQuery
+		TQueryBuilder::insertQuery(const TString& tableName, const TSize& parametersNum)
+		{
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream {};
+			
+			TSize __index {};
+			__queryStream << "INSERT INTO " << tableName << " VALUES (";
+			AlgoUtils::forEach(
+					__index, parametersNum,
+					[ & ](TSize&)
+					{
+						__queryStream << '?';
+						if (__index != parametersNum - 1)
+							__queryStream << ", ";
+					});
+			__queryStream << ')';
+			
+			return this->resetQuery(__queryStream);
+		}
+		
+		TQueryBuilder::TQuery
+		TQueryBuilder::selectQuery(const TStringVector& tables, const TStringVector& columns,
+								   UInt32 indexColumn, UInt32 leftTableIndex)
+		{
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream {};
+			
+			__queryStream << "SELECT ";
+			
+			for (UInt32 __index = 0; __index < columns.size(); ++__index)
 			{
-				if (index != indexColumn)
-					m_query.append(columns.at(index));
-				if (index != columns.size() - 1 && index != indexColumn)
-					m_query.push_back(',');
-				m_query.push_back(' ');
+				if (__index != indexColumn)
+					__queryStream << columns.at(__index);
+				if (__index != columns.size() - 1 and __index != indexColumn)
+					__queryStream << ',';
+				__queryStream << g_whiteSpace;
 			}
-			m_query += " FROM " + tables.at(leftTableIndex);
+			
+			__queryStream << " FROM " << tables.at(leftTableIndex);
 			if (tables.size() > 1)
 			{
-				m_query += " JOIN (";
-				for (ui32 i = 0; i < tables.size(); i++)
+				__queryStream << " JOIN (";
+				for (UInt32 __index = 0; __index < tables.size(); ++__index)
 				{
-					if (i != leftTableIndex)
-						m_query += tables.at(i);
+					if (__index != leftTableIndex)
+						__queryStream << tables.at(__index);
 					
-					if (i != tables.size() - 1 && i != leftTableIndex)
-						m_query += ", ";
+					if (__index != tables.size() - 1 and __index != leftTableIndex)
+						__queryStream << ", ";
 				}
-				m_query += ") ON ";
+				__queryStream << ") ON ";
 			}
-			for (ui32 i {}; i < tables.size(); i++)
+			
+			for (UInt32 __i = 0; __i < tables.size(); ++__i)
 			{
-				if (tables.at(leftTableIndex) != tables.at(i) && leftTableIndex != i)
+				if (tables.at(leftTableIndex) != tables.at(__i) and leftTableIndex != __i)
 				{
-					m_query += tables.at(leftTableIndex) + '.'
-					           + columns.at(indexColumn) + '='
-					           + tables.at(i) + '.'
-					           + columns.at(indexColumn);
-					if (i != tables.size() - 1)
-						m_query.append(" AND ");
+					__queryStream << tables.at(leftTableIndex) << '.'
+								  << columns.at(indexColumn) << '='
+								  << tables.at(__i) << '.'
+								  << columns.at(indexColumn);
+					if (__i != tables.size() - 1)
+						__queryStream << " AND ";
 				}
 			}
-			return m_query;
+			
+			return this->resetQuery(__queryStream);
 		}
 		
-		const string_t&
-		QueryBuilder::selectQuery(const string_t& table, const string_t& column, string_t clause)
+		TQueryBuilder::TQuery
+		TQueryBuilder::selectQuery(const TString& table, const TString& column, TClause clause)
 		{
-			m_query.clear();
-			m_query += "SELECT ";
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream;
 			
-			m_query += column;
-			m_query += " FROM " + table;
+			__queryStream << "SELECT " << column << " FROM " << table;
 			
-			if (!clause.empty())
-			{
-				m_query += " WHERE ";
-				m_query += clause;
-			}
+			if (not clause.empty())
+				__queryStream << " WHERE " << clause;
 			
-			return m_query;
+			return this->resetQuery(__queryStream);
 		}
 		
-		const string_t&
-		QueryBuilder::selectQuery(const string_t& table, const std::vector<string_t>& columns, ui32 indexColumn)
+		TQueryBuilder::TQuery
+		TQueryBuilder::selectQuery(const TString& table, const TStringVector& columns, UInt32 indexColumn)
 		{
-			m_query.clear();
-			m_query += "SELECT ";
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream;
 			
-			for (ui32 index = 0; index < columns.size(); index++)
+			__queryStream << "SELECT ";
+			
+			for (UInt32 index = 0; index < columns.size(); index++)
 			{
 				if (index != indexColumn)
-					m_query.append(columns.at(index));
-				if (index != columns.size() - 1 && index != indexColumn)
-					m_query.push_back(',');
-				m_query.push_back(' ');
+					__queryStream << columns.at(index);
+				if (index != columns.size() - 1 and index != indexColumn)
+					__queryStream << ',';
+				__queryStream << g_whiteSpace;
 			}
-			m_query += " FROM " + table;
 			
-			return m_query;
+			__queryStream << " FROM " << table;
+			
+			return this->resetQuery(__queryStream);
 		}
 		
-		const string_t&
-		QueryBuilder::selectQuery(const string_t& table, const std::vector<string_t>& columns, string_t clause)
+		TQueryBuilder::TQuery
+		TQueryBuilder::selectQuery(const TString& table, const TStringVector& columns, TClause clause)
 		{
-			m_query.clear();
-			m_query += "SELECT ";
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream;
+			uint index {};
+			
+			__queryStream << "SELECT ";
 			
 			for (const auto& column : columns)
-			{
-				m_query += column + ',';
-			}
-			m_query.pop_back();
-			m_query.push_back(' ');
+				__queryStream << column << ( index++ == columns.size() - 1 ? "" : ", " );
 			
-			m_query += " FROM " + table + ' ';
+			__queryStream << g_whiteSpace << " FROM " << table << g_whiteSpace << clause;
 			
-			m_query += clause;
-			return m_query;
+			return this->resetQuery(__queryStream);
 		}
 		
-		const string_t&
-		QueryBuilder::selectLikeQuery(const std::vector<string_t>& tables, const std::vector<string_t>& columns,
-		                              const string_t& text, ui32 comparatorColumn, ui32 leftTableIndex, ui32 fieldIndex,
-		                              bool asRegex)
+		TQueryBuilder::TQuery
+		TQueryBuilder::selectLikeQuery(const TStringVector& tables, const TStringVector& columns,
+									   const TString& text, UInt32 comparatorColumn,
+									   UInt32 leftTableIndex, UInt32 fieldIndex, bool asRegex)
 		{
-			string_t __searchText {};
-			if (asRegex)
-				__searchText += '%';
-			__searchText += text + '%';
-			selectQuery(tables, columns, comparatorColumn, leftTableIndex);
-			m_query += " WHERE " + columns.at(fieldIndex) + " LIKE \"" + __searchText.c_str() + "\"";
-			return m_query;
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream;
+			
+			this->selectQuery(tables, columns, comparatorColumn, leftTableIndex);
+			__queryStream << " WHERE " << columns.at(fieldIndex)
+						  << " LIKE \"" << ( asRegex ? "\'%" : "" )
+						  << text << '%' << "\"";
+			
+			return this->resetQuery(__queryStream);
 		}
 		
-		const string_t&
-		QueryBuilder::updateQuery(const string_t& tableName, const std::list<Value*>& dbValueList)
+		TQueryBuilder::TQuery
+		TQueryBuilder::updateQuery(const TString& tableName, const std::list<TValue*>& dbValueList)
 		{
-			string_t params {};
+			TLockGuard __lockGuard(m_mutex);
+			TQueryStream __queryStream;
+			
+			for (const auto& __value : dbValueList)
+				__queryStream << "UPDATE " << tableName
+							  << " SET " << __value->getValueName() << "=, ";
+			
+			return this->resetQuery(__queryStream);
+		}
+		
+		inline TString&
+		TQueryBuilder::resetQuery(std::ostringstream& stream)
+		{
 			m_query.clear();
-			
-			for (const auto& value : dbValueList)
-			{
-				m_query += "UPDATE " + tableName + " SET ";
-				m_query += value->getValueName() + "=, ";
-			}
+			m_query = stream.str();
 			return m_query;
 		}
-	}
-}
+	} // namespace Database
+} // namespace Dixter

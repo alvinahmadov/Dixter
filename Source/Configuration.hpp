@@ -9,58 +9,23 @@
  
 #pragma once
 
-#include <set>
 #include <map>
-#include <list>
+#include <unordered_map>
+#include <set>
 #include <mutex>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include "Types.hpp"
-#include "Constants.hpp"
-#include "MethodCallback.hpp"
-#include "Node.hpp"
-#include "Utilities.hpp"
+#include "Commons.hpp"
 
-#define DEBUG_CONFIG 0
 
 namespace Dixter
 {
-	struct Node;
-	class NodeData;
-	struct ConfigurationInterface;
-	
-	using PropertyTree          = boost::property_tree::basic_ptree<string_t, ustring_t>;
-	using ConfigurationProperty = std::map<string_t, ConfigurationInterface*>;
-	
-	/**
-	 * \namespace Dixter
-	 * \brief Trigger for exception catching for NodeEntry class
-	 */
-	enum class ExceptionCase
-	{
-		kThrow,
-		kDontThrow
-	};
-	
-	/**
-	 * \brief Global configuration data paths for application
-	 * */
-	const auto g_ConfigPath = std::list<string_t> {
-			kLangConfigPath, kVoiceConfigPath, kPanelConfigPath
-	};
-	
-	/**
-	 * \brief Enum that defines which configuration reader/writer to use.
-	 * */
-	enum class ConfigurationType
-	{
-		kConfigIni,
-		kConfigXml,
-		kConfigJson,
-		kConfigNone
-	};
+	struct TNode;
+	class TNodeData;
+	class TNodeEntry;
+	struct IConfiguration;
 	
 	/**
 	 * \author Alvin Ahmadov
@@ -68,8 +33,13 @@ namespace Dixter
 	 * \struct ConfigurationInterface
 	 * \brief Interface for Configuration readers/writers.
 	 * */
-	struct ConfigurationInterface
+	struct IConfiguration
 	{
+		using PropertyTree          = boost::property_tree::basic_ptree<TString, TUString>;
+		using PropertyTreePtr       = std::unique_ptr<PropertyTree>;
+		using NodeEntryPtr       	= std::shared_ptr<TNodeEntry>;
+		using ConfigurationProperty = std::unordered_map<TString, std::shared_ptr<IConfiguration>>;
+		
 		/**
 		 * \interface ConfigurationInterface
 		 * \brief Abstract method for loading data
@@ -83,154 +53,60 @@ namespace Dixter
 		 * to configuration file.
 		 * */
 		virtual void save() = 0;
+		
+		virtual void set(const TString& key, const TUString& value) = 0;
+		
+		virtual void keys(std::list<TString>&) const = 0;
+		
+		virtual void get(const TString& key, std::vector<TUString>& values) const = 0;
+		
+		virtual TUString get(const TString& key, const TUString& byValue) const = 0;
+		
+		virtual TUString get(const TString& key) const = 0;
+		
+		virtual ~IConfiguration() = default;
 	};
 	
 	/**
-	 * \author Alvin Ahmadov
-	 * \namespace Dixter
-	 * \brief Iterface class to store data configuration data.
-	 *
-	 * Stores data read from configuration reader/writer in an
-	 * indexed map, to simplify data access.
+	 * \brief Enum that defines which configuration reader/writer to use.
 	 * */
-	class NodeEntry
+	enum class EConfiguration
 	{
-	public:
-		using Entry = std::map<i32, NodeData*>;
-	public:
-		/**
-		 * \class NodeEntry
-		 * \brief ctor.
-		 * \param throw_ If data to return is null or empty,
-		 * class methods will throw exceptions.
-		 * */
-		NodeEntry(ExceptionCase throw_ = ExceptionCase::kThrow);
-		
-		~NodeEntry();
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Inserts data entry.
-		 * \param nodeEntry  Entry to insert.
-		 * \returns true if data was inserted, false otherwise.
-		 * */
-		bool insertEntry(NodeData* nodeEntry);
-		
-		bool setEntry(const string_t& key, const ustring_t& value);
-		
-		bool setEntry(size_t index, const ustring_t& value);
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Removes data entry.
-		 * \returns true if data was removed, false otherwise.
-		 * */
-		bool removeEntry();
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Find matching entry by node name.
-		 * \param key Node name as a key to find corresponding node.
-		 * \returns Node.
-		 *
-		 * Depending on \c m_throw value throws exception if node
-		 * haven't found else returns null.
-		 * */
-		const Node* findEntry(const string_t& key) const;
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Find matching entry by node value.
-		 * \param value Node value as a key to find corresponding
-		 * node.
-		 * \returns Node.
-		 *
-		 * Depending on \c m_throw value throws exception if node
-		 * haven't found else returns null.
-		 * */
-		const Node* findEntry(const ustring_t& value) const;
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Find node data by index.
-		 * \param index Index of data.
-		 * \returns Node Data.
-		 *
-		 * Depending on \c m_throw value throws exception if
-		 * node data haven't found else returns null.
-		 * */
-		const std::shared_ptr<NodeData> findEntryData(i32 index) const;
-		
-		i32 findEntryIndex(const string_t& key) const;
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Get number of data stored in NodeEntry.
-		 * \returns Size of stored data.
-		 * */
-		size_t getSize() const;
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Calls NodeData methods on stored data
-		 * with arguments.
-		 * \tparam R Return type of NodeData method.
-		 * \tparam Args Argument types for NodeData method.
-		 * \param method NodeData method to call.
-		 * \param args Arguments of NodeData method.
-		 * */
-		template<typename R, typename ... Args>
-		void forEach(R(NodeData::*method)(Args...), Args ... args);
-		
-		/**
-		 * \class NodeEntry
-		 * \brief Get all entries.
-		 * \returns Entries.
-		 * */
-		const Entry* get() const;
-		
-		Entry* operator()();
-		
-		const NodeData* operator[](i32 index) const;
-	
-	private:
-		bool checkKey(const string_t& key) const;
-		
-		bool checkIndex(size_t index) const;
-	
-	private:
-		i32 m_index;
-		ExceptionCase m_throw;
-		Entry* m_nodeEntries;
-		mutable std::mutex m_mutex;
+		None,
+		INI,
+		XML,
+		JSON
 	};
-	
-	
-	class ConfigurationManager;
 	
 	/**
 	 * @brief Class for reading and storing settings from ini file
 	 * */
-	class INIConfiguration : public ConfigurationInterface
+	class TConfigurationINI final : public IConfiguration,
+									public TMoveOnly
 	{
-		friend class ConfigurationManager;
-	
 	public:
-		explicit INIConfiguration(const string_t& file);
+		explicit TConfigurationINI(const TString& file) noexcept;
 		
-		~INIConfiguration();
+		virtual ~TConfigurationINI() noexcept override = default;
 		
-		void load() dxDECL_OVERRIDE;
+		void load() override;
 		
-		void save() dxDECL_OVERRIDE;
+		void save() override;
 		
-		void getKey(std::list<string_t>&) const;
+		void set(const TString& key, const TUString& value) override;
 		
-		ustring_t getValue(const string_t& key) const;
+		void keys(std::list<TString>&) const override;
+		
+		TUString get(const TString& key) const override;
+		
+		void get(const TString& key, std::vector<TUString>& values) const override;
+		
+		TUString get(const TString& key, const TUString& byValue) const override;
 	
 	private:
-		std::list<Shared<NodeData>> m_configurationList;
-		Unique<PropertyTree> m_propertyTree;
+		TString m_file;
+		PropertyTreePtr m_propertyTree;
+		NodeEntryPtr m_entries;
 	};
 	
 	/**
@@ -238,29 +114,28 @@ namespace Dixter
 	 * \implements ConfigurationInterface
 	 * \brief Class for reading and storing settings from xml file
 	 * */
-	class XMLConfiguration : public ConfigurationInterface
+	class TConfigurationXML final : public IConfiguration,
+									public TMoveOnly
 	{
-		friend class ConfigurationManager;
-	
 	public:
 		/**
 		 * \class XMLConfiguration
 		 * \brief ctor.
 		 * \param file Absolute path to XML configuration xml file.
 		 * */
-		explicit XMLConfiguration(const string_t& file);
+		explicit TConfigurationXML(const TString& file) noexcept;
 		
 		/**
 		 * \class XMLConfiguration
 		 * \brief dtor.
 		 * */
-		~XMLConfiguration();
+		virtual ~TConfigurationXML() noexcept override = default;
 		
 		/**
 		 * \class XMLConfiguration
 		 * \brief Loads data from configuration file to memory.
 		 * */
-		void load() dxDECL_OVERRIDE;
+		void load() override;
 		
 		/**
 		 * \class XMLConfiguration
@@ -268,79 +143,90 @@ namespace Dixter
 		 * \note Not implemented for now.
 		 * \throws NotImplementedException
 		 * */
-		void save() dxDECL_OVERRIDE;
+		void save() override;
 		
-		void getKey(std::list<string_t>&) const;
+		void set(const TString& key, const TUString& value) override;
 		
-		/*
-		UStringVector GetAttributes(const ustring_t &attributeName) const;
+		void keys(std::list<TString>&) const override;
 		
-		ustring_t GetAttributeValue(const ustring_t &nodeValue, const ustring_t &attributeName) const;
+		void get(const TString& key, std::vector<TUString>& values) const override;
 		
-		ustring_t GetAttributeValueBySibling(const ustring_t &siblingValue, const ustring_t &nodeName);
-		*/
+		TUString get(const TString& key) const override;
+		
+		TUString get(const TString& key, const TUString& byValue) const override;
+		
 	private:
-		string_t m_rootNode;
-		string_t m_file;
-		NodeEntry* m_entries;
-		PropertyTree* m_propertyTree;
+		TString m_file;
+		
+		TString m_rootNode;
+		
+		NodeEntryPtr m_entries;
+		
+		PropertyTreePtr m_propertyTree;
+		
+		mutable std::mutex m_mutex;
 	};
 	
-	class JSONConfiguration : public ConfigurationInterface
+	class TConfigurationJSON : public IConfiguration,
+							   public TMoveOnly
 	{
-		JSONConfiguration(const string_t& config_file) = delete;
+	public:
+		using PropertyTree = boost::property_tree::basic_ptree<TString, TString>;
 		
-		virtual ~JSONConfiguration() = 0;
+	public:
+		explicit TConfigurationJSON(const TString& file) noexcept ;
 		
-		virtual void load() = 0;
+		virtual ~TConfigurationJSON() noexcept override = default;
 		
-		virtual void save() = 0;
+		void load() override;
 		
-		virtual void getKey(std::list<string_t>&) const = 0;
+		void save() override;
 		
-		virtual const ustring_t& getValue(const string_t& nodeName) const = 0;
+		void set(const TString&, const TUString&) override {}
 		
-		virtual const ustring_t& getValue(const ustring_t& siblingValue, const string_t& nodeName) const = 0;
+		void keys(std::list<TString>&) const override;
 		
-		static size_t reference_count;
+		void get(const TString& key, std::vector<TUString>& values) const override;
+		
+		TUString get(const TString& key) const override;
+		
+		TUString get(const TString& key, const TUString& byValue) const override;
+		
 	private:
-		string_t m_rootNode;
-		std::map<i32, Shared<NodeData>>* m_pConfigMap;
+		TString m_file;
+		
+		TString m_rootNode;
+		
+		NodeEntryPtr m_entries;
+		
 		std::unique_ptr<PropertyTree> m_propertyTree;
 	};
 	
-	class ConfigurationFactory : public ConfigurationInterface
+	class TConfigurationFactory : public TMoveOnly
 	{
+	private:
+		using IConfigurationPtr = std::shared_ptr<IConfiguration>;
 	public:
-		ConfigurationFactory(const string_t& configPath, ConfigurationType type);
+		explicit TConfigurationFactory(const TString& configPath, EConfiguration type);
 		
-		~ConfigurationFactory();
+		~TConfigurationFactory() noexcept = default;
 		
-		void load() dxDECL_OVERRIDE;
+		void load();
 		
-		void save() dxDECL_OVERRIDE;
+		void save();
 		
-		void getKey(std::list<string_t>& keyList) const;
+		void keys(std::list<TString>&) const;
 		
-		ConfigurationInterface* getConfiguration();
+		IConfigurationPtr
+		getConfiguration();
 		
-		const ConfigurationType& getType() const;
+		EConfiguration 
+		getType() const;
 	
 	private:
-		ConfigurationType m_type;
-		ConfigurationInterface* m_configuration;
-	};
-	
-	struct ConfigurationManagerInterface
-	{
-		using key_const_iterator = typename std::map<string_t, ConfigurationInterface*>::const_iterator;
+		EConfiguration m_type;
 		
-		virtual void read(ConfigurationType type, const string_t& path) = 0;
-		
-		virtual void write(ConfigurationType type, const string_t& path) = 0;
-		
-		inline void checkKey(const key_const_iterator key, ConfigurationProperty* properties,
-		                     string_t errorMsg) const;
+		IConfigurationPtr m_configuration;
 	};
 	
 	/**
@@ -350,20 +236,25 @@ namespace Dixter
 	 * \namespace Dixter
 	 * \brief Singleton class that manages configurations
 	 * */
-	class ConfigurationManager final : public ConfigurationManagerInterface
+	class TConfigurationManager : public TNonCopyable
 	{
-	private:
 		/**
 		 * \author Alvin Ahmadov
 		 * \class ConfigurationManager::Accessor
-		 * \brief Class used as inner helper class to access data of ConfigurationManager.
+		 * \brief Class used as inner helper class to read data of ConfigurationManager.
 		 *
 		 * Provides easy access interfaces to data. Data is immutable.
 		 * */
-		class Accessor
+		class TAccessor : public TNonCopyable
 		{
 		public:
-			Accessor(ConfigurationManager* manager);
+			/**
+			 * \brief Constructs TAccessor with non-owning TConfigurationManager pointer,
+			 * which means it doesn't delete passed pointer.
+			 * */
+			explicit TAccessor(TConfigurationManager* manager) noexcept;
+			
+			~TAccessor() noexcept override = default;
 			
 			/**
 		 * \class ConfigurationManager
@@ -372,32 +263,53 @@ namespace Dixter
 		 * \returns Found value.
 		 * \throws NotFoundException.
 		 * */
-			const ustring_t& getValue(const string_t& root, const string_t& key) const;
+			TUString getValue(const TString& key,
+							  const TString& root = TString()) const;
 			
 			/**
 			 * \class XMLConfiguration
 			 * \brief Get value of node with key and with sibling value.
-			 * \param value Sibling value.
+			 * \param byValue Sibling value.
 			 * \param key Node name of sibling value.
 			 * \returns value
 			 * \throws NotFoundException
 			 * */
-			const ustring_t& getValue(const string_t& root, const ustring_t& value, const string_t& key) const;
+			TUString getValue(const TString& key, const TUString& byValue,
+							  const TString& root = TString()) const;
 			
 			/**
 			 * \brief Get all values of node with specified name.
 			 * \tparam Container Container to which save data.
 			 * */
-			void getValues(const string_t& root, const string_t& key, std::vector<ustring_t>& values) const;
+			const TAccessor*
+			getValues(const TString& key, std::vector<TUString>& values,
+					  const TString& root = TString()) const;
 		
 		private:
-			ConfigurationManager* m_manager;
+			std::shared_ptr<IConfiguration>
+			get(const TString& key, const TString& root = TString()) const;
+		
+		private:
+			TConfigurationManager* m_manager;
 		};
 		
-		class Mutator
+		/**
+		 * \author Alvin Ahmadov
+		 * \class ConfigurationManager::Mutator
+		 * \brief Class used as inner helper class to write data of ConfigurationManager.
+		 *
+		 * Provides easy access interfaces to data. Data is mutable.
+		 * */
+		class TMutator : public TNonCopyable
 		{
 		public:
-			Mutator(ConfigurationManager* manager);
+			/**
+			 * \brief Constructs TMutator with non-owning TConfigurationManager pointer,
+			 * which means it doesn't delete passed pointer.
+			 * */
+			explicit TMutator(TConfigurationManager* manager) noexcept;
+			
+			~TMutator() noexcept override = default;
 			
 			/**
 		 * \class ConfigurationManager
@@ -406,13 +318,29 @@ namespace Dixter
 		 * \returns Found value.
 		 * \throws NotFoundException.
 		 * */
-			void setValue(const string_t& root, const string_t& key, const ustring_t& value) const;
+			const TMutator*
+			setValue(const TString& key, const TUString& value,
+					 const TString& root = "");
 		
 		private:
-			ConfigurationManager* m_manager;
+			std::shared_ptr<IConfiguration>
+			get(const TString& key, const TString& root = "");
+		
+		private:
+			TConfigurationManager*  m_manager;
+			
+			mutable std::mutex m_mutex;
 		};
-	
+		
 	public:
+		using TSelf 			= TConfigurationManager;
+		using TInstancePtr 		= std::shared_ptr<TSelf>;
+		using TAccessorPtr 		= std::unique_ptr<TAccessor>;
+		using TMutatorPtr 		= std::unique_ptr<TMutator>;
+		using TConstIterator	= IConfiguration::ConfigurationProperty::const_iterator;
+		
+		virtual ~TConfigurationManager() noexcept = default;
+		
 		/**
 		 * \class ConfigurationManager
 		 * \brief Get instance of manager.
@@ -424,127 +352,80 @@ namespace Dixter
 		 * then the first instance will be added to a set, and new instance
 		 * is initialised and used. Depending on type it will return the correct instance.
 		 * */
-		static ConfigurationManager* getManager(ConfigurationType type,
-		                                        const std::list<string_t>& paths = g_ConfigPath);
+		static TInstancePtr&
+		getManager(EConfiguration type, std::set<TString> paths = std::set<TString>());
 		
-		const Accessor* const getAccessor() const;
+		const TAccessorPtr&
+		accessor() const;
 		
-		Mutator* getMutator();
-		
-		/**
-		 * \class ConfigurationManager
-		 * \brief Gets configuration object and casts it to
-		 * the derived Configuration class (e.g. \c XMLConfiguration, \c INIConfiguration)
-		 * \tparam T Type of configuration derived from \c ConfigurationInterface.
-		 * \param key Root name of configuration to find.
-		 * \param type Cast type.
-		 * \returns Casted type pointer.
-		 * */
-		template<class T>
-		inline const T* getConfiguration(const string_t& key,
-		                                 ConfigurationType type = ConfigurationType::kConfigNone)
-		{
-			try
-			{
-				if (type != ConfigurationType::kConfigNone)
-				{
-					if (m_instance->getType() != type)
-					{
-						for (auto& __instance : *m_instances)
-						{
-							if (__instance->getType() == type)
-							{
-								return getConfiguration<T>(key, ConfigurationType::kConfigNone);
-							}
-						}
-					}
-				} else
-				{
-					auto iter = m_properties->find(key);
-					
-					if (iter != m_properties->end())
-					{
-						return dynamic_cast<T*>(iter->second);
-					}
-					return nullptr;
-				}
-			} catch (std::exception& e)
-			{
-				printerr(e.what())
-			}
-			return nullptr;
-		}
-		
-		/**
-		 * \class ConfigurationManager
-		 * \brief Get value of node using key.
-		 * \param key Node name of value.
-		 * \returns Found value.
-		 * \throws NotFoundException.
-		 * */
-//		const ustring_t& getValue(const string_t& root, const string_t& key) const;
+		const TMutatorPtr&
+		mutator();
 		
 		/**
 		 * \class ConfigurationManager
 		 * \brief Gets the type of current instance.
 		 * \returns Instance's type.
 		 * */
-		const ConfigurationType& getType() const;
+		EConfiguration
+		getType() const;
 		
 		/**
 		 * \class ConfigurationManager
 		 * \brief Updates loaded configuration values.
 		 * \returns True if values updated.
 		 * */
-		bool update();
+		// bool update();
 		
-		/**
-		 * \class ConfigurationManager
-		 * \brief Releases instance to update application's
-		 * configuration. Used after \c getManager().
-		 * \returns True if instance is deleted.
-		 * */
-		static bool release();
-	
 	private:
-		/// dtor.
-		virtual ~ConfigurationManager();
-		
-		void read(ConfigurationType type, const string_t& path) dxDECL_OVERRIDE;
-		
-		void write(ConfigurationType type, const string_t& path) dxDECL_OVERRIDE;
-		
-		void checkKey(const std::map<string_t, ConfigurationInterface*>::const_iterator key,
-		              string_t errorMsg) const;
-		
 		/**
 		 * \class ConfigurationManager
 		 * \brief ctor. Loads configuration for every configuration file.
 		 * \param type Type of configuration to initialise.
 		 * \param paths List of paths to configuration files.
 		 * */
-		ConfigurationManager(ConfigurationType type, const std::list<string_t>& paths);
+		TConfigurationManager(EConfiguration type, const std::set<TString>& paths);
+		
+		void read(EConfiguration type, const TString& path);
+		
+		void write(EConfiguration type, const TString& path);
+		
+		void checkKey(const TConstIterator key, TString errorMsg = "") const;
 	
 	private:
-		std::list<string_t> m_pathList;
-		ConfigurationFactory* m_factory;
-		std::map<string_t, ConfigurationInterface*>* m_properties;
-		Accessor* m_accessor;
-		Mutator* m_mutator;
-		/// Instance of manager
-		static ConfigurationManager* m_instance;
-		/// Set of instances with different types.
-		static std::set<ConfigurationManager*>* m_instances;
+		static TInstancePtr m_instance;
+		
+		EConfiguration m_type;
+		
+		std::set<TString> m_paths;
+		
+		IConfiguration::ConfigurationProperty m_properties;
+		
+		std::unique_ptr<TAccessor> m_accessor;
+		
+		std::unique_ptr<TMutator> m_mutator;
 	};
 	
-	template<typename return_t, typename ... args_t>
-	void NodeEntry::forEach(return_t(NodeData::*method)(args_t ... args), args_t ... args)
+	inline TConfigurationManager::TInstancePtr
+	getManager(EConfiguration type, const std::set<TString>& path)
 	{
-		auto __methodCallback = MethodCallback<NodeData, return_t, args_t ...>(method);
-		std::for_each(m_nodeEntries->begin(), m_nodeEntries->end(), [ &__methodCallback, &args ... ](std::pair<i32, Shared<NodeData>>& pair)
-		{
-			if (pair.second != nullptr)
-				__methodCallback(pair.second, args ...);
-		});
+		return TConfigurationManager::getManager(type, path);
+	}
+	
+	inline TConfigurationManager::TInstancePtr
+	getIniManager(const std::set<TString>& path)
+	{
+		return TConfigurationManager::getManager(EConfiguration::INI, path);
+	}
+	
+	inline TConfigurationManager::TInstancePtr
+	getXmlManager(const std::set<TString>& path = {})
+	{
+		return TConfigurationManager::getManager(EConfiguration::XML, path);
+	}
+	
+	inline TConfigurationManager::TInstancePtr
+	getJsonManager(const std::set<TString>& path = {})
+	{
+		return TConfigurationManager::getManager(EConfiguration::JSON, path);
 	}
 } // namespace Dixter

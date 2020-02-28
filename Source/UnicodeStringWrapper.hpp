@@ -47,8 +47,6 @@ namespace Dixter
 		
 		UnicodeStringWrapper& fromUTF32(const UChar32 *src, size_t codePointLen);
 		
-		const char* c_str() const;
-		
 		std::string asUTF8() const;
 		
 		QString asCustom() const;

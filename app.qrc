@@ -1,9 +1,7 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
+    <file>Resources/icons/flip.png</file>
     <file>Resources/icons/speak.png</file>
     <file>Resources/icons/translate.png</file>
 </qresource>
 </RCC>
-
-
-

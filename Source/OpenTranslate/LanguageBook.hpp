@@ -17,23 +17,24 @@ namespace Dixter
 {
 	namespace OpenTranslate
 	{
-		class LanguageBook
+		
+		class dxDEPRECATED LanguageBook
 		{
 		public:
 			LanguageBook();
 			
 			~LanguageBook();
 			
-			void insert(const string_t& language, const string_t& id);
+			void insert(const TString& language, const TString& id);
 			
-			ustring_t getView(string_t language);
+			TUString getView(TString language);
 			
-			const code_point_t* getView(ustring_t language);
+			const TCodePoint* getView(TUString language);
 		
 		private:
 			std::list<Alphabet*> m_alphabets;
 			
-			std::map<string_t, const code_point_t*> m_langdefs;
+			std::map<TString, const TCodePoint*> m_langdefs;
 		};
 	}
 }

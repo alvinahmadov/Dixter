@@ -7,33 +7,42 @@
  *  See README.md for more information.
  */
 #include "Button.hpp"
-#include <Commons.hpp>
-#include <Configuration.hpp>
+#include "Constants.hpp"
+#include "Configuration.hpp"
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		//Button implementation
-		Button::Button(QWidget* parent, const QString& label)
+		TButton::TButton(QWidget* parent, const QString& label)
 				: QPushButton(label, parent)
 		{
+			init();
 		}
 		
-		Button::Button(QIcon icon, QWidget *parent)
-				: Button(parent,QString())
+		TButton::TButton(QIcon icon, QWidget* parent)
+				: TButton(parent, QString())
 		{
 			icon.actualSize(size());
 			setIcon(icon);
 		}
 		
-		Button::Button(const QString& label)
-				: Button(nullptr, label)
+		TButton::TButton(const QString& label)
+				: TButton(nullptr, label)
 		{
 		}
 		
-		Button::~Button()
+		void TButton::init()
 		{
+			auto __confMan = getIniManager({ g_guiConfigPath });
+			auto __bgColour = __confMan->accessor()->getValue(NodeKey::kWinBtnColourNode).asCustom();
+			auto __fontName = __confMan->accessor()->getValue(NodeKey::kWinFontNameNode).asCustom();
+			int __fontSize = __confMan->accessor()->getValue(NodeKey::kWinFontSizeNode);
+			__bgColour.prepend('#');
+			QPalette __palette(__bgColour);
+			
+			setPalette(__palette);
+			setFont(QFont(__fontName, __fontSize));
 		}
-	}
-}
+	} // namespace Gui
+} //namespace Dixter

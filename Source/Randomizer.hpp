@@ -15,52 +15,53 @@ namespace Dixter
 {
 	namespace Utilities
 	{
-		template<typename Distribution = std::uniform_real_distribution<double>,
-				typename Engine = std::default_random_engine,
-				typename ResultType = typename Distribution::result_type>
-		class RandomGenerator : public NonCopyable
+		template<
+				typename TDistribution = std::uniform_real_distribution<double>,
+				typename TEngine = std::default_random_engine,
+				typename TResult = typename TDistribution::result_type
+		>
+		class TRandomGenerator final : public TNonCopyable
 		{
 		public:
-			explicit RandomGenerator(ResultType lowerBound, ResultType upperBound)
-					: m_randomDevice {std::random_device()},
-					  m_randomEngine(new Engine(m_randomDevice())),
-					  m_distribution(new Distribution(lowerBound, upperBound))
-			{}
+			explicit TRandomGenerator(TResult lowerBound, TResult upperBound)
+					: m_randomEngine(new TEngine(m_randomDevice())),
+					  m_distribution(new TDistribution(lowerBound, upperBound))
+			{ }
 			
-			explicit RandomGenerator(ResultType upperBound = ResultType(1))
-					: m_randomDevice {std::random_device()},
-					  m_randomEngine(new Engine(m_randomDevice())),
-					  m_distribution(new Distribution(ResultType(0), upperBound))
-			{}
+			explicit TRandomGenerator(TResult upperBound = TResult(1))
+					: TRandomGenerator(TResult(0), upperBound)
+			{ }
 			
-			~RandomGenerator()
+			~TRandomGenerator() noexcept
 			{
-				SAFE_RELEASE(m_randomEngine)
-				SAFE_RELEASE(m_distribution)
+				delete m_randomEngine;
+				delete m_distribution;
 			}
 			
-			ResultType getRand()
+			TResult getRand()
 			{
-				return (*m_distribution)(*m_randomEngine);
+				return ( *m_distribution )(*m_randomEngine);
 			}
 			
-			void setSeed(ui32 seed = Engine::default_seed)
+			inline void setSeed(UInt32 seed = TEngine::default_seed) noexcept
 			{
 				m_randomEngine->seed(seed);
 			}
 			
 			template<class Container>
-			void generate(Container& container, size_t n = 0)
+			inline void generate(Container& container, TSize n = 0) noexcept
 			{
-				size_t idx = 0;
+				TSize idx = 0;
 				while (idx++ != n)
 					container.push_back(getRand());
 			}
 		
 		private:
 			std::random_device m_randomDevice;
-			Engine* m_randomEngine;
-			Distribution* m_distribution;
+			
+			TEngine* m_randomEngine;
+			
+			TDistribution* m_distribution;
 		};
-	}
-}
+	} // namespace Utilities
+} // namespace Dixter

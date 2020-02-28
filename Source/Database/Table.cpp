@@ -11,80 +11,80 @@
 #include <cppconn/statement.h>
 #include <cppconn/prepared_statement.h>
 
-#include "Commons.hpp"
+#include "Exception.hpp"
 #include "Table.hpp"
+#include "Value.hpp"
 #include "QueryBuilder.hpp"
-
-using namespace std;
 
 namespace Dixter
 {
 	namespace Database
 	{
-		Table::Table(const string_t& tableName, const list<Value*>& valueList)
+		TTable::TTable(const TString& tableName,
+					   const std::list<TValue*>& valueList) noexcept
 				: m_paramsSize(),
 				  m_tableName(tableName),
-				  m_dbValueList(const_cast<list<Value*>*>(&valueList)),
-				  m_queryBuilder(new QueryBuilder)
+				  m_dbValueList(valueList),
+				  m_queryBuilder(new TQueryBuilder)
 		{ }
 		
-		Table::~Table()
+		TTable::~TTable() noexcept
 		{
-			SAFE_RELEASE(m_queryBuilder)
-			SAFE_RELEASE(m_dbValueList)
+			delete m_queryBuilder;
+			
+			for (auto& __i : m_dbValueList)
+				delete __i;
 		}
 		
-		void Table::createTable(sql::Statement* statement, bool dropIf)
+		void TTable::createTable(sql::Statement* statement, bool dropIf)
 		{
 			if (statement == nullptr)
-			{
-				throw IllegalArgumentException { "%s:%d Statement is NULL.\n", __FILE__, __LINE__ };
-			}
-			string_t query { };
+				throw TIllegalArgumentException("%s:%d Statement is NULL.\n", __FILE__, __LINE__);
+			
+			TString __query;
 			if (dropIf)
 			{
-				query = m_queryBuilder->dropQuery(m_tableName);
-				statement->execute(query);
+				__query = m_queryBuilder->dropQuery(m_tableName);
+				statement->execute(__query);
 			}
-			query = m_queryBuilder->createQuery(m_tableName, *m_dbValueList, m_paramsSize);
-			if (query.empty())
-			{
-				throw IllegalArgumentException { "%s:%d Query not set", __FILE__, __LINE__ };
-			}
-			statement->execute(query);
+			__query = m_queryBuilder->createQuery(m_tableName, m_dbValueList, m_paramsSize);
+			if (__query.empty())
+				throw TSQLException("%s:%d Query not set", __FILE__, __LINE__);
+			
+			statement->execute(__query);
 		}
 		
 		sql::PreparedStatement*
-		Table::insertValues(sql::Connection* connection)
+		TTable::insertValues(sql::Connection* connection)
 		{
-			auto query = m_queryBuilder->insertQuery(m_tableName, m_paramsSize);
-			auto result = connection->prepareStatement(query);
-			return result;
+			auto __query = m_queryBuilder->insertQuery(m_tableName, m_paramsSize);
+			auto __result = connection->prepareStatement(__query.data());
+			return __result;
 		}
 		
 		sql::PreparedStatement*
-		Table::updateValues(sql::Connection* connection)
+		TTable::updateValues(sql::Connection* connection)
 		{
 			connection->getMetaData();
 			return nullptr;
 		}
 		
-		const string_t&
-		Table::getTableName() const
+		const TString&
+		TTable::getTableName() const
 		{
 			return m_tableName;
 		}
 		
-		const list<Value*>&
-		Table::getValuesList() const
+		const std::list<TValue*>&
+		TTable::getValuesList() const
 		{
-			return *m_dbValueList;
+			return m_dbValueList;
 		}
 		
-		const size_t&
-		Table::getParametersSize() const
+		const TSize&
+		TTable::getParametersSize() const
 		{
 			return m_paramsSize;
 		}
-	}
-}
+	} // namespace Database
+} // namespace Dixter

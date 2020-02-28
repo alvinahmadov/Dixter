@@ -8,26 +8,26 @@
  */
 
 #include "Commons.hpp"
-
+#include "Constants.hpp"
 
 namespace Dixter
 {
 	template<typename T>
-	const size_t ClassInfo<T>::ClassNameConvertor::m_charTableSize = 10;
+	const TSize TClassInfo<T>::TClassNameConvertor::m_charTableSize = 10;
 	
 	template<typename T>
-	std::list<const byte*>
-			ClassInfo<T>::ClassNameConvertor::m_charTable
+	std::list<const TByte*>
+			TClassInfo<T>::TClassNameConvertor::m_charTable
 			{
 					"N3", "NSt7"
 			};
 	
 	template<typename T>
-	std::map<string_t, string_t>
-			ClassInfo<T>::ClassNameConvertor::m_names
+	std::map<TString, TString>
+			TClassInfo<T>::TClassNameConvertor::m_names
 			{
 					{"NSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", "string"},
-					{"St17basic_string_viewIcSt11char_traitsIcEE",           "string_view"},
+					{"St17basic_string_viewIcSt11char_traitsIcEE",           "TStringView"},
 					{"8wxString",                                            "wxString"},
 					{"d",                                                    "double"},
 					{"f",                                                    "float"},
@@ -37,25 +37,28 @@ namespace Dixter
 			};
 	
 	template<typename T>
-	string_t
-	ClassInfo<T>::ClassNameConvertor::getName(const string_t& rawName)
+	TString
+	TClassInfo<T>::TClassNameConvertor::getName(const TString& rawName)
 	{
-		return _getName(rawName.c_str());
+		return getName(rawName.c_str());
 	}
 	
 	template<typename T>
-	string_t
-	ClassInfo<T>::ClassNameConvertor::getName(const char* rawName)
+	TString
+	TClassInfo<T>::TClassNameConvertor::getName(const TByte* rawName)
 	{
-		return _getName(rawName);
+		auto __iter = m_names.find(rawName);
+		if (__iter != m_names.end())
+			return m_names.find(rawName)->second;
+		return parseName(rawName);
 	}
 	
 	template<typename T>
-	string_t
-	ClassInfo<T>::ClassNameConvertor::parseName(const char* raw)
+	TString
+	TClassInfo<T>::TClassNameConvertor::parseName(const TByte* raw)
 	{
-		size_t __size {0};
-		string_t res {};
+		TSize __size {0};
+		TString res {};
 		bool __start {true};
 		while (raw[__size] != '\0')
 		{
@@ -75,85 +78,6 @@ namespace Dixter
 			++__size;
 		}
 		
-		return string_t();
-	}
-	
-	template<typename T>
-	string_t
-	ClassInfo<T>::ClassNameConvertor::_getName(const char* rawName)
-	{
-		auto __iter = m_names.find(rawName);
-		if (__iter != m_names.end())
-			return m_names.find(rawName)->second;
-		return parseName(rawName);
-	}
-	
-	Exception::Exception(const string_t& message) dxDECL_NOEXCEPT
-			: std::exception(),
-			  m_message {message}
-	{}
-	
-	Exception::~Exception() dxDECL_NOEXCEPT
-	{}
-	
-	inline const char* Exception::what() const dxDECL_NOEXCEPT
-	{
-		return m_message.data();
-	}
-	
-	inline const string_t&
-	Exception::getMessage() const dxDECL_NOEXCEPT
-	{
-		return m_message;
-	}
-
-	#define IMPLEMENT_SIMPLE_EXCEPTION(className)               \
-    className::className()                                      \
-        : Exception{}                                           \
-    {};                                                         \
-    className::className(const char* msg)                       \
-        : Exception{msg}                                        \
-    {}                                                          \
-    className::className(string_t &&msg)                        \
-        : Exception{msg}                                        \
-    {}                                                          \
-    className::~className() dxDECL_NOEXCEPT {}                       \
-    const char* className::what() const dxDECL_NOEXCEPT              \
-    {                                                           \
-        return m_message.c_str();                               \
-    }
-
-	#define DEF_DETAILED_EXCEPTION(className)                   \
-    className::className(const string_t& message)               \
-        : Exception(message) {}                                 \
-    className::~className() dxDECL_NOEXCEPT {}                  \
-    const char* className::what() const dxDECL_NOEXCEPT         \
-    {                                                           \
-        return m_message.data();                                \
-    }                                                           \
-    const string_t& className::getMessage()                     \
-    const dxDECL_NOEXCEPT                                       \
-    {                                                           \
-        return Exception::getMessage();                         \
-    }                                                           \
-
-	DEF_DETAILED_EXCEPTION(NotImplementedException)
-	
-	DEF_DETAILED_EXCEPTION(NullPointerException)
-	
-	DEF_DETAILED_EXCEPTION(NotFoundException)
-	
-	DEF_DETAILED_EXCEPTION(IllegalArgumentException)
-	
-	DEF_DETAILED_EXCEPTION(RangeException)
-	
-	size_t DJBHash::operator()(const string_t& hashKey) const
-	{
-		size_t hash = 5381;
-		for (size_t i = 0; i < hashKey.size(); ++i)
-		{
-			hash = ((hash << 5) + hash) + hashKey.at(i);
-		}
-		return hash;
+		return TString();
 	}
 }

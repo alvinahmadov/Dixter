@@ -9,20 +9,13 @@
 
 #pragma once
 
-
-#include <cppconn/driver.h>
-#include <cppconn/resultset.h>
-#include <cppconn/statement.h>
-#include <cppconn/prepared_statement.h>
-
 #include "Types.hpp"
-
 
 namespace Dixter
 {
 	namespace Database
 	{
-		enum class DataType
+		enum class EDataType
 		{
 			kUnknown = 0,
 			kBit,
@@ -58,38 +51,46 @@ namespace Dixter
 			kBool
 		};
 		
-		class Value
+		class TValue
 		{
 		public:
-			Value(const string_t& valueName, DataType valueType, size_t size = 0, bool null = true,
-			      bool autoIncrement = false, bool primaryKey = false);
+			TValue(const TString& name, EDataType type, TSize size = 0, bool null = true,
+				   bool primaryKey = false, bool autoIncrement = false) noexcept;
 			
-			const string_t& getValueName() const;
+			TValue(const TValue&) = default;
 			
-			const DataType& getType() const;
+			TValue& operator=(const TValue&) = default;
 			
-			string_t getTypeString() const;
+			TValue(TValue&&) = default;
 			
-			const size_t& getSize() const;
+			TValue& operator=(TValue&&) = default;
+			
+			const TString& getValueName() const;
+			
+			const EDataType& getType() const;
+			
+			TString getTypeString() const;
+			
+			const TSize& getSize() const;
 			
 			bool isAutoIncrement() const;
 			
-			bool isNull() const;
-			
 			bool isPrimaryKey() const;
+			
+			bool isNull() const;
 		
 		private:
-			bool m_autoIncrement;
-			
 			bool m_null;
 			
 			bool m_primaryKey;
 			
-			size_t m_size;
+			bool m_autoIncrement;
 			
-			string_t m_valueName;
+			TSize m_size;
 			
-			DataType m_valueType;
+			TString m_name;
+			
+			EDataType m_type;
 		};
-	}
-}
+	} // namespace Database
+} // namespace Dixter

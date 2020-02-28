@@ -10,7 +10,6 @@
 
 #pragma once
 
-
 #include <map>
 #include <list>
 #include "Types.hpp"
@@ -22,43 +21,45 @@ namespace sql
 	class Statement;
 	
 	class PreparedStatement;
-}
+} // namespace sql
 
 namespace Dixter
 {
 	namespace Database
 	{
-		class QueryBuilder;
+		class TQueryBuilder;
 		
-		class Value;
+		class TValue;
 		
-		class Table
+		class TTable : public TCopyConstructible
 		{
 		public:
-			Table(const string_t& tableName, const std::list<Value*>& valueList);
+			TTable(const TString& tableName, const std::list<TValue*>& valueList) noexcept;
 			
-			~Table();
+			~TTable() noexcept;
 			
 			void createTable(sql::Statement* statement, bool dropIf = true);
 			
-			sql::PreparedStatement* insertValues(sql::Connection* connection);
+			sql::PreparedStatement*
+			insertValues(sql::Connection* connection);
 			
-			sql::PreparedStatement* updateValues(sql::Connection* connection);
+			sql::PreparedStatement*
+			updateValues(sql::Connection* connection);
 			
-			const string_t& getTableName() const;
+			const TString& getTableName() const;
 			
-			const std::list<Value*>& getValuesList() const;
+			const std::list<TValue*>& getValuesList() const;
 			
-			const size_t& getParametersSize() const;
+			const TSize& getParametersSize() const;
 		
 		private:
-			size_t m_paramsSize;
+			TSize m_paramsSize;
 			
-			string_t m_tableName;
+			TString m_tableName;
 			
-			std::list<Value*>* m_dbValueList;
+			std::list<TValue*> m_dbValueList;
 			
-			QueryBuilder* m_queryBuilder;
+			TQueryBuilder* m_queryBuilder;
 		};
-	}
-}
+	} // namespace Database
+} // namespace Dixter

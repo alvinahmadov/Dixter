@@ -8,26 +8,25 @@
  */
 #pragma once
 
-#include "Types.hpp"
-
 #include <QPushButton>
-
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		class Button : public QPushButton
+		class TButton : public QPushButton
 		{
-			Q_OBJECT
+		Q_OBJECT
 		public:
-			explicit Button(QWidget* parent, const QString& label = QString());
+			TButton(QWidget* parent, const QString& label = QString());
 			
-			Button(QIcon icon, QWidget *parent = nullptr);
+			TButton(QIcon icon, QWidget* parent = nullptr);
 			
-			Button(const QString& label);
+			explicit TButton(const QString& label);
 			
-			~Button() dxDECL_OVERRIDE;
+			~TButton() = default;
+			
+			virtual void init();
 		};
-	}
-}
+	} // namespace Gui
+} //namespace Dixter

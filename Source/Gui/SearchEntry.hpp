@@ -8,40 +8,60 @@
  */
 #pragma once
 
-#include "Macros.hpp"
-
 #include <QLineEdit>
+
+class QMutex;
 
 namespace Dixter
 {
+	namespace Database
+	{
+		class TManager;
+	}
+	
+	namespace OpenTranslate
+	{
+		class TDictionary;
+	}
+	
 	namespace Gui
 	{
+		class TTextView;
+		
 		/**
 		 * \brief SearchEntry is a class that responsible for
 		 * searching a word in the database
 		 * */
-		class SearchEntry : public QLineEdit
+		class TSearchEntry : public QLineEdit
 		{
 		Q_OBJECT
 		public:
-			explicit SearchEntry(QWidget* parent, const QString& placeholder = "Search",
-			                     const QSize& size = QSize(), int margin = 0);
+			using TDictionaryPtr = std::shared_ptr<OpenTranslate::TDictionary>;
+			using TDatabaseManagerPtr = std::shared_ptr<Database::TManager>;
+		public:
+			explicit TSearchEntry(QWidget* parent, const QString& placeholder = QString("Search"),
+								  const QSize& size = QSize(), int margin = 0);
 			
-			~SearchEntry() dxDECL_OVERRIDE;
+			virtual ~TSearchEntry() noexcept;
 			
 			bool isPlaceholderSet() const;
-		
-		protected slots:
 			
-			void onEnter(const QString& text);
+			void search(const TString& database, const TString& keyColumn,
+						TTextView* textView);
 		
 		protected:
-			void connectEvents();
+			virtual void init();
 		
 		private:
 			bool m_isPlaceholderSet;
 			
 			QString m_placeholder;
+			
+			QMutex* m_mutex;
+			
+			TDictionaryPtr m_dictionary;
+			
+			TDatabaseManagerPtr m_dbManager;
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

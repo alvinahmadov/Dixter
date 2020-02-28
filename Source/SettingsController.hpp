@@ -8,23 +8,25 @@
  */
 #pragma once
 
-#include "Configuration.hpp"
+#include "Commons.hpp"
 
 namespace Dixter
 {
-	class SettingsController
+	enum class EConfiguration;
+	
+	class TSettingsController : public TNonCopyable
 	{
 	public:
-		SettingsController(const string_t& configRoot);
+		explicit TSettingsController(const TString& configRoot) noexcept;
 		
-		~SettingsController();
+		~TSettingsController() = default;
 		
-		void read(const string_t& key, ustring_t& value);
+		void read(const TString& key, TUString& value);
 		
-		void write(const string_t& key, const ustring_t& value);
+		void write(const TString& key, const TUString& value);
 	
 	private:
-		const string_t& m_root;
-		ConfigurationType m_type;
+		const TString& m_root;
+		EConfiguration m_type;
 	};
 }

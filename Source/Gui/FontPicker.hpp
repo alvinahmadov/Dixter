@@ -20,7 +20,7 @@ namespace Dixter
 		Q_OBJECT
 		public:
 			FontPicker(QWidget* parent, const QColor& initial = QColor(),
-			           const QSize& size = QSize(300, 300));
+			           const QSize& size = QSize(300, 300)) noexcept;
 		
 		protected:
 			void init();
@@ -29,5 +29,5 @@ namespace Dixter
 			
 			// void onFontChange(wxFontPickerEvent& event);
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

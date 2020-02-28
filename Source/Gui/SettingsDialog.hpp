@@ -26,19 +26,21 @@ namespace Dixter
 	class SettingsController;
 	namespace Gui
 	{
-		class SettingsDialog : public QDialog
+		class TSettingsDialog : public QDialog
 		{
 		Q_OBJECT
 		public:
-			explicit SettingsDialog(QWidget* parent = nullptr, const QString& title = "Settings");
+			explicit TSettingsDialog(QWidget* parent = nullptr, const QString& title = "Settings");
+			
+			virtual ~TSettingsDialog() override;
 			
 			void init();
 			
 			void generalTab();
 			
-			void accept();
+			void accept() override;
 			
-			void reject();
+			void reject() override;
 		
 		private:
 			QTabWidget* m_tabWidget;

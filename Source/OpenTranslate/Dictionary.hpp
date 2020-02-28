@@ -8,27 +8,74 @@
  */
 #pragma once
 
+#include <mutex>
+#include <deque>
 
+#include "setup.h"
 #include "Database/Manager.hpp"
-
 
 namespace Dixter
 {
+	template<
+			typename T,
+			typename ID
+	>
+	class TGroup;
+	
 	namespace OpenTranslate
 	{
-		class Dictionary
+		inline TString toString(std::unordered_multimap<TString, std::vector<TString>>& resultMap)
 		{
+			std::ostringstream __oss{};
+			
+			for(const auto&[__k,__vs] : resultMap)
+			{
+				__oss << __k << ": {";
+				for (const auto& __v : __vs)
+					__oss << __v << " ";
+				
+				__oss << "}\n";
+			}
+			
+			return __oss.str();
+		}
+		
+		class TDictionary : public TMovable
+		{
+			using TDatabaseManager      = Database::TManager;
+			using TDatabaseManagerPtr   = std::shared_ptr<TDatabaseManager>;
+			#ifdef HAVE_CXX17
+			using TWord = TStringView;
+			#else
+			using TWord = const TString&;
+			#endif
+		
 		public:
-			Dictionary(Database::Manager* manager);
+			using TSearchResult = std::unordered_multimap<TString, std::vector<TString>>;
+		
+		public:
+			explicit TDictionary(TDatabaseManagerPtr manager) noexcept;
 			
-			~Dictionary();
+			TDictionary(TDictionary&& self) noexcept;
 			
-			std::map<string_t, string_t>
-			search(const string_t& word, string_t column,
-			       bool asRegex = false, bool all = false);
+			TDictionary& operator=(TDictionary&& rv) noexcept;
+			
+			~TDictionary() noexcept = default;
+			
+			const TSearchResult&
+			lookFor(TWord word, const TString& keyColumn, bool fullsearch = false) noexcept;
+		
+		protected:
+			void doSearch(TByte key, TDatabaseManager::TClause clause);
+			
+			void fetch(const TString& table, TDatabaseManager::TClause clause);
 		
 		private:
-			Database::Manager* m_databaseManager;
+			TSearchResult m_resultMap;
+			
+			TDatabaseManagerPtr m_databaseManager;
+			
+			mutable std::mutex m_mutex;
 		};
-	}
-}
+	} // namespace OpenTranslate
+} // namespace Dixter

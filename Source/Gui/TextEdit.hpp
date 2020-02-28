@@ -17,24 +17,24 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class TextArea : public QTextEdit
+		class TTextEdit : public QTextEdit
 		{
 		Q_OBJECT
 		public:
-			explicit TextArea(QWidget* parent, const QString& value = QString(),
-			                  bool readOnly = false, int fontSize = 16);
+			TTextEdit(QWidget* parent, const QString& value = QString(),
+			          bool readOnly = false, int fontSize = 16);
 			
-			~TextArea() dxDECL_OVERRIDE;
+			virtual ~TTextEdit() noexcept override = default;
 			
 			void copyToClipboard(bool copyAll = false);
 			
 			void cutToClipboard(bool cutAll = false);
 			
-			void swapContent(TextArea* other);
+			void swapContent(TTextEdit* other);
 			
 			QString getContent() const;
 			
-			void write(const TextArea* other);
+			void write(const TTextEdit* other);
 			
 			void clearContent();
 			
@@ -48,7 +48,9 @@ namespace Dixter
 			void resetPlaceholder();
 		
 		protected:
-			void resizeEvent(QResizeEvent* sizeEvent) dxDECL_OVERRIDE;
+			void init();
+			
+			void resizeEvent(QResizeEvent* sizeEvent) override;
 			
 			void connectEvents();
 		
@@ -57,11 +59,11 @@ namespace Dixter
 			
 			bool m_placeholderSet;
 			
-			size_t m_maxCharCount;
+			TSize m_maxCharCount;
+			
+			UInt64 m_charCount;
 			
 			QString m_placeholderText;
-			
-			ui64 m_charCount;
 		};
 	}
 }

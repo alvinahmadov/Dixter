@@ -15,107 +15,119 @@ namespace Dixter
 	 * \namespace Dixter
 	 * \class MethodCallback
 	 * \brief Allows holder structures to call its elements' methods.
-	 * \tparam C Type of class of callback method.
-	 * \tparam R Return type of method.
-	 * \tparam Args Variable argument types
+	 * \tparam TClass Type of class of callback method.
+	 * \tparam TReturn Return type of method.
+	 * \tparam TArgs Variable argument types
 	 * */
 	template<
-			typename C,
-			typename R,
-			typename ... Args
+			typename TClass,
+			typename TReturn,
+			typename... TArgs
 	>
-	class MethodCallback
+	class TMethodCallback
 	{
 	public:
-		using pointer_t   = C*;
-		using reference_t = C&;
+		using TPointer   = TClass*;
+		using TReference = TClass&;
 		
-		typedef R (C::*method_t)(Args ... args);
+		typedef TReturn (TClass::*FMethod)(TArgs ... args);
 	
 	public:
-		explicit MethodCallback(method_t methodPtr);
+		explicit TMethodCallback(FMethod methodPtr);
 		
-		explicit MethodCallback(method_t methodPtr, pointer_t objectPtr);
+		explicit TMethodCallback(FMethod methodPtr, TPointer objectPtr);
 		
-		~MethodCallback();
+		~TMethodCallback();
 		
-		R operator()(pointer_t objectPtr, Args ... args);
+		TReturn operator()(TPointer objectPtr, TArgs&& ... args);
 		
-		R operator()(Args ... args);
+		TReturn operator()(TArgs&& ... args);
 		
-		static R of(pointer_t objectPtr, Args ... args);
+		static TReturn of(TPointer objectPtr, TArgs&& ... args);
 		
-		static R of(Args ... args);
+		static TReturn of(TArgs&& ... args);
 	
 	private:
-		method_t m_methodPtr;
-		pointer_t m_objectPtr;
+		FMethod m_methodPtr;
+		
+		TPointer m_objectPtr;
 	};
-}
+} // namespace Dixter
 
 namespace Dixter
 {
 	template<
-			class T,
-			class Return,
-			typename ... Args>
-	MethodCallback<T, Return, Args...>::MethodCallback(MethodCallback::method_t methodPtr)
-			: m_methodPtr {methodPtr},
-			  m_objectPtr {nullptr}
-	{}
+			class TClass,
+			class TReturn,
+			typename... TArgs
+	>
+	TMethodCallback<TClass, TReturn, TArgs...>::
+	TMethodCallback(TMethodCallback::FMethod methodPtr)
+			: m_methodPtr(methodPtr),
+			  m_objectPtr()
+	{ }
 	
 	template<
-			class T,
-			class Return,
-			typename ... Args>
-	MethodCallback<T, Return, Args...>::
-	        MethodCallback(MethodCallback::method_t methodPtr, MethodCallback::pointer_t objectPtr)
-			: m_methodPtr {methodPtr},
-			  m_objectPtr {objectPtr}
-	{}
+			class TClass,
+			class TReturn,
+			typename... TArgs
+	>
+	TMethodCallback<TClass, TReturn, TArgs...>::
+	TMethodCallback(TMethodCallback::FMethod methodPtr, TMethodCallback::TPointer objectPtr)
+			: m_methodPtr(methodPtr),
+			  m_objectPtr(objectPtr)
+	{ }
 	
 	template<
-			class T,
-			class Return,
-			typename ... Args>
-	MethodCallback<T, Return, Args...>::~MethodCallback()
-	{}
+			class TClass,
+			class TReturn,
+			typename ... Args
+	>
+	TMethodCallback<TClass, TReturn, Args...>::~TMethodCallback()
+	{ }
 	
 	template<
-			class T,
-			class Return,
-			typename ... Args>
-	Return MethodCallback<T, Return, Args...>::operator()(MethodCallback::pointer_t objectPtr, Args... args)
+			class TClass,
+			class TReturn,
+			typename... TArgs
+	>
+	TReturn TMethodCallback<TClass, TReturn, TArgs...>::
+	operator()(TMethodCallback::TPointer objectPtr, TArgs&& ... args)
 	{
-		return (objectPtr->*m_methodPtr)(args...);
+		return ( objectPtr->*m_methodPtr )(std::forward<TArgs>(args)...);
 	}
 	
 	template<
-			class T,
-			class Return,
-			typename ... Args>
-	Return MethodCallback<T, Return, Args...>::operator()(Args... args)
+			class TClass,
+			class TReturn,
+			typename... TArgs
+	>
+	TReturn TMethodCallback<TClass, TReturn, TArgs...>::operator()(TArgs&& ... args)
 	{
-		if (m_objectPtr != nullptr)
-			return (m_objectPtr->*m_methodPtr)(args...);
+		if (m_objectPtr)
+			return ( m_objectPtr->*m_methodPtr )(std::forward<TArgs>(args)...);
 	}
 	
 	template<
-			class T,
-			class Return,
-			typename ... Args>
-	Return MethodCallback<T, Return, Args...>::of(MethodCallback::pointer_t objectPtr, Args... args)
+			class TClass,
+			class TReturn,
+			typename... TArgs
+	>
+	TReturn TMethodCallback<TClass, TReturn, TArgs...>::
+	of(TMethodCallback::TPointer objectPtr, TArgs&& ... args)
 	{
-		if (objectPtr != nullptr)
-			return MethodCallback<T, Return(Args...)>()(objectPtr, args...);
+		if (objectPtr)
+			return TMethodCallback<TClass, TReturn(TArgs...)>()(objectPtr, std::forward<TArgs>(args)...);
 	}
 	
 	template<
-			class T,
-			class Return,
-			typename ... Args>
-	Return MethodCallback<T, Return, Args...>::of(Args... args)
+			class TClass,
+			class TReturn,
+			typename... TArgs
+	>
+	TReturn TMethodCallback<TClass, TReturn, TArgs...>::
+	of(TArgs&& ... args)
 	{
-			return MethodCallback<T, Return(Args...)>()(args...);
+		return TMethodCallback<TClass, TReturn(TArgs...)>()(std::forward<TArgs>(args)...);
 	}
-}
+} // namespace Dixter

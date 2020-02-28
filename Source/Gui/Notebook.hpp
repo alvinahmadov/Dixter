@@ -9,8 +9,7 @@
 #pragma once
 
 #include <QTabWidget>
-
-#include "Configuration.hpp"
+#include <memory>
 
 class QWidget;
 class QResizeEvent;
@@ -19,18 +18,20 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		class Panel;
-		class Notebook : public QTabWidget
+		class APanel;
+		
+		class TNotebook : public QTabWidget
 		{
 		Q_OBJECT
 		public:
-			Notebook(QWidget* parent = nullptr, const QString& name = "");
+			TNotebook(QWidget* parent = nullptr, const QString& name = "");
 			
-			~Notebook() dxDECL_OVERRIDE;
+			~TNotebook() override = default;
 			
 			void addPage(QWidget* page, const QString& title);
 			
-			Panel* getPage(int pageNumber);
+			APanel*
+			getPage(int pageNumber);
 			
 			int getPageNumber(QWidget* page) const;
 		
@@ -40,5 +41,5 @@ namespace Dixter
 		protected:
 			void connectEvents();
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

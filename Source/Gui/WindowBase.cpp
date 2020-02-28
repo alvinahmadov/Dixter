@@ -11,9 +11,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QStatusBar>
-#include <QDialog>
 
 #include "Group.hpp"
+#include "Constants.hpp"
 #include "Gui/WindowBase.hpp"
 #include "Gui/SettingsDialog.hpp"
 
@@ -21,18 +21,18 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		WindowBase::WindowBase()
+		TWindowBase::TWindowBase()
 				: QMainWindow(),
-				  m_hasMenus { false },
-				  m_hasStatusBar { false }
+				  m_hasMenus(false),
+				  m_hasStatusBar(false)
 		{
 			init();
 			connectEvents();
 		}
 		
-		WindowBase::WindowBase(const QString& title, int width, int height,
-		                       bool visible, bool enableMenu, bool enableStatusbar)
-				: WindowBase(nullptr, title, width, height, visible, enableMenu, enableStatusbar)
+		TWindowBase::TWindowBase(const QString& title, int width, int height,
+								 bool visible, bool enableMenu, bool enableStatusbar)
+				: TWindowBase(nullptr, title, width, height, visible, enableMenu, enableStatusbar)
 		{
 			init();
 			setWindowTitle(title);
@@ -40,12 +40,12 @@ namespace Dixter
 			setVisible(visible);
 		}
 		
-		WindowBase::WindowBase(QWidget* parent, const QString& title, int width, int height,
-		                       bool visible, bool enableMenu, bool enableStatusbar)
+		TWindowBase::TWindowBase(QWidget* parent, const QString& title, int width, int height,
+								 bool visible, bool enableMenu, bool enableStatusbar)
 				: QMainWindow(parent),
 				  m_hasMenus { enableMenu },
 				  m_hasStatusBar { enableStatusbar },
-				  m_objects { new Group<QObject, MenuID> },
+				  m_objects { new TGroup<QObject, EMenuID> },
 				  m_statbar { nullptr }
 		{
 			init();
@@ -54,34 +54,35 @@ namespace Dixter
 			setVisible(visible);
 		}
 		
-		WindowBase::~WindowBase()
+		TWindowBase::~TWindowBase()
 		{
-			SAFE_RELEASE(m_objects)
+			delete m_objects;
 		}
 		
 		QWidget*
-		WindowBase::getChildWidget(const QString& name)
+		TWindowBase::getChildWidget(const QString& name)
 		{
 			return findChild<QWidget*>(name);
 		}
 		
-		void WindowBase::init()
+		void TWindowBase::init()
 		{
-			m_settingsDialog = new SettingsDialog(this, QString("Settings"));
+			m_settingsDialog = new TSettingsDialog(this, QString("Settings"));
 			if (m_hasMenus)
 			{
 				auto __menuBar = new QMenuBar(this);
-				auto __menuFile = new QMenu(tr("File"), __menuBar);
-				auto __menuEdit = new QMenu(tr("Edit"), __menuBar);
-				auto __menuView = new QMenu(tr("View"), __menuBar);
+				auto __menuFile = new QMenu(tr("File"));
+				auto __menuEdit = new QMenu(tr("Edit"));
+				auto __menuView = new QMenu(tr("View"));
+				
 				//File menu
-				__menuFile->addMenu(tr("&New"));
-				__menuFile->addMenu(tr("&Open"));
+				__menuFile->addMenu(new QMenu(tr("&New")));
+				__menuFile->addMenu(new QMenu(tr("&Open")));
+				auto __quitAction =
+						__menuFile->addMenu(new QMenu(tr("&Quit")));
 				
-				auto __quitAction = new QAction(tr("&Quit"));
-				__menuFile->addAction(__quitAction);
-				
-				connect(__quitAction, SIGNAL(triggered()), this, SLOT(close()));
+				connect(__quitAction, SIGNAL(triggered()),
+						this, SLOT(close()));
 				
 				//Edit menu
 				__menuEdit->addMenu(tr("&Preferences"));
@@ -104,57 +105,57 @@ namespace Dixter
 			}
 		}
 		
-		void WindowBase::onMenuitemNew(QMenuEvent*)
+		void TWindowBase::onMenuitemNew(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onMenuitemOpen(QMenuEvent*)
+		void TWindowBase::onMenuitemOpen(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onMenuitemQuit(QMenuEvent*)
+		void TWindowBase::onMenuitemQuit(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onMenuitemCopy(QMenuEvent*)
+		void TWindowBase::onMenuitemCopy(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onMenuitemPaste(QMenuEvent*)
+		void TWindowBase::onMenuitemPaste(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onMenuitemPrefs(QMenuEvent*)
+		void TWindowBase::onMenuitemPrefs(QMenuEvent*)
 		{
 			m_settingsDialog->show();
 		}
 		
-		void WindowBase::onMenuitemSortName(QMenuEvent*)
+		void TWindowBase::onMenuitemSortName(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onMenuitemSortDate(QMenuEvent*)
+		void TWindowBase::onMenuitemSortDate(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onMenuitemSortType(QMenuEvent*)
+		void TWindowBase::onMenuitemSortType(QMenuEvent*)
 		{ }
 		
-		void WindowBase::onQuit()
+		void TWindowBase::onQuit()
 		{
 			QCoreApplication::quit();
 		}
 		
-		void WindowBase::setSize(i32 width, i32 height)
+		void TWindowBase::setSize(Int32 width, Int32 height)
 		{
 			setMinimumSize(width, height);
 		}
 		
-		void WindowBase::connectEvents()
+		void TWindowBase::connectEvents()
 		{
 			//	BIND_EVENT(wxEVT_UPDATE_UI, Window::OnTextEdit)
-			// BIND_EVENT_B(wxEVT_MENU, DixterWindow, onMenuitemNew, MenuID, IdFileNew);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemOpen, MenuID, IdFileOpen);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemQuit, MenuID, IdFileQuit);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemCopy, MenuID, IdEditCopy);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemPaste, MenuID, IdEditPaste);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemPrefs, MenuID, IdEditPreferences);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemSortName, MenuID, IdViewSortName);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemSortDate, MenuID, IdViewSortDate);
-			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemSortType, MenuID, IdViewSortType);
+			// BIND_EVENT_B(wxEVT_MENU, DixterWindow, onMenuitemNew, EMenuID, IdFileNew);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemOpen, EMenuID, IdFileOpen);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemQuit, EMenuID, IdFileQuit);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemCopy, EMenuID, IdEditCopy);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemPaste, EMenuID, IdEditPaste);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemPrefs, EMenuID, IdEditPreferences);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemSortName, EMenuID, IdViewSortName);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemSortDate, EMenuID, IdViewSortDate);
+			// BIND_EVENT_B(wxEVT_MENU, Window, onMenuitemSortType, EMenuID, IdViewSortType);
 		}
 	}
 }

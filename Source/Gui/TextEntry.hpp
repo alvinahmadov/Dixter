@@ -10,22 +10,18 @@
 
 #include <QLineEdit>
 
-#include "Types.hpp"
-
 namespace Dixter
 {
 	namespace Gui
 	{
-		class TextEntry : public QLineEdit
+		class TTextEntry : public QLineEdit
 		{
 		Q_OBJECT
 		public:
-			TextEntry(QWidget* parent,
-			          const QString& value = QString(),
-			          const QSize& size = QSize(100, 100),
-			          const QString& name = QString());
-			
-			// virtual void onEntryChanged(wxKeyEvent& event);
+			TTextEntry(QWidget* parent,
+					   const QString& value = QString(),
+					   const QSize& size = QSize(100, 100),
+					   const QString& name = QString());
 			
 			void connectEvents();
 		};

@@ -8,14 +8,13 @@
  */
 
 #include "Commons.hpp"
-#include "Configuration.hpp"
 #include "Gui/Label.hpp"
 
 namespace Dixter
 {
 	namespace Gui
 	{
-		Label::Label(const QString& label, QWidget* parent, const QSize& size)
+		TLabel::TLabel(const QString& label, QWidget* parent, const QSize& size)
 				: QLabel(label, parent)
 		{
 			if (size != QSize())
@@ -24,11 +23,8 @@ namespace Dixter
 			setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 		}
 		
-		Label::Label(const QString& label, const QSize& size)
-				: Label(label, nullptr, size)
+		TLabel::TLabel(const QString& label, const QSize& size)
+				: TLabel(label, nullptr, size)
 		{}
-		
-		Label::~Label()
-		{ }
-	}
-}
+	} // namespace Gui
+} // namespace Dixter

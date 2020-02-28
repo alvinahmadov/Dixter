@@ -7,6 +7,7 @@
  *  See README.md for more information.
  */
 
+#include "Macros.hpp"
 #include "Configuration.hpp"
 #include "Gui/Application.hpp"
 
@@ -14,24 +15,22 @@ namespace Dixter
 {
 	namespace Gui
 	{
-		Application::Application(int& argc, char** argv,
-		                         const QString& appId, bool enableNativeWindow)
-				: QApplication(argc, argv),
-				  m_enableSelfWindow(enableNativeWindow)
+		TApplication::TApplication(int& argc, char** argv,
+								   const QString& appId)
+				: QApplication(argc, argv)
 		{
 			setApplicationName(appId);
 		}
 		
-		Application::~Application()
-		{
-			ConfigurationManager::getManager(ConfigurationType::kConfigXml)->release();
-		}
+		TApplication::~TApplication()
+		{ }
 		
-		int Application::run(QWidget* window)
+		int TApplication::exec(QWidget* window)
 		{
 			try
 			{
 				setActiveWindow(window);
+				window->show();
 				return QApplication::exec();
 			} catch (std::exception& e)
 			{

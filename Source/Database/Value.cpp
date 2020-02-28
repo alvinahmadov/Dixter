@@ -8,95 +8,126 @@
  */
 
 #include "Value.hpp"
-#include "Commons.hpp"
 #include "Macros.hpp"
-#include "Utilities.hpp"
-
+#include "Exception.hpp"
 
 namespace Dixter
 {
 	namespace Database
 	{
-		Value::Value(const string_t& valueName, DataType valueType, size_t size, bool null, bool autoIncrement, bool primaryKey)
-				: m_autoIncrement { autoIncrement },
-				  m_null { null },
-				  m_primaryKey { primaryKey },
-				  m_size { size },
-				  m_valueName { valueName },
-				  m_valueType { valueType }
+		TValue::TValue(const TString& name, EDataType type, TSize size,
+					   bool null, bool primaryKey, bool autoIncrement) noexcept
+				: m_null(null),
+				  m_primaryKey(primaryKey),
+				  m_autoIncrement(autoIncrement),
+				  m_size(size),
+				  m_name(name),
+				  m_type(type)
 		{ }
 		
-		const string_t&
-		Value::getValueName() const
+		const TString&
+		TValue::getValueName() const
 		{
-			return m_valueName;
+			return m_name;
 		}
 		
-		const DataType&
-		Value::getType() const
+		const EDataType&
+		TValue::getType() const
 		{
-			return m_valueType;
+			return m_type;
 		}
 		
-		string_t
-		Value::getTypeString() const
+		TString
+		TValue::getTypeString() const
 		{
-			switch (m_valueType)
+			switch (m_type)
 			{
-				case DataType::kBit: return xSTR(BIT);
-				case DataType::kTinyInt: return xSTR(TINYINT);
-				case DataType::kSmallInt: return xSTR(SMALLINT);
-				case DataType::kMediumInt: return xSTR(MEDIUMINT);
-				case DataType::kInteger: return xSTR(INTEGER);
-				case DataType::kBigInt: return xSTR(BIGINT);
-				case DataType::kReal: return xSTR(REAL);
-				case DataType::kNumeric: return xSTR(NUMERIC);
-				case DataType::kChar: return xSTR(CHAR);
-				case DataType::kBinary: return xSTR(BINARY);
-				case DataType::kVarChar: return xSTR(VARCHAR);
-				case DataType::kVarBinary: return xSTR(VARBINARY);
-				case DataType::kLongVarChar: return xSTR(LONGVARCHAR);
-				case DataType::kLongVarBinary: return xSTR(LONGVARBINARY);
-				case DataType::kTimeStamp: return xSTR(TIMESTAMP);
-				case DataType::kDate: return xSTR(DATE);
-				case DataType::kTime: return xSTR(TIME);
-				case DataType::kYear: return xSTR(YEAR);
-				case DataType::kDecimal: return xSTR(DECIMAL);
-				case DataType::kDouble: return xSTR(DOUBLE);
-				case DataType::kGeometry: return xSTR(GEOMETRY);
-				case DataType::kEnum: return xSTR(ENUM);
-				case DataType::kSet: return xSTR(SET);
-				case DataType::kSqlNull: return xSTR(SQLNULL);
-				case DataType::kJson: return xSTR(JSON);
-				case DataType::kTinyText: return xSTR(TINYTEXT);
-				case DataType::kText: return xSTR(TEXT);
-				case DataType::kMediumText: return xSTR(MEDIUMTEXT);
-				case DataType::kLongText: return xSTR(LONGTEXT);
-				case DataType::kInt: return xSTR(INT);
-				case DataType::kBool: return xSTR(BOOL);
-				default: throw NotFoundException { "%s:%d Unknown type.\n", __FILE__, __LINE__ };
+				case EDataType::kBit:
+					return dxSTR(BIT);
+				case EDataType::kTinyInt:
+					return dxSTR(TINYINT);
+				case EDataType::kSmallInt:
+					return dxSTR(SMALLINT);
+				case EDataType::kMediumInt:
+					return dxSTR(MEDIUMINT);
+				case EDataType::kInteger:
+					return dxSTR(INTEGER);
+				case EDataType::kBigInt:
+					return dxSTR(BIGINT);
+				case EDataType::kReal:
+					return dxSTR(REAL);
+				case EDataType::kNumeric:
+					return dxSTR(NUMERIC);
+				case EDataType::kChar:
+					return dxSTR(CHAR);
+				case EDataType::kBinary:
+					return dxSTR(BINARY);
+				case EDataType::kVarChar:
+					return dxSTR(VARCHAR);
+				case EDataType::kVarBinary:
+					return dxSTR(VARBINARY);
+				case EDataType::kLongVarChar:
+					return dxSTR(LONGVARCHAR);
+				case EDataType::kLongVarBinary:
+					return dxSTR(LONGVARBINARY);
+				case EDataType::kTimeStamp:
+					return dxSTR(TIMESTAMP);
+				case EDataType::kDate:
+					return dxSTR(DATE);
+				case EDataType::kTime:
+					return dxSTR(TIME);
+				case EDataType::kYear:
+					return dxSTR(YEAR);
+				case EDataType::kDecimal:
+					return dxSTR(DECIMAL);
+				case EDataType::kDouble:
+					return dxSTR(DOUBLE);
+				case EDataType::kGeometry:
+					return dxSTR(GEOMETRY);
+				case EDataType::kEnum:
+					return dxSTR(ENUM);
+				case EDataType::kSet:
+					return dxSTR(SET);
+				case EDataType::kSqlNull:
+					return dxSTR(SQLNULL);
+				case EDataType::kJson:
+					return dxSTR(JSON);
+				case EDataType::kTinyText:
+					return dxSTR(TINYTEXT);
+				case EDataType::kText:
+					return dxSTR(TEXT);
+				case EDataType::kMediumText:
+					return dxSTR(MEDIUMTEXT);
+				case EDataType::kLongText:
+					return dxSTR(LONGTEXT);
+				case EDataType::kInt:
+					return dxSTR(INT);
+				case EDataType::kBool:
+					return dxSTR(BOOL);
+				default:
+					throw TNotFoundException("%s:%d Unknown type.\n", __FILE__, __LINE__);
 			}
 		}
 		
-		const size_t&
-		Value::getSize() const
+		const TSize&
+		TValue::getSize() const
 		{
 			return m_size;
-		};
+		}
 		
-		bool Value::isAutoIncrement() const
+		bool TValue::isAutoIncrement() const
 		{
 			return m_autoIncrement;
 		}
 		
-		bool Value::isNull() const
-		{
-			return m_null;
-		}
-		
-		bool Value::isPrimaryKey() const
+		bool TValue::isPrimaryKey() const
 		{
 			return m_primaryKey;
 		}
-	}
-}
+		
+		bool TValue::isNull() const
+		{
+			return m_null;
+		}
+	} // namespace Database
+} // namespace Dixter

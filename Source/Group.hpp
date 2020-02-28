@@ -15,7 +15,6 @@
 
 namespace Dixter
 {
-	
 	/*!
 	 * \author Alvin Ahmadov <alvin.dev.ahmadov@gmail.com>
 	 * \class Group
@@ -25,64 +24,60 @@ namespace Dixter
 	 *
 	 * It can store objects of classes which have common base class.
 	 * */
-	template<class T, typename ID = ui32>
-	class Group final : public NonCopyable
+	template<class T, typename ID = UInt32>
+	class TGroup final : public TNonCopyable
 	{
 	public:
-		using object_type           = T;
-		using id_type               = ID;
-		using key_type              = const string_t;
-		using element_type          = GroupElement<object_type*, ID>;
-		using container_type        = std::list<element_type*>;
-		using mapped_type           = container_type*;
-		using value_type            = std::pair<key_type, mapped_type>;
-		using multimap_type         = std::unordered_map<key_type, mapped_type, DJBHash>;
-		using iterator              = typename Group<T, ID>::multimap_type::iterator;
-		using const_iterator        = typename Group<T, ID>::multimap_type::const_iterator;
-		using list_iterator         = typename std::list<element_type*>::iterator;
-		using list_const_iterator   = const typename std::list<element_type*>::iterator;
+		using TObject               = T;
+		using EId                   = ID;
+		using TKey                  = TString;
+		using TElement              = TGroupElement<TObject*, ID>;
+		using TContainer            = std::list<TElement*>;
+		using TMapped               = TContainer*;
+		using TValue                = std::pair<TKey, TMapped>;
+		using TMultimap             = std::unordered_map<TKey, TMapped>;
+		using TIterator             = typename TGroup<T, ID>::TMultimap::iterator;
+		using TConstIterator        = typename TGroup<T, ID>::TMultimap::const_iterator;
+		using TListIterator         = typename std::list<TElement*>::iterator;
+		using TListConstIterator    = const typename std::list<TElement*>::iterator;
 	public:
-		/// ctor.
-		/// Initialises group with empty data
-		Group();
+		TGroup() noexcept;
 		
-		/// Move ctor.
-		Group(Group&& src);
+		TGroup(TGroup&& src) noexcept;
 		
-		Group(const Group&) = delete;
+		TGroup& operator=(TGroup&& src) noexcept;
 		
-		Group& operator=(const Group&) = delete;
-		
-		/// dtor.
-		~Group();
+		~TGroup() noexcept;
 		
 		/**
 		 * \class Group
 		 * \brief Add element to the group and return casted pointer to that element.
-		 * \tparam cast_type Type of added element.
+		 * \tparam TCast Type of added element.
 		 * \param groupName The name of the group to be added.
 		 * \param element Element to be added to the group.
 		 * \param id Id associated with the element.
 		 * \param autoDelete Automatical deletion of element if unused.
 		 * \param description Description of the element (optional).
 		 * */
-		template<class cast_type = object_type>
-		cast_type*
-		add(key_type& groupName, T* element, ID id, bool autoDelete = false, const string_t& description = string_t());
+		template<class TCast = TObject>
+		TCast*
+		add(const TKey& groupName, TObject* element, ID id, bool autoDelete = false,
+			typename TElement::TDescription description = "");
 		
 		/**
 		 * \class Group
 		 * \brief Add element to the group and return casted pointer to that element.
-		 * \tparam cast_type Type of added element.
+		 * \tparam TCast Type of added element.
 		 * \param groupName The name of the group to be added.
 		 * \param element Element to be added to the group.
 		 * \param id Id associated with the element.
 		 * \param autoDelete Automatical deletion of element if unused.
 		 * \param description Description of the element (optional).
 		 * */
-		template<class cast_type = object_type>
-		cast_type*
-		add(T* element, ID id, bool autoDelete = false, const string_t& description = string_t());
+		template<class TCast = TObject>
+		TCast*
+		add(TObject* element, ID id, bool autoDelete = false,
+			typename TElement::TDescription description = "");
 		
 		/**
 		 * \class Group
@@ -91,9 +86,11 @@ namespace Dixter
 		 * \param id Id of element to remove.
 		 * \returns True if element removed successfully.
 		 * */
-		bool remove(key_type& groupName, ID id);
+		bool remove(const TKey& groupName, ID id);
 		
-		Group& append(T* element, ID id);
+		void clear();
+		
+		TGroup& append(TObject* element, ID id);
 		
 		/**
 		 * \class Group
@@ -102,129 +99,107 @@ namespace Dixter
 		 * \returns Elements of the group.
 		 * \throws NotFoundException
 		 * */
-		mapped_type& getGroup(key_type& groupName);
+		TMapped& getGroup(const TKey& groupName);
 		
-		mapped_type& getGroup(size_t index)
+		TMapped& getGroup(TSize index)
 		{
-			size_t idx { };
+			TSize idx {};
 			
-			for (std::pair<key_type, mapped_type>& g : *m_group)
-			{
+			for (auto&[__key, __mapped] : *m_group)
 				if (idx++ == index)
-				{
-					return g.second;
-				}
-			}
+					return __mapped;
 		}
 		
 		/**
 		 * \class Group
 		 * \brief Get element.
-		 * \tparam cast_type Type to cast the element.
+		 * \tparam TCast Type to cast the element.
 		 * \param id Id of the element.
 		 * \returns Casted element.
 		 * */
-		template<class cast_type = object_type>
-		cast_type*
+		template<class TCast = TObject>
+		TCast*
 		get(ID id);
 		
 		/**
 		 * \class Group
 		 * \brief Get element.
-		 * \tparam cast_type Type to cast the element.
+		 * \tparam TCast Type to cast the element.
 		 * \param groupName Name of the group.
 		 * \param id Id of the element.
 		 * \returns Casted element.
 		 * \throws NotFoundException
 		 * */
-		template<class cast_type = object_type>
-		cast_type*
-		get(key_type& groupName, ID id);
+		template<class TCast = TObject>
+		TCast*
+		get(const TKey& groupName, ID id);
+		
+		/**
+		 * \class Group
+		 * \brief Calls specified method of element.
+		 * \tparam TReturn Return type of element's method.
+		 * \tparam TArgs Types of variadic arguments to be passed to the method.
+		 * \param args Arguments for method.
+		 *
+		 * For each element of all groups call method. All groups must have
+		 * the same types.
+		 * */
+		template<
+				typename TReturn,
+				typename... TArgs
+		>
+		void forEach(TReturn(T::* MethodCallback)(TArgs...), TArgs ... args);
+		
+		/**
+		 * \class Group
+		 * \brief Calls specified method of element.
+		 * \tparam TReturn Return type of element's method.
+		 * \tparam TArgs Types of variadic arguments to be passed to the method.
+		 * \param groupName Name of the group.
+		 * \param args Arguments for method.
+		 *
+		 * For each element of a group calls its method.
+		 * */
+		template<
+				typename TReturn,
+				typename... TArgs
+		>
+		void forEach(const TKey& groupName, TReturn(T::*MethodCallback)(TArgs ... args), TArgs ... args);
 		
 		/**
 		 * \class Group
 		 * \returns Number of groups.
 		 * */
-		size_t getGroupCount() const;
+		TSize getSize() const;
 		
 		/**
 		 * \class Group
 		 * \param groupName Name of the group.
 		 * \returns Number of elements in the group.
 		 * */
-		size_t getItemCount(key_type& groupName);
+		TSize getItemCount(const TKey& groupName) const;
 		
-		/**
-		 * \class Group
-		 * \brief Calls specified method of element.
-		 * \tparam R Return type of element's method.
-		 * \tparam Args Types of variadic arguments to be passed to the method.
-		 * \param args Arguments for method.
-		 *
-		 * For each element of all groups call method. All groups must have
-		 * the same types.
-		 * */
-		template<typename R, typename ... Args>
-		void forEach(R(T::* MethodCallback)(Args...), Args ... args);
+		bool empty() const noexcept;
 		
-		/**
-		 * \class Group
-		 * \brief Calls specified method of element.
-		 * \tparam R Return type of element's method.
-		 * \tparam Args Types of variadic arguments to be passed to the method.
-		 * \param groupName Name of the group.
-		 * \param args Arguments for method.
-		 *
-		 * For each element of a group calls its method.
-		 * */
-		template<typename R, typename ... Args>
-		void forEach(key_type& groupName, R(T::*MethodCallback)(Args ... args), Args ... args);
+		bool empty(const TKey& key) const noexcept;
 		
-		auto begin();
+		bool isEmpty() const noexcept;
 		
-		auto end();
+		bool isEmpty(const TKey& key) const noexcept;
 		
-		const auto cbegin() const dxDECL_NOEXCEPT;
+		TIterator
+		begin() noexcept;
 		
-		const auto cend() const dxDECL_NOEXCEPT;
+		TIterator
+		end() noexcept;
 		
-		/**
-		 * \class Group
-		 * \brief Checks if group exists or group name isn't empty.
-		 * \param groupName Name of group to check.
-		 * \returns True if group is valid.
-		 * */
-		inline dxDECL_CONSTEXPR bool validGroupName(const key_type& groupName)
-		{
-			return hasGroup(groupName) || groupName.size() > 0;
-		}
+		TConstIterator
+		cbegin() const noexcept;
 		
-		/**
-		 * \class Group
-		 * \brief Checks if element isn't null.
-		 * \param element Element to check.
-		 * \returns True if element is valid.
-		 * */
-		inline dxDECL_CONSTEXPR bool validElement(object_type* element)
-		{
-			return element != nullptr;
-		}
-		
-		Group& operator()(key_type& groupName, object_type* item, ID id, bool autoRelease = true)
-		{
-			add(groupName, item, id, ClassInfo<T>::getRawName(), autoRelease);
-			return *this;
-		}
-		
-		bool hasElement(const key_type& groupName, const ID& id) const;
-		
-		/*! Method that finds item in group by its group name
-		 * @param groupName Name of the group where exists the searched data
-		 * @returns A pair with true if found, and the iterator to the item
-		 */
-		bool hasGroup(const key_type& groupName) const;
+		TConstIterator
+		cend() const noexcept;
 	
-	protected:
+	private:
 		/**
 		 * \class Group
 		 * \brief Insert a GroupElement object to the group.
@@ -233,15 +208,45 @@ namespace Dixter
 		 * \returns True if item added successfully.
 		 * \throws IllegalArgumentException.
 		 */
-		object_type* add(key_type& groupName, Group<T, ID>::element_type* groupElement);
+		TObject* doAdd(const TKey& groupName, TElement* groupElement);
+		
+		bool
+		hasElement(const TKey& groupName, const ID& id) const;
+		
+		/*! Method that finds item in group by its group name
+		 * @param groupName Name of the group where exists the searched data
+		 * @returns A pair with true if found, and the iterator to the item
+		 */
+		bool
+		hasGroup(const TKey& groupName) const;
+		
+		/**
+		 * \class Group
+		 * \brief Checks if group exists or group name isn't empty.
+		 * \param groupName Name of group to check.
+		 * \returns True if group is valid.
+		 * */
+		inline bool
+		isValidGroupName(const TKey& groupName) const;
+		
+		/**
+		 * \class Group
+		 * \brief Checks if element isn't null.
+		 * \param element Element to check.
+		 * \returns True if element is valid.
+		 * */
+		inline bool
+		isValidElement(const TObject* element) const;
 	
 	private:
-		size_t m_count;
+		TSize m_count;
 		
-		multimap_type* m_group;
+		TMultimap* m_group;
+		
+		static const TKey s_defaultGroup;
 		
 		mutable std::mutex m_mutex;
 	};
-}
+} // namespace Dixter
 
 #include "GroupImpl.hpp"

@@ -19,12 +19,12 @@ namespace Dixter
 			Q_OBJECT
 		public:
 			ColourPicker(QWidget* parent, const QColor& colour = Qt::GlobalColor::lightGray,
-						 const QSize& size = QSize());
+						 const QSize& size = QSize()) noexcept;
 			
 			virtual ~ColourPicker();
 		
 		protected:
 			virtual void connectEvents();
 		};
-	}
-}
+	} // namespace Gui
+} // namespace Dixter
